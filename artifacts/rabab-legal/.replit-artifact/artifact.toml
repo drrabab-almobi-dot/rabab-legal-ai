@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "محاميتك الرقمية – RABAB LEGAL AI"
+version = "1.0.0"
+id = "artifacts/rabab-legal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19524
+
+[services.development]
+run = "pnpm --filter @workspace/rabab-legal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/rabab-legal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/rabab-legal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19524"
+BASE_PATH = "/"
