@@ -1,0 +1,1364 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: RABAB LEGAL AI Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: packages
+    description: Service packages
+  - name: subscriptions
+    description: User subscriptions
+  - name: payments
+    description: Payment operations
+  - name: consultations
+    description: Legal consultations
+  - name: knowledge
+    description: Knowledge base search
+  - name: coupons
+    description: Discount coupons
+  - name: admin
+    description: Admin operations
+  - name: faqs
+    description: FAQ management
+  - name: service-areas
+    description: Service areas
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ──────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me/update:
+    patch:
+      operationId: updateMe
+      tags: [auth]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ─── PACKAGES ──────────────────────────────────────────────────────────────
+  /packages:
+    get:
+      operationId: listPackages
+      tags: [packages]
+      summary: List all available packages
+      responses:
+        "200":
+          description: List of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Package"
+
+  /packages/{id}:
+    get:
+      operationId: getPackage
+      tags: [packages]
+      summary: Get a package by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Package details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+
+  # ─── SUBSCRIPTIONS ─────────────────────────────────────────────────────────
+  /subscriptions/my:
+    get:
+      operationId: getMySubscription
+      tags: [subscriptions]
+      summary: Get current user's active subscription
+      responses:
+        "200":
+          description: Active subscription or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions:
+    post:
+      operationId: createSubscription
+      tags: [subscriptions]
+      summary: Subscribe to a package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionInput"
+      responses:
+        "201":
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  # ─── PAYMENTS ──────────────────────────────────────────────────────────────
+  /payments/initiate:
+    post:
+      operationId: initiatePayment
+      tags: [payments]
+      summary: Initiate a payment for a package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInitInput"
+      responses:
+        "200":
+          description: Payment session info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentSession"
+
+  /payments/verify:
+    post:
+      operationId: verifyPayment
+      tags: [payments]
+      summary: Verify payment result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentVerifyInput"
+      responses:
+        "200":
+          description: Payment verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResult"
+
+  /payments/webhook:
+    post:
+      operationId: paymentWebhook
+      tags: [payments]
+      summary: Payment gateway webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookPayload"
+      responses:
+        "200":
+          description: Webhook received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /payments/history:
+    get:
+      operationId: listMyPayments
+      tags: [payments]
+      summary: List current user's payment history
+      responses:
+        "200":
+          description: Payment history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+
+  /invoices:
+    get:
+      operationId: listMyInvoices
+      tags: [payments]
+      summary: List current user's invoices
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [payments]
+      summary: Get invoice by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  # ─── COUPONS ───────────────────────────────────────────────────────────────
+  /coupons/validate:
+    post:
+      operationId: validateCoupon
+      tags: [coupons]
+      summary: Validate a discount coupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponValidateInput"
+      responses:
+        "200":
+          description: Coupon is valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CouponValidation"
+        "400":
+          description: Invalid or expired coupon
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── KNOWLEDGE SEARCH ──────────────────────────────────────────────────────
+  /knowledge/search:
+    get:
+      operationId: searchKnowledge
+      tags: [knowledge]
+      summary: Semantic search in knowledge base (paid subscribers)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [judicial, circular, regulation, contract, general]
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeSearchResponse"
+        "403":
+          description: Subscription required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── CONSULTATIONS ─────────────────────────────────────────────────────────
+  /consultations:
+    get:
+      operationId: listMyConsultations
+      tags: [consultations]
+      summary: List current user's consultations
+      responses:
+        "200":
+          description: List of consultations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Consultation"
+    post:
+      operationId: createConsultation
+      tags: [consultations]
+      summary: Create a new consultation request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsultationInput"
+      responses:
+        "201":
+          description: Consultation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+
+  /consultations/{id}:
+    get:
+      operationId: getConsultation
+      tags: [consultations]
+      summary: Get consultation by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Consultation details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+
+  # ─── FAQs ──────────────────────────────────────────────────────────────────
+  /faqs:
+    get:
+      operationId: listFaqs
+      tags: [faqs]
+      summary: List all FAQs
+      responses:
+        "200":
+          description: List of FAQs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Faq"
+
+  # ─── SERVICE AREAS ─────────────────────────────────────────────────────────
+  /service-areas:
+    get:
+      operationId: listServiceAreas
+      tags: [service-areas]
+      summary: List all service areas
+      responses:
+        "200":
+          description: List of service areas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceArea"
+
+  # ─── ADMIN ─────────────────────────────────────────────────────────────────
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: List all users (admin)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /admin/users/{id}:
+    get:
+      operationId: getAdminUser
+      tags: [admin]
+      summary: Get user by ID (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateAdminUser
+      tags: [admin]
+      summary: Update user (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/packages:
+    get:
+      operationId: listAdminPackages
+      tags: [admin]
+      summary: List all packages (admin)
+      responses:
+        "200":
+          description: List of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Package"
+    post:
+      operationId: createAdminPackage
+      tags: [admin]
+      summary: Create a package (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PackageInput"
+      responses:
+        "201":
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+
+  /admin/packages/{id}:
+    patch:
+      operationId: updateAdminPackage
+      tags: [admin]
+      summary: Update a package (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PackageUpdate"
+      responses:
+        "200":
+          description: Updated package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+    delete:
+      operationId: deleteAdminPackage
+      tags: [admin]
+      summary: Delete a package (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Package deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/coupons:
+    get:
+      operationId: listAdminCoupons
+      tags: [admin]
+      summary: List all coupons (admin)
+      responses:
+        "200":
+          description: List of coupons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coupon"
+    post:
+      operationId: createAdminCoupon
+      tags: [admin]
+      summary: Create a coupon (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponInput"
+      responses:
+        "201":
+          description: Coupon created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+
+  /admin/coupons/{id}:
+    patch:
+      operationId: updateAdminCoupon
+      tags: [admin]
+      summary: Update a coupon (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponUpdate"
+      responses:
+        "200":
+          description: Updated coupon
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+    delete:
+      operationId: deleteAdminCoupon
+      tags: [admin]
+      summary: Delete a coupon (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Coupon deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/payments:
+    get:
+      operationId: listAdminPayments
+      tags: [admin]
+      summary: List all payments (admin)
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+
+  /admin/faqs:
+    post:
+      operationId: createAdminFaq
+      tags: [admin]
+      summary: Create FAQ (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqInput"
+      responses:
+        "201":
+          description: FAQ created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+
+  /admin/faqs/{id}:
+    patch:
+      operationId: updateAdminFaq
+      tags: [admin]
+      summary: Update FAQ (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqUpdate"
+      responses:
+        "200":
+          description: Updated FAQ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+    delete:
+      operationId: deleteAdminFaq
+      tags: [admin]
+      summary: Delete FAQ (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: FAQ deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/consultations:
+    get:
+      operationId: listAdminConsultations
+      tags: [admin]
+      summary: List all consultations (admin)
+      responses:
+        "200":
+          description: List of consultations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Consultation"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    # ─── AUTH ─────────────────────────────────────────────────────────────
+    RegisterInput:
+      type: object
+      required: [name, email, password, phone]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        phone:
+          type: string
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+
+    # ─── USER ─────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, name, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [user, admin]
+        freeConsultationsUsed:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+          enum: [user, admin]
+        isActive:
+          type: boolean
+
+    # ─── PACKAGE ──────────────────────────────────────────────────────────
+    Package:
+      type: object
+      required: [id, nameAr, nameEn, price, questionsAllowed, type, isActive, features]
+      properties:
+        id:
+          type: integer
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        descriptionAr:
+          type: ["string", "null"]
+        price:
+          type: number
+        questionsAllowed:
+          type: integer
+        type:
+          type: string
+          enum: [free, questions, monthly, business]
+        isActive:
+          type: boolean
+        isPopular:
+          type: boolean
+        features:
+          type: array
+          items:
+            type: string
+        sortOrder:
+          type: integer
+
+    PackageInput:
+      type: object
+      required: [nameAr, nameEn, price, questionsAllowed, type, features]
+      properties:
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        descriptionAr:
+          type: string
+        price:
+          type: number
+        questionsAllowed:
+          type: integer
+        type:
+          type: string
+          enum: [free, questions, monthly, business]
+        isPopular:
+          type: boolean
+        features:
+          type: array
+          items:
+            type: string
+        sortOrder:
+          type: integer
+
+    PackageUpdate:
+      type: object
+      properties:
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        descriptionAr:
+          type: string
+        price:
+          type: number
+        questionsAllowed:
+          type: integer
+        isActive:
+          type: boolean
+        isPopular:
+          type: boolean
+        features:
+          type: array
+          items:
+            type: string
+        sortOrder:
+          type: integer
+
+    # ─── SUBSCRIPTION ─────────────────────────────────────────────────────
+    Subscription:
+      type: object
+      required: [id, userId, packageId, status, questionsUsed, questionsAllowed, startDate]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        packageId:
+          type: integer
+        package:
+          $ref: "#/components/schemas/Package"
+        status:
+          type: string
+          enum: [active, expired, cancelled]
+        questionsUsed:
+          type: integer
+        questionsAllowed:
+          type: integer
+        questionsRemaining:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: ["string", "null"]
+          format: date-time
+
+    SubscriptionInput:
+      type: object
+      required: [packageId]
+      properties:
+        packageId:
+          type: integer
+        couponCode:
+          type: string
+
+    # ─── PAYMENT ──────────────────────────────────────────────────────────
+    Payment:
+      type: object
+      required: [id, userId, packageId, amount, vatAmount, totalAmount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        packageId:
+          type: integer
+        package:
+          $ref: "#/components/schemas/Package"
+        amount:
+          type: number
+        vatAmount:
+          type: number
+        totalAmount:
+          type: number
+        discountAmount:
+          type: number
+        couponCode:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, paid, failed, refunded]
+        gateway:
+          type: ["string", "null"]
+        gatewayRef:
+          type: ["string", "null"]
+        billingName:
+          type: ["string", "null"]
+        billingEmail:
+          type: ["string", "null"]
+        billingPhone:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    PaymentInitInput:
+      type: object
+      required: [packageId, billingName, billingEmail, billingPhone]
+      properties:
+        packageId:
+          type: integer
+        couponCode:
+          type: string
+        billingName:
+          type: string
+        billingEmail:
+          type: string
+        billingPhone:
+          type: string
+        gateway:
+          type: string
+          enum: [moyasar, hyperpay, tap]
+
+    WebhookPayload:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        data:
+          type: string
+
+    PaymentSession:
+      type: object
+      required: [paymentId, amount, vatAmount, totalAmount]
+      properties:
+        paymentId:
+          type: integer
+        amount:
+          type: number
+        vatAmount:
+          type: number
+        totalAmount:
+          type: number
+        discountAmount:
+          type: number
+        gateway:
+          type: string
+        checkoutUrl:
+          type: ["string", "null"]
+
+    PaymentVerifyInput:
+      type: object
+      required: [paymentId]
+      properties:
+        paymentId:
+          type: integer
+        gatewayRef:
+          type: string
+
+    PaymentResult:
+      type: object
+      required: [success, status]
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+          enum: [paid, failed, pending]
+        payment:
+          $ref: "#/components/schemas/Payment"
+
+    # ─── INVOICE ──────────────────────────────────────────────────────────
+    Invoice:
+      type: object
+      required: [id, invoiceNumber, userId, paymentId, amount, vatAmount, totalAmount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        userId:
+          type: integer
+        paymentId:
+          type: integer
+        payment:
+          $ref: "#/components/schemas/Payment"
+        amount:
+          type: number
+        vatAmount:
+          type: number
+        totalAmount:
+          type: number
+        discountAmount:
+          type: number
+        billingName:
+          type: string
+        billingEmail:
+          type: string
+        status:
+          type: string
+          enum: [issued, cancelled]
+        packageNameAr:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── COUPON ───────────────────────────────────────────────────────────
+    Coupon:
+      type: object
+      required: [id, code, discountType, discountValue, isActive, usageCount]
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        descriptionAr:
+          type: ["string", "null"]
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue:
+          type: number
+        maxUses:
+          type: ["integer", "null"]
+        usageCount:
+          type: integer
+        isActive:
+          type: boolean
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    CouponInput:
+      type: object
+      required: [code, discountType, discountValue]
+      properties:
+        code:
+          type: string
+        descriptionAr:
+          type: string
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue:
+          type: number
+        maxUses:
+          type: integer
+        expiresAt:
+          type: string
+          format: date-time
+
+    CouponUpdate:
+      type: object
+      properties:
+        descriptionAr:
+          type: string
+        discountValue:
+          type: number
+        maxUses:
+          type: integer
+        isActive:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+
+    CouponValidateInput:
+      type: object
+      required: [code, packageId]
+      properties:
+        code:
+          type: string
+        packageId:
+          type: integer
+
+    CouponValidation:
+      type: object
+      required: [valid, discountType, discountValue, discountAmount, finalPrice]
+      properties:
+        valid:
+          type: boolean
+        code:
+          type: string
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue:
+          type: number
+        discountAmount:
+          type: number
+        finalPrice:
+          type: number
+
+    # ─── CONSULTATION ─────────────────────────────────────────────────────
+
+    # --- KNOWLEDGE ---
+    KnowledgeChunk:
+      type: object
+      required: [content, documentName, similarity]
+      properties:
+        content:
+          type: string
+        documentId:
+          type: integer
+        documentName:
+          type: string
+        similarity:
+          type: number
+
+    KnowledgeSearchResponse:
+      type: object
+      required: [results, query]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/KnowledgeChunk"
+        query:
+          type: string
+        fallback:
+          type: boolean
+
+    Consultation:
+      type: object
+      required: [id, userId, title, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        subscriptionId:
+          type: ["integer", "null"]
+        title:
+          type: string
+        areaAr:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, answered, closed]
+        chatgptUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ConsultationInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        areaAr:
+          type: string
+
+    # ─── FAQ ──────────────────────────────────────────────────────────────
+    Faq:
+      type: object
+      required: [id, questionAr, answerAr, sortOrder]
+      properties:
+        id:
+          type: integer
+        questionAr:
+          type: string
+        answerAr:
+          type: string
+        sortOrder:
+          type: integer
+
+    FaqInput:
+      type: object
+      required: [questionAr, answerAr]
+      properties:
+        questionAr:
+          type: string
+        answerAr:
+          type: string
+        sortOrder:
+          type: integer
+
+    FaqUpdate:
+      type: object
+      properties:
+        questionAr:
+          type: string
+        answerAr:
+          type: string
+        sortOrder:
+          type: integer
+
+    # ─── SERVICE AREA ─────────────────────────────────────────────────────
+    ServiceArea:
+      type: object
+      required: [id, nameAr, icon, description]
+      properties:
+        id:
+          type: integer
+        nameAr:
+          type: string
+        icon:
+          type: string
+        description:
+          type: string
+        sortOrder:
+          type: integer
+
+    # ─── ADMIN STATS ──────────────────────────────────────────────────────
+    AdminStats:
+      type: object
+      required: [totalUsers, activeSubscriptions, totalRevenue, consultationsToday, pendingPayments, totalConsultations]
+      properties:
+        totalUsers:
+          type: integer
+        activeSubscriptions:
+          type: integer
+        totalRevenue:
+          type: number
+        consultationsToday:
+          type: integer
+        pendingPayments:
+          type: integer
+        totalConsultations:
+          type: integer
+        revenueThisMonth:
+          type: number
+        newUsersThisMonth:
+          type: integer
