@@ -1,0 +1,957 @@
+════════════════",
+      ].join("\n");
+    }
+
+    if (requestId) emitResearchPhase(requestId, "done");
+    res.json({
+      summary:          parsed.summary          ?? "",
+      articles:         verifiedArticles,
+      strengths:        parsed.strengths         ?? [],
+      weaknesses:       parsed.weaknesses        ?? [],
+      options:          parsed.options           ?? [],
+      procedure_steps:  parsed.procedure_steps   ?? [],
+      key_deadlines:    parsed.key_deadlines     ?? [],
+      memo:             memoWithCitations,
+      hasCitations:     citableChunks.length > 0,
+      citableCount:     citableChunks.length,
+      references:       parsed.references        ?? [],
+      disclaimer:       parsed.disclaimer        ?? "",
+      sources_used:     { kb: chunks.length, web: tavilyResults.length },
+      verification: {
+        confidence: reportConfidence,
+        verifiedArticles: verifiedCount,
+        totalArticles,
+        sufficientSources,
+        blockedCount: verifiedArticles.filter(a => !a.verified).length,
+        sources: highQualityKB.slice(0, 6).map(c => ({
+          name: c.documentName,
+          similarity: Math.round(c.similarity * 100),
+          verified: true,
+          snippet: c.content.slice(0, 180).trim(),
+          sourceType: "kb" as const,
+        })).concat(
+          tavilyResults.slice(0, 3).map(r => ({
+            name: r.title,
+            similarity: Math.round((r.score ?? 0.5) * 100),
+            verified: true,
+            snippet: r.content.slice(0, 180).trim(),
+            sourceType: "web" as const,
+            url: r.url,
+          }))
+        ),
+        auditTs: new Date().toISOString(),
+      },
+    });
+  } catch (err: any) {
+    if (requestId) emitResearchPhase(requestId, "done");
+    res.status(500).json({ error: err?.message ?? "فشل إعداد البحث" });
+  }
+});
+
+// ── Public preview search (no auth — max 2 results, no source names) ──────────
+router.get("/knowledge/preview-search", previewSearchRateLimit, async (req, res): Promise<void> => {
+  const q = (req.query.q as string ?? "").trim();
+  if (!q || q.length < 2) { res.status(400).json({ error: "أدخل نصاً للبحث" }); return; }
+  if (q.length > 150)      { res.status(400).json({ error: "الاستعلام طويل جداً" }); return; }
+
+  try {
+    const apiKey = getApiKey();
+    const chunks = await retrieveRelevantChunks(q, apiKey, 2, 0.50, undefined);
+
+    // Strip source names and truncate content for preview
+    const preview = chunks.map(c => ({
+      excerpt: c.content.slice(0, 220).trim() + (c.content.length > 220 ? "..." : ""),
+      similarity: Math.round(c.similarity * 100),
+    }));
+
+    res.json({ results: preview, hasMore: true });
+  } catch (err: any) {
+    res.status(500).json({ error: "فشل البحث" });
+  }
+});
+
+// ── Public KB stats (no auth — counts for marketing display) ─────────────────
+router.get("/knowledge/stats", async (_req, res): Promise<void> => {
+  try {
+    const rows = await db
+      .select({
+        category: knowledgeDocumentsTable.category,
+        count: sql<number>`cast(count(*) as int)`,
+        chunks: sql<number>`cast(coalesce(sum(${knowledgeDocumentsTable.totalChunks}),0) as int)`,
+      })
+      .from(knowledgeDocumentsTable)
+      .where(
+        and(
+          isNull(knowledgeDocumentsTable.archivedAt),
+          eq(knowledgeDocumentsTable.status, "indexed"),
+        ),
+      )
+      .groupBy(knowledgeDocumentsTable.category);
+
+    const byCategory: Record<string, number> = {};
+    let totalDocs = 0;
+    let totalChunks = 0;
+    for (const row of rows) {
+      const cat = row.category ?? "general";
+      byCategory[cat] = (byCategory[cat] ?? 0) + row.count;
+      totalDocs += row.count;
+      totalChunks += row.chunks;
+    }
+
+    res.json({
+      judicial:   byCategory["judicial"]   ?? 0,
+      circular:   byCategory["circular"]   ?? 0,
+      regulation: byCategory["regulation"] ?? 0,
+      general:    byCategory["general"]    ?? 0,
+      contract:   byCategory["contract"]   ?? 0,
+      totalDocs,
+      totalChunks,
+    });
+  } catch {
+    res.status(500).json({ error: "فشل جلب الإحصائيات" });
+  }
+});
+
+// ── Full re-index all documents from original file binary ─────────────────────
+// Uses fileData (raw binary) so the new text-direction fix + page-exclusion
+// logic are applied from scratch — does NOT reuse stored extractedText.
+router.post("/admin/knowledge/reindex-all", requireAdmin, async (req, res): Promise<void> => {
+  const docs = await db
+    .select({
+      id: knowledgeDocumentsTable.id,
+      filename: knowledgeDocumentsTable.filename,
+      mimeType: knowledgeDocumentsTable.mimeType,
+      fileData: knowledgeDocumentsTable.fileData,
+    })
+    .from(knowledgeDocumentsTable)
+    .where(isNull(knowledgeDocumentsTable.archivedAt));
+
+  const indexable = docs.filter(d => d.fileData && (d.fileData as Buffer).length > 0);
+  if (indexable.length === 0) {
+    res.json({ queued: 0, message: "لا توجد ملفات مُخزَّنة قابلة للفهرسة — الوثائق المضافة برابط URL لا تدعم إعادة الفهرسة" });
+    return;
+  }
+
+  const jobId = `reindex-all-${Date.now()}`;
+  const job: BulkJob = { total: indexable.length, done: 0, failed: 0, running: true, log: [] };
+  bulkJobs.set(jobId, job);
+
+  // Run in background — do NOT await
+  (async () => {
+    for (const doc of indexable) {
+      try {
+        logJob(job, `فهرسة: ${doc.filename}`);
+        await indexDocument(doc.id, Buffer.from(doc.fileData as Buffer), doc.mimeType ?? "application/octet-stream", doc.filename);
+        job.done++;
+        logJob(job, `✓ ${doc.filename} (${job.done}/${job.total})`);
+      } catch (err: any) {
+        job.failed++;
+        logJob(job, `✗ ${doc.filename}: ${err?.message ?? 'خطأ غير معروف'}`);
+      }
+    }
+    job.running = false;
+    logJob(job, `اكتمل: نجح ${job.done}، فشل ${job.failed}`);
+  })().catch(() => { job.running = false; });
+
+  res.json({
+    jobId,
+    total: indexable.length,
+    message: `بدأت إعادة الفهرسة الكاملة في الخلفية — ${indexable.length} وثيقة`,
+  });
+});
+
+// ── Reindex job status ────────────────────────────────────────────────────────
+router.get("/admin/knowledge/reindex-status/:jobId", requireAdmin, async (req, res): Promise<void> => {
+  const job = bulkJobs.get(req.params.jobId as string);
+  if (!job) { res.status(404).json({ error: "مهمة غير موجودة أو انتهت" }); return; }
+  res.json(job);
+});
+
+// ── Re-fill pageStart/pageEnd for existing chunks (PDF docs only) ─────────────
+// Does NOT re-embed — only updates page numbers on already-indexed chunks.
+router.post("/admin/knowledge/reindex-all-pages", requireAdmin, async (req, res): Promise<void> => {
+  const docs = await db
+    .select({
+      id: knowledgeDocumentsTable.id,
+      filename: knowledgeDocumentsTable.filename,
+      mimeType: knowledgeDocumentsTable.mimeType,
+      fileData: knowledgeDocumentsTable.fileData,
+    })
+    .from(knowledgeDocumentsTable)
+    .where(and(
+      isNull(knowledgeDocumentsTable.archivedAt),
+      eq(knowledgeDocumentsTable.status, "indexed"),
+    ));
+
+  // Only PDF docs that have stored binary data
+  const pdfDocs = docs.filter(d => {
+    if (!d.fileData || (d.fileData as Buffer).length === 0) return false;
+    const f = d.filename.toLowerCase();
+    const m = d.mimeType ?? "";
+    return f.endsWith(".pdf") || m.includes("pdf");
+  });
+
+  if (pdfDocs.length === 0) {
+    res.json({ queued: 0, message: "لا توجد ملفات PDF مخزّنة قابلة لاستخراج أرقام الصفحات" });
+    return;
+  }
+
+  // Extended job with extra counters
+  interface PageJob extends BulkJob { chunksUpdated: number; }
+  const jobId = `reindex-pages-${Date.now()}`;
+  const job: PageJob = { total: pdfDocs.length, done: 0, failed: 0, running: true, log: [], chunksUpdated: 0 };
+  bulkJobs.set(jobId, job);
+
+  (async () => {
+    for (const doc of pdfDocs) {
+      try {
+        logJob(job, `معالجة: ${doc.filename}`);
+        const buf = Buffer.from(doc.fileData as Buffer);
+        const { text: fullText, pageBoundaries } = await extractPdfWithPages(buf);
+
+        if (pageBoundaries.length === 0) {
+          job.done++;
+          logJob(job, `⚠ ${doc.filename}: لم تُستخرج حدود صفحات`);
+          continue;
+        }
+
+        // Load all chunks for this document
+        const chunks = await db
+          .select({ id: knowledgeChunksTable.id, content: knowledgeChunksTable.content })
+          .from(knowledgeChunksTable)
+          .where(eq(knowledgeChunksTable.documentId, doc.id));
+
+        let updated = 0;
+        for (const chunk of chunks) {
+          // Fingerprint-based page lookup (same logic as getChunkPages in document-indexer.ts)
+          const fingerprint = chunk.content.slice(0, 80);
+          const pos = fullText.indexOf(fingerprint);
+          if (pos === -1) continue;
+          const endPos = pos + chunk.content.length - 1;
+          let pageStart: number | null = null;
+          let pageEnd: number | null = null;
+          for (const b of pageBoundaries) {
+            if (pageStart === null && pos <= b.endChar) pageStart = b.pageNum;
+            if (endPos <= b.endChar) { pageEnd = b.pageNum; break; }
+            pageEnd = b.pageNum;
+          }
+          if (pageStart !== null) {
+            await db
+              .update(knowledgeChunksTable)
+              .set({ pageStart, pageEnd: pageEnd ?? pageStart })
+              .where(eq(knowledgeChunksTable.id, chunk.id));
+            updated++;
+          }
+        }
+
+        job.done++;
+        (job as PageJob).chunksUpdated += updated;
+        logJob(job, `✓ ${doc.filename}: ${updated}/${chunks.length} مقطع حصل على رقم صفحة`);
+      } catch (err: any) {
+        job.failed++;
+        logJob(job, `✗ ${doc.filename}: ${err?.message?.slice(0, 60) ?? "خطأ"}`);
+      }
+    }
+    job.running = false;
+    logJob(job, `اكتمل: نجح ${job.done}، فشل ${job.failed}، مقاطع محدّثة: ${(job as PageJob).chunksUpdated}`);
+    setTimeout(() => bulkJobs.delete(jobId), 30 * 60 * 1000);
+  })().catch(() => { job.running = false; });
+
+  res.json({ jobId, total: pdfDocs.length, message: `بدأ استخراج أرقام الصفحات في الخلفية — ${pdfDocs.length} وثيقة PDF` });
+});
+
+// ── Extract caseMetadata for all judicial docs that lack it ───────────────────
+// Covers two cases:
+//  1. caseMetadata IS NULL  — never processed
+//  2. caseMetadata is non-null but missing both caseNumber AND rulingNumber —
+//     extracted by the old 3 000-char window which missed the court stamp at the tail
+router.post("/admin/knowledge/extract-all-metadata", requireAdmin, async (req, res): Promise<void> => {
+  // force=true → process ALL judicial docs regardless of existing caseMetadata
+  const force = req.body?.force === true || req.query.force === "true";
+
+  const baseConditions = and(
+    isNull(knowledgeDocumentsTable.archivedAt),
+    eq(knowledgeDocumentsTable.status, "indexed"),
+    eq(knowledgeDocumentsTable.category as any, "judicial"),
+  );
+
+  const whereClause = force
+    ? baseConditions
+    : and(
+        baseConditions,
+        or(
+          isNull(knowledgeDocumentsTable.caseMetadata),
+          // Old-algorithm docs: have metadata but no case/ruling number
+          sql`(${knowledgeDocumentsTable.caseMetadata}->>'caseNumber' IS NULL AND ${knowledgeDocumentsTable.caseMetadata}->>'rulingNumber' IS NULL)`,
+        ),
+      );
+
+  const docs = await db
+    .select({
+      id: knowledgeDocumentsTable.id,
+      filename: knowledgeDocumentsTable.filename,
+      extractedText: knowledgeDocumentsTable.extractedText,
+    })
+    .from(knowledgeDocumentsTable)
+    .where(whereClause);
+
+  const eligible = docs.filter(d => d.extractedText && d.extractedText.length > 20);
+
+  if (eligible.length === 0) {
+    res.json({ queued: 0, message: force ? "لا توجد وثائق قضائية للمعالجة" : "لا توجد وثائق قضائية تحتاج استخراج بيانات الاستشهاد" });
+    return;
+  }
+
+  // Extended job with metadata + validation-rejection counters
+  interface MetaJob extends BulkJob { extracted: number; rejectedFields: number; affectedDocs: number; sanitized: number; forceMode: boolean; }
+  const jobId = `extract-meta-${Date.now()}`;
+  const job: MetaJob = { total: eligible.length, done: 0, failed: 0, running: true, log: [], extracted: 0, rejectedFields: 0, affectedDocs: 0, sanitized: 0, forceMode: force };
+  bulkJobs.set(jobId, job);
+
+  (async () => {
+    for (const doc of eligible) {
+      try {
+        logJob(job, `استخراج: ${doc.filename}`);
+        const meta = await extractCaseMetadata(doc.extractedText!, doc.filename);
+        if (meta) {
+          // Explicit validation guard before persisting — ensures corrupt fields
+          // are nulled out even if the internal call inside extractCaseMetadata
+          // is bypassed or skipped in a future refactor.
+          const { rejectedCount } = validateCaseMetadata(meta as unknown as Record<string, any>, doc.filename);
+          (job as MetaJob).rejectedFields += rejectedCount;
+          if (rejectedCount > 0) {
+            (job as MetaJob).affectedDocs++;
+            logJob(job, `⚠️ ${doc.filename}: رُفض ${rejectedCount} حقل بالتحقق`);
+          }
+          await db
+            .update(knowledgeDocumentsTable)
+            .set({ caseMetadata: meta as any, updatedAt: new Date() })
+            .where(eq(knowledgeDocumentsTable.id, doc.id));
+          (job as MetaJob).extracted++;
+          logJob(job, `✓ ${doc.filename}: استُخرجت البيانات`);
+        } else {
+          logJob(job, `— ${doc.filename}: لم تُستخرج بيانات (ليس حكماً قضائياً)`);
+        }
+        job.done++;
+      } catch (err: any) {
+        job.failed++;
+        logJob(job, `✗ ${doc.filename}: ${err?.message?.slice(0, 60) ?? "خطأ"}`);
+      }
+    }
+    // ── تنظيف تلقائي: حذف caseMetadata للوثائق التي فشلت جميع حقولها الجوهرية ──
+    let cleanedCount = 0;
+    let cleanedDocNames: string[] = [];
+    try {
+      // نجلب الوثائق القضائية التي لديها caseMetadata لكن الحقول الثلاثة الجوهرية كلها null
+      const corruptDocs = await db
+        .select({ id: knowledgeDocumentsTable.id, filename: knowledgeDocumentsTable.filename })
+        .from(knowledgeDocumentsTable)
+        .where(and(
+          isNull(knowledgeDocumentsTable.archivedAt),
+          eq(knowledgeDocumentsTable.status, "indexed"),
+          eq(knowledgeDocumentsTable.category as any, "judicial"),
+          sql`${knowledgeDocumentsTable.caseMetadata} IS NOT NULL`,
+          sql`(${knowledgeDocumentsTable.caseMetadata}->>'caseNumber' IS NULL OR ${knowledgeDocumentsTable.caseMetadata}->>'caseNumber' = '')`,
+          sql`(${knowledgeDocumentsTable.caseMetadata}->>'rulingNumber' IS NULL OR ${knowledgeDocumentsTable.caseMetadata}->>'rulingNumber' = '')`,
+          sql`(${knowledgeDocumentsTable.caseMetadata}->>'court' IS NULL OR ${knowledgeDocumentsTable.caseMetadata}->>'court' = '')`,
+        ));
+
+      if (corruptDocs.length > 0) {
+        const corruptIds = corruptDocs.map(d => d.id);
+        const now = new Date();
+        await db
+          .update(knowledgeDocumentsTable)
+          .set({
+            caseMetadata: null as any,
+            lastCleanedAt: now,
+            cleanCount: sql`clean_count + 1`,
+            updatedAt: now,
+          })
+          .where(inArray(knowledgeDocumentsTable.id, corruptIds));
+        cleanedCount = corruptDocs.length;
+        (job as MetaJob).sanitized = cleanedCount;
+        cleanedDocNames = corruptDocs.map(d => d.filename ?? `#${d.id}`);
+        logJob(job, `🧹 نُظِّفت بيانات الاستشهاد لـ ${cleanedCount} وثيقة فشلت جميع حقولها الجوهرية`);
+        for (const d of corruptDocs) {
+          logJob(job, `  ✗ ${d.filename}`);
+        }
+      }
+    } catch (cleanErr: any) {
+      logJob(job, `⚠️ خطأ في التنظيف التلقائي: ${cleanErr?.message?.slice(0, 60) ?? "خطأ غير معروف"}`);
+    }
+
+    job.running = false;
+    const mj = job as MetaJob;
+    logJob(job, `اكتمل: فحص ${job.done}، استُخرجت بيانات ${mj.extracted}، حقول مرفوضة ${mj.rejectedFields}، نُظِّفت ${cleanedCount}، فشل ${job.failed}`);
+
+    // أرسل تنبيه Telegram للمدير إذا تجاوز معدل الفشل الكلي 20%
+    if (job.failed > 0) {
+      notifyAdminHighFailureRate(job.failed, job.total).catch(() => {});
+    }
+    // أرسل تنبيه Telegram للمدير إذا وُجدت حقول مشبوهة
+    if (mj.rejectedFields > 0) {
+      notifyAdminSuspiciousCitations(mj.rejectedFields, mj.affectedDocs, job.done).catch(() => {});
+    }
+    // أرسل تنبيه Telegram منفصل إذا جرى تنظيف تلقائي لوثائق فاسدة
+    if (cleanedCount > 0) {
+      notifyAdminCleanedCitations(cleanedCount, cleanedDocNames, job.done).catch(() => {});
+    }
+    // احسب عدد الوثائق ذات needsReview:true من قاعدة البيانات وأرسل تنبيهاً إذا وُجدت
+    try {
+      const judicialWithMeta = await db
+        .select({ caseMetadata: knowledgeDocumentsTable.caseMetadata })
+        .from(knowledgeDocumentsTable)
+        .where(and(
+          isNull(knowledgeDocumentsTable.archivedAt),
+          eq(knowledgeDocumentsTable.status, "indexed"),
+          eq(knowledgeDocumentsTable.category as any, "judicial"),
+          sql`${knowledgeDocumentsTable.caseMetadata} IS NOT NULL`,
+        ));
+      const needsReviewCount = judicialWithMeta.filter(
+        d => citationNeedsReview(d.caseMetadata as any ?? {})
+      ).length;
+      if (needsReviewCount > 0) {
+        notifyAdminNeedsReview(needsReviewCount, judicialWithMeta.length).catch(() => {});
+      }
+    } catch {
+      // non-fatal — لا يوقف تدفق العملية
+    }
+
+    setTimeout(() => bulkJobs.delete(jobId), 30 * 60 * 1000);
+  })().catch(() => { job.running = false; });
+
+  const modeLabel = force ? "إعادة استخراج كاملة (جميع الوثائق)" : "استخراج تدريجي (الوثائق غير المعالجة فقط)";
+  res.json({ jobId, total: eligible.length, force, message: `بدأ ${modeLabel} في الخلفية — ${eligible.length} وثيقة قضائية` });
+});
+
+// ── Quality scan: check all existing chunks and report corrupted ones ──────────
+router.get("/admin/knowledge/quality-scan", requireAdmin, async (_req, res): Promise<void> => {
+  // Load all chunks with their document info
+  const rows = await db
+    .select({
+      id: knowledgeChunksTable.id,
+      content: knowledgeChunksTable.content,
+      chunkIndex: knowledgeChunksTable.chunkIndex,
+      documentId: knowledgeChunksTable.documentId,
+      filename: knowledgeDocumentsTable.filename,
+      category: knowledgeDocumentsTable.category,
+    })
+    .from(knowledgeChunksTable)
+    .innerJoin(knowledgeDocumentsTable, eq(knowledgeChunksTable.documentId, knowledgeDocumentsTable.id))
+    .where(and(
+      eq(knowledgeDocumentsTable.status, "indexed"),
+      isNull(knowledgeDocumentsTable.archivedAt)
+    ));
+
+  let clean = 0, blocked = 0;
+  const blockedList: Array<{
+    id: number; documentId: number; filename: string; chunkIndex: number;
+    score: number; reasons: string[]; category: string; snippet: string;
+  }> = [];
+  const docStats = new Map<number, { filename: string; total: number; blocked: number }>();
+
+  for (const row of rows) {
+    const ds = docStats.get(row.documentId) ?? { filename: row.filename, total: 0, blocked: 0 };
+    ds.total++;
+    const quality = checkChunkQuality(row.content);
+    if (!quality.passed) {
+      blocked++;
+      ds.blocked++;
+      blockedList.push({
+        id: row.id,
+        documentId: row.documentId,
+        filename: row.filename,
+        chunkIndex: row.chunkIndex,
+        score: quality.score,
+        reasons: quality.reasons,
+        category: quality.category,
+        snippet: row.content.slice(0, 120),
+      });
+    } else {
+      clean++;
+    }
+    docStats.set(row.documentId, ds);
+  }
+
+  // Category breakdown of blocked chunks
+  const byCategory: Record<string, number> = {};
+  for (const b of blockedList) {
+    byCategory[b.category] = (byCategory[b.category] ?? 0) + 1;
+  }
+
+  // Per-document stats
+  const documentBreakdown = [...docStats.entries()].map(([id, ds]) => ({
+    documentId: id, filename: ds.filename, total: ds.total,
+    blocked: ds.blocked, clean: ds.total - ds.blocked,
+    healthPercent: Math.round(((ds.total - ds.blocked) / Math.max(ds.total, 1)) * 100),
+  })).sort((a, b) => b.blocked - a.blocked);
+
+  res.json({
+    summary: {
+      total: rows.length,
+      clean,
+      blocked,
+      healthPercent: Math.round((clean / Math.max(rows.length, 1)) * 100),
+      byCategory,
+    },
+    documentBreakdown,
+    blockedChunks: blockedList.slice(0, 200), // cap for response size
+  });
+});
+
+// ── Delete all blocked chunks for a document (admin — triggers re-index) ───────
+router.delete("/admin/knowledge/blocked-chunks/:documentId", requireAdmin, async (req, res): Promise<void> => {
+  const docId = parseInt(req.params.documentId as string, 10);
+  if (isNaN(docId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
+
+  const rows = await db
+    .select({ id: knowledgeChunksTable.id, content: knowledgeChunksTable.content })
+    .from(knowledgeChunksTable)
+    .where(eq(knowledgeChunksTable.documentId, docId));
+
+  const toDelete: number[] = [];
+  for (const row of rows) {
+    const q = checkChunkQuality(row.content);
+    if (!q.passed) toDelete.push(row.id);
+  }
+
+  if (toDelete.length > 0) {
+    await db.delete(knowledgeChunksTable).where(inArray(knowledgeChunksTable.id, toDelete));
+    // Update totalChunks
+    const remaining = rows.length - toDelete.length;
+    await db.update(knowledgeDocumentsTable)
+      .set({ totalChunks: remaining, updatedAt: new Date() })
+      .where(eq(knowledgeDocumentsTable.id, docId));
+  }
+
+  res.json({ deleted: toDelete.length, message: `تم حذف ${toDelete.length} مقطع تالف` });
+});
+
+// ── Indexing health report ─────────────────────────────────────────────────────
+router.get("/admin/knowledge/health", requireAdmin, async (_req, res): Promise<void> => {
+  const docs = await db
+    .select({
+      id: knowledgeDocumentsTable.id,
+      filename: knowledgeDocumentsTable.filename,
+      category: knowledgeDocumentsTable.category,
+      status: knowledgeDocumentsTable.status,
+      totalChunks: knowledgeDocumentsTable.totalChunks,
+      errorMessage: knowledgeDocumentsTable.errorMessage,
+      updatedAt: knowledgeDocumentsTable.updatedAt,
+    })
+    .from(knowledgeDocumentsTable)
+    .where(isNull(knowledgeDocumentsTable.archivedAt))
+    .orderBy(desc(knowledgeDocumentsTable.updatedAt));
+
+  const summary = {
+    total: docs.length,
+    indexed: docs.filter(d => d.status === "indexed").length,
+    error: docs.filter(d => d.status === "error").length,
+    pending: docs.filter(d => d.status === "pending").length,
+    indexing: docs.filter(d => d.status === "indexing").length,
+    totalChunks: docs.reduce((s, d) => s + (d.totalChunks ?? 0), 0),
+    zeroChunkDocs: docs.filter(d => d.status === "indexed" && (d.totalChunks ?? 0) === 0).length,
+  };
+
+  res.json({ summary, documents: docs });
+});
+
+// ── Regulatory Research Engine — Phase 1 ────────────────────────────────────
+// ── SSE: live research phase for regulatory-research and legal-research tabs ──
+// The client opens this before POSTing the search request.  Phase events are
+// emitted by the POST handler and forwarded here as SSE frames so the UI can
+// show "🌐 جارٍ البحث في الإنترنت…" while Tavily is running.
+router.get("/knowledge/research-status/:requestId", requireAuth, (req, res): void => {
+  const { requestId } = req.params;
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  // If the POST already started before the SSE connection was established,
+  // send the current phase immediately so the client catches up.
+  const current = getCurrentResearchPhase(requestId);
+  if (current) {
+    res.write(`data: ${JSON.stringify({ phase: current })}\n\n`);
+  }
+
+  const unsub = subscribeResearchPhase(requestId, (phase) => {
+    res.write(`data: ${JSON.stringify({ phase })}\n\n`);
+    if (phase === "done") {
+      res.end();
+      unsub();
+    }
+  });
+
+  // Clean up when the client disconnects before "done" arrives.
+  req.on("close", () => { unsub(); });
+});
+
+router.post("/knowledge/regulatory-research", requireAuth, async (req, res): Promise<void> => {
+  const { query, searchType = "comprehensive", relationDate, incidentDate, claimDate, requestId } = req.body as {
+    query?: string;
+    searchType?: string;
+    relationDate?: string;
+    incidentDate?: string;
+    claimDate?: string;
+    requestId?: string;
+  };
+
+  if (!query || query.trim().length < 5) {
+    res.status(400).json({ error: "يرجى إدخال اسم نظام أو سؤال نظامي (5 أحرف على الأقل)" });
+    return;
+  }
+
+  if (req.userRole !== "admin") {
+    const activeSubs = await db.select().from(subscriptionsTable)
+      .where(and(eq(subscriptionsTable.userId, req.userId!), eq(subscriptionsTable.status, "active")))
+      .limit(1);
+    const sub = activeSubs[0];
+    if (!sub || sub.questionsAllowed <= 3) {
+      res.status(403).json({ error: "الباحث النظامي متاح للمشتركين فقط", code: "UPGRADE_REQUIRED" });
+      return;
+    }
+  }
+
+  try {
+    const apiKey = getApiKey();
+    const OpenAI = (await import("openai")).default;
+    const openai = new OpenAI({ apiKey });
+
+    const q = query.trim();
+    const fetchedAt = new Date().toISOString();
+
+    // ── 1. Synonym expansion ──────────────────────────────────────────────────
+    const synonymsUsed = getSynonymsUsed(q);
+    const expandedQuery = expandWithSynonyms(q);
+
+    // ── 2. Multi-source parallel search ──────────────────────────────────────
+    // Notify client that live web search is starting
+    if (requestId) emitResearchPhase(requestId, "searching");
+
+    // 4 Tavily passes (categorised) + KB search — all concurrent
+    const [kbChunks, boeMain, execReg, amendments, circulars] = await Promise.all([
+      retrieveRelevantChunks(expandedQuery, apiKey, 8, 0.35, "regulation").catch(() => []),
+      // Pass 1: main law text from BOE (primary official source)
+      searchRegulatorySource(q, [...REGULATORY_DOMAINS_BOE, ...REGULATORY_DOMAINS_MOJ], 5, "main").catch(() => []),
+      // Pass 2: executive regulations
+      searchRegulatorySource(`${q} لائحة تنفيذية`, REGULATORY_DOMAINS_ALL, 3, "exec-reg").catch(() => []),
+      // Pass 3: amendments & amending decrees
+      searchRegulatorySource(`${q} تعديل مرسوم ملكي أمر`, REGULATORY_DOMAINS_BOE, 3, "amendment").catch(() => []),
+      // Pass 4: ministerial circulars & decisions
+      searchRegulatorySource(`${q} تعميم قرار وزاري`, [...REGULATORY_DOMAINS_MOJ, ...REGULATORY_DOMAINS_BOE], 3, "circular").catch(() => []),
+    ]);
+
+    // ── 3. Deduplicate and tag sources ────────────────────────────────────────
+    const seenUrls = new Set<string>();
+    const allSources: RegulatorySource[] = [];
+    for (const batch of [boeMain, execReg, amendments, circulars]) {
+      for (const s of batch) {
+        if (!seenUrls.has(s.url)) { seenUrls.add(s.url); allSources.push(s); }
+      }
+    }
+
+    const kbCorpus = kbChunks.map(c => c.content).join(" ");
+
+    // ── 4. Build sectioned web context for GPT-4o ─────────────────────────────
+    const section = (label: string, srcs: RegulatorySource[]) =>
+      srcs.length === 0 ? "" :
+      `\n\n═══ ${label} ═══\n` +
+      srcs.map(r => `[${r.title}]\nالرابط: ${r.url}\n${r.content}`).join("\n\n---\n\n");
+
+    const webContext =
+      section("نصوص الأنظمة — بوابة هيئة الخبراء وأم القرى", boeMain) +
+      section("اللوائح التنفيذية", execReg) +
+      section("التعديلات والمراسيم", amendments) +
+      section("التعاميم والقرارات الوزارية", circulars);
+
+    const kbSection = kbChunks.length > 0
+      ? "\n\n═══ قاعدة المعرفة الداخلية ═══\n" +
+        kbChunks.map((c, i) => `[مرجع ${i + 1}: ${c.documentName}]\n${c.content}`).join("\n\n---\n\n")
+      : "";
+
+    const today = new Date().toLocaleDateString("ar-SA-u-ca-islamic", { year: "numeric", month: "long", day: "numeric" });
+
+    const temporalBlock = (relationDate || incidentDate || claimDate)
+      ? `\nتاريخ نشوء العلاقة: ${relationDate || "غير محدد"}\nتاريخ الواقعة: ${incidentDate || "غير محدد"}\nتاريخ المطالبة: ${claimDate || "غير محدد"}\n`
+      : "";
+
+    // ── 5. GPT-4o structured extraction ──────────────────────────────────────
+    // Notify client that web search is done and AI synthesis is starting
+    if (requestId) emitResearchPhase(requestId, "generating");
+
+    const systemPrompt = `أنت محرّك بحث نظامي احترافي متخصص في المنظومة التشريعية السعودية.
+مهمتك الوحيدة: استخراج معلومات تشريعية منظّمة من المصادر المُقدَّمة وإرجاعها JSON.
+${PROHIBITION_RULE}
+══════════════════════════════════════════
+القواعد الإلزامية — لا استثناء
+══════════════════════════════════════════
+١. لا تضع أي نص بين علامتي اقتباس إلا إذا كان موجوداً حرفياً في المصادر أدناه.
+   إذا لم تجد النص الحرفي: اكتب محتوى المادة بأسلوبك دون علامتَي اقتباس، وضع verified: false.
+٢. إذا لم تجد معلومة في المصادر: اكتب "غير محدد" — لا تخترع بيانات.
+٣. هرمية الوثائق (لا تخلطها):
+   نظام (مرسوم ملكي) ← لائحة تنفيذية (قرار وزاري) ← تعميم (إدارية)
+   التعميم لا يُعدّل النظام. القرار الوزاري لا يُلغي اللائحة بمفرده.
+٤. لا يُعتبر صدور نظام جديد إلغاءً للقديم إلا بنص إلغاء صريح أو تعارض جذري.
+٥. النظام يصدر بمرسوم ملكي، واللائحة بقرار وزاري، والتعميم من جهة تنفيذية.
+٦. تاريخ النشر في أم القرى وتاريخ النفاذ متغيران مستقلان — لا تخلطهما.
+اليوم: ${today}`;
+
+    const userPrompt = `السؤال النظامي: ${q}
+${temporalBlock}
+المصادر المُقدَّمة (اعمل منها فقط):
+${webContext || "(لا توجد نتائج من الويب)"}
+${kbSection}
+
+═══════════════════════════════════════
+أرجع JSON صالح فقط (بلا نص خارجه) بالهيكل:
+═══════════════════════════════════════ {
+  "legalClassification": "التكييف القانوني الدقيق للمسألة (جملة أو جملتان)",
+  "legalQuestion": "السؤال النظامي المستخلص",
+  "keywords": ["كلمة مفتاحية", "مرادف قانوني", ...],
+
+  "mainLaw": {
+    "name": "الاسم الكامل للنظام",
+    "issuingDecree": "رقم المرسوم الملكي / الأمر الملكي",
+    "publishDate": "تاريخ النشر في أم القرى هجرياً",
+    "effectiveDate": "تاريخ النفاذ",
+    "status": "نافذ | ملغى | معدّل | غير محدد",
+    "issuingAuthority": "الجهة المُصدِرة",
+    "sourceUrl": "رابط بوابة هيئة الخبراء إن وُجد",
+    "verified": true
+  },
+
+  "legislativeMap": [ {
+      "type": "نظام | لائحة تنفيذية | قرار وزاري | تعميم | ضوابط | دليل إرشادي | أمر ملكي | نموذج معتمد",
+      "name": "اسم الوثيقة",
+      "issuingDecree": "رقم الأداة",
+      "date": "تاريخ الإصدار",
+      "status": "نافذ | ملغى | معدّل | غير محدد",
+      "relation": "وجه ارتباطها بالنظام الرئيسي",
+      "verified": true,
+      "sourceUrl": "الرابط إن وُجد"
+    }
+  ],
+
+  "amendments": [ {
+      "date": "تاريخ التعديل هجرياً",
+      "decree": "رقم المرسوم أو القرار",
+      "description": "وصف التعديل (ماذا تغيّر)",
+      "publishDate": "تاريخ نشره في أم القرى",
+      "effectiveDate": "تاريخ نفاذه",
+      "articles": "المواد المعدّلة",
+      "verified": true
+    }
+  ],
+
+  "applicableArticles": [ {
+      "articleNumber": "رقم المادة",
+      "articleText": "نص المادة — ضع اقتباساً فقط إذا كان حرفياً من المصادر",
+      "law": "اسم النظام",
+      "relevance": "وجه انطباقها على المسألة",
+      "verified": true,
+      "sourceUrl": "الرابط"
+    }
+  ],
+
+  ${temporalBlock ? `"temporalApplicability": {
+    "applicableVersion": "النسخة الواجبة التطبيق بالتواريخ المُدخلة",
+    "reason": "سبب اختيار هذه النسخة (عدم رجعية / أحكام انتقالية / فورية إجرائية)",
+    "transitionalNote": "أي أحكام انتقالية ذات صلة"
+  },` : ""}
+
+  "conditions": ["شرط تطبيق 1", ...],
+  "exceptions": ["استثناء نظامي 1", ...],
+  "applicationAnalysis": "فقرة تحليلية: كيف تنطبق النصوص على الواقعة",
+  "conflicts": ["تعارض أو غموض محتمل 1", ...],
+  "conclusion": "الخلاصة النظامية (فقرة)",
+  "pendingIssues": ["مسألة تحتاج بحثاً إضافياً 1", ...]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        charterSystemMsg(),
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 4000,
+    });
+
+    let extracted: Record<string, any> = {};
+    try {
+      extracted = JSON.parse(completion.choices[0].message.content ?? "{}");
+    } catch { extracted = {}; }
+
+    // ── 6. Programmatic article verification ─────────────────────────────────
+    // Enforce: no text in quotes unless found in fetched sources
+    const articles: RegulatoryResult["applicableArticles"] = (extracted.applicableArticles ?? []).map((a: any) => ({
+      articleNumber: a.articleNumber ?? "",
+      articleText:   a.articleText   ?? "",
+      law:           a.law           ?? "",
+      relevance:     a.relevance     ?? "",
+      sourceUrl:     a.sourceUrl,
+      verified: isTextVerified(a.articleText, allSources, kbCorpus),
+    }));
+
+    // Also verify legislative map entries
+    const legislativeMap: RegulatoryResult["legislativeMap"] = (extracted.legislativeMap ?? []).map((d: any) => ({
+      type:          d.type          ?? "نظام",
+      name:          d.name          ?? "",
+      issuingDecree: d.issuingDecree,
+      date:          d.date,
+      status:        d.status        ?? "غير محدد",
+      relation:      d.relation      ?? "",
+      verified:      allSources.some(s => s.content.includes(d.name?.slice(0, 15) ?? "__NONE__")),
+      sourceUrl:     d.sourceUrl,
+    }));
+
+    const mapAmendments: RegulatoryResult["amendments"] = (extracted.amendments ?? []).map((a: any) => ({
+      date:          a.date          ?? "",
+      decree:        a.decree        ?? "",
+      description:   a.description   ?? "",
+      publishDate:   a.publishDate,
+      effectiveDate: a.effectiveDate,
+      articles:      a.articles,
+      verified:      allSources.some(s =>
+        a.decree && s.content.includes(a.decree.slice(0, 8))
+      ),
+    }));
+
+    // ── 7. Determine audit status ─────────────────────────────────────────────
+    const verifiedArticlesCount  = articles.filter(a => a.verified).length;
+    const totalArticlesCount     = articles.length;
+    const hasMainLaw = !!(extracted.mainLaw?.name && extracted.mainLaw.name !== "غير محدد");
+    const hasSources = allSources.length > 0 || kbChunks.length > 0;
+
+    const auditNotes: string[] = [];
+    let auditStatus: RegulatoryResult["auditStatus"];
+
+    if (!hasSources) {
+      auditStatus = "غير صالحة للاعتماد";
+      auditNotes.push("لم يُعثر على مصادر رسمية أو قاعدة معرفة ذات صلة — لا يمكن التحقق من أي نص");
+    } else if (
+      hasMainLaw &&
+      (totalArticlesCount === 0 || verifiedArticlesCount / totalArticlesCount >= 0.75)
+    ) {
+      auditStatus = "موثقة وصالحة للاستخدام";
+    } else if (verifiedArticlesCount > 0 || hasMainLaw) {
+      auditStatus = "صحيحة مع نقص محدود";
+      if (totalArticlesCount > 0 && verifiedArticlesCount < totalArticlesCount) {
+        auditNotes.push(
+          `${totalArticlesCount - verifiedArticlesCount} من ${totalArticlesCount} مادة لم يُعثر على نصها الحرفي في المصادر المُجلبة — راجع المصدر الرسمي`
+        );
+      }
+    } else {
+      auditStatus = "تحتاج إعادة تحقق";
+      auditNotes.push("لم يُتحقق من نص أي مادة في المصادر المتاحة — يُنصح بمراجعة laws.boe.gov.sa مباشرةً");
+    }
+
+    const boeSourceCount = allSources.filter(s => s.url.includes("laws.boe.gov.sa")).length;
+    if (boeSourceCount > 0) {
+      auditNotes.push(`جُلب ${boeSourceCount} مصدر من بوابة هيئة الخبراء بتاريخ ${new Date(fetchedAt).toLocaleDateString("ar-SA")}`);
+    }
+    const uqnCount = allSources.filter(s => s.url.includes("uqn.gov.sa")).length;
+    if (uqnCount > 0) auditNotes.push(`جُلب ${uqnCount} مصدر من جريدة أم القرى`);
+
+    const result: RegulatoryResult = {
+      fetchedAt,
+      query: q,
+      synonymsUsed,
+      searchTermsUsed: buildRegulatorySearchTerms(q),
+      legalClassification: extracted.legalClassification ?? "",
+      legalQuestion:       extracted.legalQuestion       ?? "",
+      keywords:            extracted.keywords            ?? [],
+      mainLaw:             extracted.mainLaw             ?? null,
+      legislativeMap,
+      amendments:          mapAmendments,
+      applicableArticles:  articles,
+      temporalApplicability: extracted.temporalApplicability,
+      conditions:          extracted.conditions          ?? [],
+      exceptions:          extracted.exceptions          ?? [],
+      applicationAnalysis: extracted.applicationAnalysis ?? "",
+      conflicts:           extracted.conflicts           ?? [],
+      conclusion:          extracted.conclusion          ?? "",
+      pendingIssues:       extracted.pendingIssues       ?? [],
+      // Return sources with truncated snippets (full content was used for verification only)
+      sources: allSources.slice(0, 12).map(s => ({ ...s, content: s.content.slice(0, 400) })),
+      auditStatus,
+      auditNotes,
+    };
+
+    if (requestId) emitResearchPhase(requestId, "done");
+    res.json(result);
+  } catch (err: any) {
+    if (requestId) emitResearchPhase(requestId, "done");
+    res.status(500).json({ error: err?.message ?? "فشل البحث النظامي" });
+  }
+});
+
+// ── Sanitize corrupted caseMetadata already saved in the DB ──────────────────
+// Applies validateCaseMetadata to every document that has caseMetadata stored,
+// nulls out fields that fail validation, persists the corrected record, and
+// returns a detailed report of what was fixed.
+router.post("/admin/knowledge/sanitize-citation-metadata", requireAdmin, async (_req, res): Promise<void> => {
+  // Load only the columns we need (avoid fetching file binary)
+  const docs = await db
+    .select({
+      id: knowledgeDocumentsTable.id,
+      filename: knowledgeDocumentsTable.filename,
+      caseMetadata: knowledgeDocumentsTable.caseMetadata,
+    })
+    .from(knowledgeDocumentsTable)
+    .where(and(
+      isNull(knowledgeDocumentsTable.archivedAt),
+      sql`${knowledgeDocumentsTable.caseMetadata} IS NOT NULL`,
+    ));
+
+  let scanned = 0;
+  let corrected = 0;
+  const corrections: Array<{ id: number; filename: string; nulledFields: string[] }> = [];
+
+  for (const doc of docs) {
+    if (!doc.caseMetadata) continue;
+    scanned++;
+
+    // Deep-clone so we can detect which fields changed
+    const before = JSON.parse(JSON.stringify(doc.caseMetadata)) as Record<string, any>;
+    const meta = JSON.parse(JSON.stringify(doc.caseMetadata)) as Record<string, any>;
+
+    validateCaseMetadata(meta, doc.filename);
+
+    // Detect which fields were nulled out
+    const metaFields = [
+      "caseNumber", "rulingNumber", "hijriDate", "gregorianDate",
+      "court", "litigationStage", "disputeSubject", "deedNumber",
+    ] as const;
+
+    const nulledFields: string[] = metaFields.filter(
+      f => before[f] != null && meta[f] == null,
+    );
+
+    if (nulledFields.length === 0) continue; // nothing changed — skip DB write
+
+    // Persist the cleaned metadata
+    await db
+      .update(knowledgeDocumentsTable)
+      .set({ caseMetadata: meta as any, updatedAt: new Date() })
+      .where(eq(knowledgeDocumentsTable.id, doc.id));
+
+    corrected++;
+    corrections.push({ id: doc.id, filename: doc.filename, nulledFields });
+  }
+
+  res.json({
+    scanned,
+    corrected,
+    message: corrected === 0
+      ? `فُحص ${scanned} سجل — لم يُعثر على بيانات استشهاد فاسدة`
+      : `فُحص ${scanned} سجل — صُحِّح ${corrected} سجل بإزالة الحقول الخاطئة`,
+    corrections,
+  });
+});
+
+export default router;

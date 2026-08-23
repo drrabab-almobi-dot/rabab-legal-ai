@@ -1,0 +1,37 @@
+kind = "web"
+previewPath = "/mcp-files/"
+title = "Project Files MCP Bridge"
+description = "A private, read-only MCP bridge for Claude to browse, read, and archive explicitly allowlisted project files without exposing secrets or granting write access."
+version = "1.0.0"
+id = "artifacts/mcp-file-bridge"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/mcp-files/" ]
+localPort = 24564
+
+[services.development]
+run = "pnpm --filter @workspace/mcp-file-bridge run dev"
+
+[services.production]
+
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/mcp-file-bridge", "run", "build" ]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = [ "node", "--enable-source-maps", "artifacts/mcp-file-bridge/dist/server.mjs" ]
+
+[services.production.run.env]
+NODE_ENV = "production"
+PORT = "24564"
+
+[services.production.health.startup]
+path = "/mcp-files/healthz"
+
+[services.env]
+PORT = "24564"
+BASE_PATH = "/mcp-files/"
