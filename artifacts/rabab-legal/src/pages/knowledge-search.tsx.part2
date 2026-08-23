@@ -1,0 +1,1657 @@
+  <div className="w-5 h-5 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center shrink-0 mt-0.5 relative z-10">
+                        <span className="text-[8px] font-bold text-primary">{i + 1}</span>
+                      </div>
+                      <div className="flex-1 bg-muted/20 border border-border/50 rounded-xl px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          {a.date && a.date !== 'غير محدد' && (
+                            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg">{a.date}</span>
+                          )}
+                          {a.decree && a.decree !== 'غير محدد' && (
+                            <span className="text-xs text-muted-foreground">{a.decree}</span>
+                          )}
+                          {!a.verified && <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-1">⚠ غير متحقق</span>}
+                        </div>
+                        <p className="text-sm text-foreground/90 leading-relaxed mb-1.5">{a.description}</p>
+                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground/70">
+                          {a.articles && a.articles !== 'غير محدد' && <span>المواد: {a.articles}</span>}
+                          {a.publishDate && a.publishDate !== 'غير محدد' && <span>نُشر: {a.publishDate}</span>}
+                          {a.effectiveDate && a.effectiveDate !== 'غير محدد' && <span>نفذ: {a.effectiveDate}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Applicable articles */}
+          {result.applicableArticles?.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <SectionHeader icon={<BookOpen className="w-4 h-4 text-primary" />} title="المواد المنطبقة بنصوصها" count={result.applicableArticles.length} />
+              <div className="divide-y divide-border/40">
+                {result.applicableArticles.map((art, i) => {
+                  const expanded = expandedArticles[i] ?? false;
+                  const isLong = art.articleText?.length > 250;
+                  return (
+                    <div key={i} className={cn('px-4 py-4', !art.verified && 'bg-amber-50/30')}>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-lg">مادة {art.articleNumber}</span>
+                        <span className="text-xs font-semibold text-foreground/80">{art.law}</span>
+                        <VerifiedBadge verified={art.verified} />
+                      </div>
+                      {art.articleText && (
+                        <div className={cn('text-xs leading-relaxed bg-muted/30 rounded-xl px-3 py-2.5 mb-2 font-mono-arabic border-r-2',
+                          art.verified ? 'border-primary/40' : 'border-amber-400',
+                          !expanded && isLong && 'max-h-20 overflow-hidden relative')}>
+                          {art.verified ? `"${art.articleText}"` : art.articleText}
+                          {!expanded && isLong && (
+                            <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-muted/20 to-transparent" />
+                          )}
+                        </div>
+                      )}
+                      {isLong && (
+                        <button onClick={() => setExpandedArticles(p => ({ ...p, [i]: !p[i] }))}
+                          className="text-xs text-primary hover:underline mb-1.5">
+                          {expanded ? '▲ طيّ' : '▼ عرض كامل'}
+                        </button>
+                      )}
+                      {!art.verified && (
+                        <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-2 py-1 mb-1.5">
+                          ⚠️ لم يُعثر على هذا النص في المصادر المُجلبة — تحقق من:{' '}
+                          <a href={art.sourceUrl ?? 'https://laws.boe.gov.sa'} target="_blank" rel="noopener noreferrer" className="underline font-semibold">laws.boe.gov.sa</a>
+                        </p>
+                      )}
+                      {art.relevance && (
+                        <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground/70">وجه الانطباق: </span>{art.relevance}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Temporal applicability */}
+          {result.temporalApplicability && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
+              <SectionHeader icon={<Calendar className="w-4 h-4 text-amber-700" />} title="النص الواجب التطبيق زمنياً" />
+              <div className="p-4 space-y-2">
+                <div className="bg-white/80 border border-amber-100 rounded-xl px-3 py-2">
+                  <p className="text-xs font-bold text-amber-800 mb-1">النسخة المطبّقة</p>
+                  <p className="text-sm font-semibold">{result.temporalApplicability.applicableVersion}</p>
+                </div>
+                <p className="text-xs text-amber-800 leading-relaxed">{result.temporalApplicability.reason}</p>
+                {result.temporalApplicability.transitionalNote && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-blue-800">
+                    📌 أحكام انتقالية: {result.temporalApplicability.transitionalNote}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Conditions + exceptions */}
+          {(result.conditions?.length > 0 || result.exceptions?.length > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {result.conditions?.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl overflow-hidden">
+                  <SectionHeader icon={<ShieldCheck className="w-4 h-4 text-green-600" />} title="شروط التطبيق" />
+                  <ul className="p-4 space-y-2">
+                    {result.conditions.map((c, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs">
+                        <span className="text-green-600 font-bold mt-0.5 shrink-0">✓</span>{c}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {result.exceptions?.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl overflow-hidden">
+                  <SectionHeader icon={<AlertTriangle className="w-4 h-4 text-amber-600" />} title="الاستثناءات" />
+                  <ul className="p-4 space-y-2">
+                    {result.exceptions.map((ex, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs">
+                        <span className="text-amber-600 font-bold mt-0.5 shrink-0">⚡</span>{ex}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Application analysis + conclusion */}
+          {(result.applicationAnalysis || result.conclusion) && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <SectionHeader icon={<Gavel className="w-4 h-4 text-primary" />} title="وجه الانطباق والخلاصة النظامية" />
+              <div className="p-4 space-y-3">
+                {result.applicationAnalysis && (
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground mb-1">وجه الانطباق على الواقعة</p>
+                    <p className="text-sm leading-relaxed">{result.applicationAnalysis}</p>
+                  </div>
+                )}
+                {result.conclusion && (
+                  <div className="bg-primary/5 border-r-4 border-primary/40 rounded-r-xl px-4 py-3">
+                    <p className="text-xs font-bold text-primary mb-1">الخلاصة النظامية</p>
+                    <p className="text-sm leading-relaxed font-medium">{result.conclusion}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Conflicts */}
+          {result.conflicts?.filter(Boolean).length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl overflow-hidden">
+              <SectionHeader icon={<TriangleAlert className="w-4 h-4 text-red-600" />} title="التعارضات النظامية المحتملة" />
+              <ul className="p-4 space-y-2">
+                {result.conflicts.map((c, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-red-900">
+                    <span className="text-red-600 font-bold shrink-0 mt-0.5">⚠</span>{c}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Pending issues */}
+          {result.pendingIssues?.filter(Boolean).length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden">
+              <SectionHeader icon={<Search className="w-4 h-4 text-blue-700" />} title="مسائل تحتاج بحثاً إضافياً" />
+              <ul className="p-4 space-y-2">
+                {result.pendingIssues.map((p, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-blue-900">
+                    <span className="text-blue-600 font-bold shrink-0 mt-0.5">→</span>{p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Sources */}
+          {result.sources?.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <SectionHeader icon={<BookMarked className="w-4 h-4 text-primary" />} title="المصادر الرسمية المُجلبة" count={result.sources.length} />
+              <div className="p-4 space-y-2">
+                {result.sources.map((s, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs border border-border/40 rounded-lg px-3 py-2.5 bg-muted/20">
+                    <div className="flex-1 min-w-0">
+                      <a href={s.url} target="_blank" rel="noopener noreferrer"
+                        className="font-semibold text-primary hover:underline flex items-center gap-1 truncate">
+                        <ExternalLink className="w-3 h-3 shrink-0" />{s.title || s.url}
+                      </a>
+                      {s.content && (
+                        <p className="text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{s.content}</p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-[10px] text-muted-foreground/60 whitespace-nowrap">
+                      {new Date(s.fetchedAt).toLocaleDateString('ar-SA')}
+                    </span>
+                  </div>
+                ))}
+                <p className="text-[10px] text-muted-foreground pt-1">
+                  📅 تاريخ آخر تحقق: {new Date(result.fetchedAt).toLocaleString('ar-SA')}
+                </p>
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Contract drafter ──────────────────────────────────────────────────────────
+const CONTRACT_DRAFT_KEY = 'rabab_contract_draft_v1';
+
+interface SavedContractDraft {
+  description: string;
+  draft: string;
+  editedDraft: string;
+  savedAt: string;
+}
+
+function ContractDrafter() {
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+  const [description, setDescription] = useState('');
+  const [draft, setDraft] = useState('');
+  const [editedDraft, setEditedDraft] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
+
+  // saved-draft banner (sourced from DB when logged in, else localStorage)
+  const [savedDraft, setSavedDraft] = useState<SavedContractDraft | null>(null);
+  const [showResumeBanner, setShowResumeBanner] = useState(false);
+
+  // ── Helper: persist to DB (fire-and-forget, best-effort) ────────────────────
+  const syncToDb = useCallback((payload: { description: string; draft: string; editedDraft: string }) => {
+    if (!isAuthenticated) return;
+    fetch(`${API_BASE}/api/knowledge/contract-draft`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  }, [isAuthenticated]);
+
+  const deleteFromDb = useCallback(() => {
+    if (!isAuthenticated) return;
+    fetch(`${API_BASE}/api/knowledge/contract-draft`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).catch(() => {});
+  }, [isAuthenticated]);
+
+  // ── On mount: load saved draft — DB first for logged-in users, else localStorage ──
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch(`${API_BASE}/api/knowledge/contract-draft`, { credentials: 'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          const d = data?.draft;
+          if (d && (d.draft || d.editedDraft)) {
+            setSavedDraft({
+              description: d.description ?? '',
+              draft: d.draft ?? '',
+              editedDraft: d.editedDraft ?? '',
+              savedAt: d.updatedAt ?? new Date().toISOString(),
+            });
+            setShowResumeBanner(true);
+          } else {
+            // Fall back to localStorage in case user just logged in
+            try {
+              const raw = localStorage.getItem(CONTRACT_DRAFT_KEY);
+              if (raw) {
+                const parsed: SavedContractDraft = JSON.parse(raw);
+                if (parsed.draft || parsed.editedDraft) {
+                  setSavedDraft(parsed);
+                  setShowResumeBanner(true);
+                }
+              }
+            } catch { /* ignore */ }
+          }
+        })
+        .catch(() => {
+          // Network error — fall back to localStorage
+          try {
+            const raw = localStorage.getItem(CONTRACT_DRAFT_KEY);
+            if (raw) {
+              const parsed: SavedContractDraft = JSON.parse(raw);
+              if (parsed.draft || parsed.editedDraft) {
+                setSavedDraft(parsed);
+                setShowResumeBanner(true);
+              }
+            }
+          } catch { /* ignore */ }
+        });
+    } else {
+      try {
+        const raw = localStorage.getItem(CONTRACT_DRAFT_KEY);
+        if (raw) {
+          const parsed: SavedContractDraft = JSON.parse(raw);
+          if (parsed.draft || parsed.editedDraft) {
+            setSavedDraft(parsed);
+            setShowResumeBanner(true);
+          }
+        }
+      } catch { /* ignore */ }
+    }
+  }, [isAuthenticated]);
+
+  // ── Persist draft whenever it changes ────────────────────────────────────────
+  useEffect(() => {
+    if (!draft && !editedDraft) return;
+    const payload: SavedContractDraft = {
+      description,
+      draft,
+      editedDraft,
+      savedAt: new Date().toISOString(),
+    };
+    // Always keep localStorage as fast local layer
+    try { localStorage.setItem(CONTRACT_DRAFT_KEY, JSON.stringify(payload)); } catch { /* quota */ }
+    // Sync to DB for logged-in users
+    syncToDb({ description, draft, editedDraft });
+  }, [draft, editedDraft, description]);
+
+  const resumeSavedDraft = () => {
+    if (!savedDraft) return;
+    setDescription(savedDraft.description);
+    setDraft(savedDraft.draft);
+    setEditedDraft(savedDraft.editedDraft);
+    setShowResumeBanner(false);
+    setSavedDraft(null);
+  };
+
+  const clearSavedDraft = () => {
+    localStorage.removeItem(CONTRACT_DRAFT_KEY);
+    deleteFromDb();
+    setShowResumeBanner(false);
+    setSavedDraft(null);
+  };
+
+  const startFresh = () => {
+    localStorage.removeItem(CONTRACT_DRAFT_KEY);
+    deleteFromDb();
+    setDescription('');
+    setDraft('');
+    setEditedDraft('');
+    setIsEditing(false);
+    setError('');
+    setUpgradeRequired(false);
+    setSavedDraft(null);
+    setShowResumeBanner(false);
+  };
+
+  const handleDraft = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!description.trim() || loading) return;
+    if (!isAuthenticated) { setLocation(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+    // If there are unsaved edits, ask for confirmation before overwriting
+    const hasUnsavedEdits = !!draft && editedDraft !== draft;
+    if (hasUnsavedEdits && !showOverwriteConfirm) {
+      setShowOverwriteConfirm(true);
+      return;
+    }
+    setShowOverwriteConfirm(false);
+    setLoading(true);
+    setError('');
+    setUpgradeRequired(false);
+    setDraft('');
+    setEditedDraft('');
+    setIsEditing(false);
+    // Clear any old saved draft so we don't offer to resume the old one
+    localStorage.removeItem(CONTRACT_DRAFT_KEY);
+    deleteFromDb();
+    try {
+      const res = await fetch(`${API_BASE}/api/knowledge/draft-contract`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === 'UPGRADE_REQUIRED') { setUpgradeRequired(true); return; }
+        throw new Error(err.error || 'فشل توليد العقد');
+      }
+      const data = await res.json();
+      const newDraft = data.draft ?? '';
+      setDraft(newDraft);
+      setEditedDraft(newDraft);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeDraft = editedDraft || draft;
+
+  const copyDraft = () => {
+    navigator.clipboard.writeText(activeDraft).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const saveEdits = () => {
+    setIsEditing(false);
+  };
+
+  const exportPdf = () => {
+    setExportingPdf(true);
+    try {
+      const win = window.open('', '_blank');
+      if (!win) { setExportingPdf(false); return; }
+      const escaped = activeDraft
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      win.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8"/>
+  <title>مسودة العقد — RABAB LEGAL AI</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Naskh Arabic', 'Arial', sans-serif; direction: rtl; font-size: 13pt; line-height: 2; color: #1a1a1a; padding: 40px 50px; background: #fff; }
+    header { border-bottom: 2px solid #1a1a2e; padding-bottom: 12px; margin-bottom: 24px; }
+    header h1 { font-size: 16pt; font-weight: bold; }
+    header p { font-size: 10pt; color: #555; margin-top: 4px; }
+    pre { white-space: pre-wrap; font-family: inherit; font-size: 12pt; line-height: 2; }
+    footer { margin-top: 32px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 9pt; color: #888; text-align: center; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>مسودة العقد</h1>
+    <p>RABAB LEGAL AI — ${new Date().toLocaleDateString('ar-SA')}</p>
+  </header>
+  <pre>${escaped}</pre>
+  <footer>هذه المسودة لأغراض المراجعة فقط — يُنصح بمراجعة محامٍ مرخّص قبل الاستخدام الرسمي.</footer>
+  <script>window.onload = function(){ window.print(); };<\/script>
+</body>
+</html>`);
+      win.document.close();
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900">
+        <p className="font-bold mb-1">📝 كيف يعمل؟</p>
+        <p>صف العقد الذي تحتاجه (نوعه، الأطراف، الغرض، أي شروط خاصة) والذكاء الاصطناعي يصيغ مسودة قانونية جاهزة للمراجعة.</p>
+      </div>
+
+      {/* ── Resume-draft banner ── */}
+      {showResumeBanner && savedDraft && (
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+          <BookMarked className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-blue-900">لديكِ مسودة محفوظة</p>
+            <p className="text-xs text-blue-700 mt-0.5 truncate">
+              {savedDraft.description ? `"${savedDraft.description.slice(0, 60)}${savedDraft.description.length > 60 ? '...' : ''}"` : 'مسودة عقد سابقة'}
+              {savedDraft.savedAt && (
+                <span className="mr-1 text-blue-500">
+                  — {new Date(savedDraft.savedAt).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={resumeSavedDraft}
+              className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              استئناف المسودة
+            </button>
+            <button
+              onClick={clearSavedDraft}
+              className="text-xs px-2.5 py-1.5 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              تجاهل
+            </button>
+          </div>
+        </div>
+      )}
+
+      {upgradeRequired && (
+        <div className="p-5 bg-primary/5 border-2 border-primary/30 rounded-2xl text-center">
+          <Lock className="w-8 h-8 text-primary mx-auto mb-2" />
+          <p className="font-bold text-primary mb-1">خدمة مدفوعة</p>
+          <p className="text-muted-foreground text-xs mb-3">صياغة العقود متاحة للمشتركين فقط</p>
+          <Link href="/pricing">
+            <button className="px-5 py-2 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90">
+              ترقية الباقة
+            </button>
+          </Link>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{error}</div>
+      )}
+
+      {/* ── Overwrite confirmation dialog ── */}
+      {showOverwriteConfirm && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-4">
+          <TriangleAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-900">لديكِ تعديلات — هل تريدين الاستمرار وفقد التعديلات؟</p>
+            <p className="text-xs text-amber-700 mt-0.5">المسودة الحالية بها تعديلات غير محفوظة. صياغة عقد جديد ستحل محلها نهائياً.</p>
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  // Proceed: submit the form programmatically
+                  const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+                  handleDraft(fakeEvent);
+                }}
+                className="text-xs px-3.5 py-1.5 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors"
+              >
+                صِغ من جديد
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowOverwriteConfirm(false)}
+                className="text-xs px-3.5 py-1.5 border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-100 transition-colors"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleDraft} className="space-y-3">
+        <textarea
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          rows={4}
+          placeholder="مثال: عقد خدمات بين شركة ومستشار لمدة سنة، يتضمن سرية معلومات وغرامة تأخير..."
+          className="w-full border-2 border-secondary/60 rounded-2xl px-4 py-3 text-sm outline-none focus:outline-none focus:ring-0 focus:border-secondary transition-colors resize-none bg-background"
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          disabled={!description.trim() || loading}
+          className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> جارٍ الصياغة...</>
+            : <><Send className="w-4 h-4" /> صِغ العقد</>}
+        </button>
+      </form>
+
+      {draft && (
+        <div className="border border-border rounded-2xl overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-primary">مسودة العقد</span>
+            <div className="flex items-center gap-2">
+              {/* Edit / Save toggle */}
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-secondary/60 text-foreground hover:bg-secondary transition-colors"
+                >
+                  <FileEdit className="w-3.5 h-3.5" />
+                  تعديل
+                </button>
+              ) : (
+                <button
+                  onClick={saveEdits}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors font-semibold"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  حفظ التعديلات
+                </button>
+              )}
+              {/* Copy */}
+              <button
+                onClick={copyDraft}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? 'تم النسخ' : 'نسخ'}
+              </button>
+              {/* PDF export */}
+              <button
+                onClick={exportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                PDF
+              </button>
+              {/* Start fresh */}
+              <button
+                onClick={startFresh}
+                className="flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive transition-colors"
+                title="مسح المسودة والبدء من جديد"
+              >
+                <X className="w-3.5 h-3.5" />
+                بدء من جديد
+              </button>
+            </div>
+          </div>
+
+          {/* Body — read-only <pre> or editable <textarea> */}
+          {isEditing ? (
+            <textarea
+              value={editedDraft}
+              onChange={e => setEditedDraft(e.target.value)}
+              className="w-full text-sm leading-relaxed p-5 font-sans text-foreground/90 bg-background border-none outline-none focus:ring-0 resize-y min-h-[40vh]"
+              dir="rtl"
+              spellCheck={false}
+            />
+          ) : (
+            <LegalMarkdown className="p-5" maxHeight="60vh">{activeDraft}</LegalMarkdown>
+          )}
+
+          <div className="px-4 py-3 bg-amber-50 border-t border-amber-100">
+            <p className="text-xs text-amber-800">هذه الإجابة لا تعتبر ملزمة ويُنصح بمراجعة محامٍ مرخّص قبل الاستخدام الرسمي.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Legal Research Report ─────────────────────────────────────────────────────
+interface LegalOption {
+  title: string; description: string; recommendation: string;
+  pros?: string; cons?: string;
+}
+interface LegalReference { title: string; excerpt: string; source_type?: string; }
+interface LegalArticle  { law: string; article: string; text: string; relevance: string; verified?: boolean; foundIn?: 'kb' | 'web'; }
+interface ProcedureStep { step: number; action: string; authority: string; note?: string; }
+interface KeyDeadline   { event: string; duration: string; source?: string; }
+
+interface LegalReport {
+  summary: string;
+  articles: LegalArticle[];
+  strengths: string[];
+  weaknesses: string[];
+  options: LegalOption[];
+  procedure_steps: ProcedureStep[];
+  key_deadlines: KeyDeadline[];
+  memo: string;
+  hasCitations?: boolean;
+  citableCount?: number;
+  references: LegalReference[];
+  disclaimer?: string;
+  sources_used?: { kb: number; web: number };
+  verification?: {
+    confidence: 'high' | 'medium' | 'low';
+    verifiedArticles: number;
+    totalArticles: number;
+    sufficientSources: boolean;
+    blockedCount: number;
+    sources: Array<{ name: string; similarity: number; verified: boolean; snippet: string; sourceType: 'kb' | 'web'; url?: string }>;
+    auditTs: string;
+  };
+}
+
+function RecommendationBadge({ rec }: { rec: string }) {
+  const r = rec?.trim();
+  if (r === 'نافذ' || r === 'مناسب') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">✓ {r}</span>;
+  if (r === 'محدود') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">⚡ {r}</span>;
+  if (r === 'غير مناسب') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">✕ {r}</span>;
+  return r ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-muted text-muted-foreground">{r}</span> : null;
+}
+
+/** Build a plain-text copy of the full report for clipboard */
+function buildFullReportText(report: LegalReport, question: string): string {
+  const lines: string[] = [];
+  lines.push('══════════════════════════════════════════');
+  lines.push('التقرير القانوني — RABAB LEGAL AI');
+  lines.push(`الموضوع: ${question}`);
+  lines.push(`التاريخ: ${new Date().toLocaleDateString('ar-SA')}`);
+  lines.push('══════════════════════════════════════════\n');
+
+  if (report.summary) {
+    lines.push('أولاً: الملخص القانوني');
+    lines.push('─────────────────────');
+    lines.push(report.summary + '\n');
+  }
+
+  if (report.articles?.length) {
+    lines.push('ثانياً: المواد النظامية ذات الصلة');
+    lines.push('─────────────────────────────────');
+    report.articles.forEach(a => {
+      lines.push(`• المادة (${a.article}) — ${a.law}`);
+      if (a.text) lines.push(`  "${a.text}"`);
+      if (a.relevance) lines.push(`  الصلة: ${a.relevance}`);
+    });
+    lines.push('');
+  }
+
+  if (report.strengths?.length || report.weaknesses?.length) {
+    lines.push('ثالثاً: تقييم الموقف القانوني');
+    lines.push('──────────────────────────────');
+    if (report.strengths?.length) {
+      lines.push('نقاط القوة:');
+      report.strengths.forEach(s => lines.push(`  ✓ ${s}`));
+    }
+    if (report.weaknesses?.length) {
+      lines.push('نقاط الضعف:');
+      report.weaknesses.forEach(w => lines.push(`  ⚠ ${w}`));
+    }
+    lines.push('');
+  }
+
+  if (report.options?.length) {
+    lines.push('رابعاً: الخيارات القانونية المتاحة');
+    lines.push('────────────────────────────────────');
+    report.options.forEach((opt, i) => {
+      lines.push(`خيار ${i + 1}: ${opt.title} [${opt.recommendation}]`);
+      lines.push(`  ${opt.description}`);
+      if (opt.pros) lines.push(`  المزايا: ${opt.pros}`);
+      if (opt.cons) lines.push(`  المحاذير: ${opt.cons}`);
+    });
+    lines.push('');
+  }
+
+  if (report.procedure_steps?.length) {
+    lines.push('خامساً: خطوات الإجراء');
+    lines.push('─────────────────────');
+    report.procedure_steps.forEach(s => {
+      lines.push(`  ${s.step}. ${s.action} — ${s.authority}`);
+      if (s.note) lines.push(`     ملاحظة: ${s.note}`);
+    });
+    lines.push('');
+  }
+
+  if (report.key_deadlines?.length) {
+    lines.push('سادساً: المهل والمواعيد القانونية');
+    lines.push('────────────────────────────────────');
+    report.key_deadlines.forEach(d => {
+      lines.push(`  • ${d.event}: ${d.duration}${d.source ? ` (${d.source})` : ''}`);
+    });
+    lines.push('');
+  }
+
+  if (report.memo) {
+    lines.push('سابعاً: المذكرة القانونية');
+    lines.push('──────────────────────────');
+    lines.push(report.memo + '\n');
+  }
+
+  if (report.references?.length) {
+    lines.push('المراجع والمصادر');
+    lines.push('─────────────────');
+    report.references.forEach(r => {
+      lines.push(`• ${r.title}`);
+      if (r.excerpt) lines.push(`  "${r.excerpt}"`);
+    });
+    lines.push('');
+  }
+
+  lines.push('══════════════════════════════════════════');
+  lines.push(report.disclaimer || 'هذا التقرير لأغراض البحث والتوعية القانونية — يُنصح بمراجعة محامٍ مرخّص.');
+  return lines.join('\n');
+}
+
+function LegalResearcher() {
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+  const [question, setQuestion] = useState('');
+  const [report, setReport] = useState<LegalReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
+  const [copiedMemo, setCopiedMemo] = useState(false);
+  const [copiedFull, setCopiedFull] = useState(false);
+  const [memoExpanded, setMemoExpanded] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingFullPdf, setExportingFullPdf] = useState(false);
+  const [exportingWord, setExportingWord] = useState(false);
+  const [previewingPdf, setPreviewingPdf] = useState(false);
+  const [previewingFullPdf, setPreviewingFullPdf] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [livePhase, setLivePhase] = useState<'searching' | 'generating' | null>(null);
+  const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const esRef = useRef<EventSource | null>(null);
+  const { data: sub } = useGetMySubscription();
+  const canExport = sub != null && sub.type !== 'free';
+
+  const handleExportMemoWord = async () => {
+    if (!report?.memo) return;
+    setExportingWord(true);
+    try {
+      await exportMemoWord({
+        memoText: report.memo,
+        title: question.slice(0, 60) || 'المذكرة القانونية',
+        weaknesses: report.weaknesses ?? [],
+        hasCitations: report.hasCitations,
+      });
+    } finally {
+      setExportingWord(false);
+    }
+  };
+
+  const LOADING_STEPS = [
+    'جارٍ قراءة قاعدة المعرفة...',
+    'جارٍ البحث في المصادر الرسمية...',
+    'جارٍ استخراج المواد النظامية...',
+    'جارٍ إعداد التقرير القانوني...',
+  ];
+
+  const handleResearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!question.trim() || loading) return;
+    if (!isAuthenticated) { setLocation(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+
+    const requestId = crypto.randomUUID();
+
+    // Open SSE connection before POSTing so we catch the first phase event
+    const es = new EventSource(`${API_BASE}/api/knowledge/research-status/${requestId}`, { withCredentials: true });
+    esRef.current = es;
+    es.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        if (data.phase === 'done') { setLivePhase(null); es.close(); }
+        else if (data.phase === 'searching' || data.phase === 'generating') setLivePhase(data.phase);
+      } catch { /* ignore */ }
+    };
+    es.onerror = () => { setLivePhase(null); es.close(); };
+
+    setLoading(true); setError(''); setUpgradeRequired(false); setReport(null);
+    setLoadingStep(0); setLivePhase(null);
+    loadingTimerRef.current = setInterval(() => {
+      setLoadingStep(s => Math.min(s + 1, LOADING_STEPS.length - 1));
+    }, 3500);
+    try {
+      const res = await fetch(`${API_BASE}/api/knowledge/legal-research`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, requestId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === 'UPGRADE_REQUIRED') { setUpgradeRequired(true); return; }
+        throw new Error(err.error || 'فشل إعداد البحث');
+      }
+      setReport(await res.json());
+      setMemoExpanded(true); // auto-expand so embedded citations are visible
+    } catch (err: any) { setError(err.message); }
+    finally {
+      setLoading(false);
+      setLivePhase(null);
+      esRef.current?.close(); esRef.current = null;
+      if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
+    }
+  };
+
+  const copyMemo = () => {
+    if (!report?.memo) return;
+    // Block export when no citable references are available
+    if (report.hasCitations === false) return;
+    navigator.clipboard.writeText(report.memo).then(() => { setCopiedMemo(true); setTimeout(() => setCopiedMemo(false), 2000); });
+  };
+
+  const copyFullReport = () => {
+    if (!report) return;
+    // Block full-report export when memo has no citable citations
+    if (report.hasCitations === false) return;
+    navigator.clipboard.writeText(buildFullReportText(report, question)).then(() => {
+      setCopiedFull(true); setTimeout(() => setCopiedFull(false), 2500);
+    });
+  };
+
+  /** Generate a text-based (selectable/searchable) PDF with all report sections and trigger direct download */
+  const doExportPdf = async (mode: 'memo' | 'full' = 'memo') => {
+    if (!report?.memo) return;
+    const today = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const isUnverified = report.hasCitations === false;
+
+    // Dynamic import keeps the heavy library out of the initial bundle
+    const { pdf, Document, Page, Text, View, Font, StyleSheet } =
+      await import('@react-pdf/renderer');
+
+    // Register Amiri — font files are bundled locally in /public/fonts/ so export
+    // works offline and is never blocked by CDN outages.
+    const fontBase = `${window.location.origin}${import.meta.env.BASE_URL}fonts`;
+    Font.register({
+      family: 'Amiri',
+      fonts: [
+        {
+          src: `${fontBase}/amiri-arabic-400-normal.woff2`,
+          fontWeight: 400,
+        },
+        {
+          src: `${fontBase}/amiri-arabic-700-normal.woff2`,
+          fontWeight: 700,
+        },
+      ],
+    });
+
+    // Disable automatic hyphenation so Arabic words are never broken mid-word
+    Font.registerHyphenationCallback(w => [w]);
+
+    const S = StyleSheet.create({
+      page: {
+        fontFamily: 'Amiri',
+        fontSize: 12,
+        lineHeight: 1.85,
+        paddingTop: 40,
+        paddingBottom: 48,
+        paddingHorizontal: 48,
+        backgroundColor: '#ffffff',
+      },
+      header: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        borderBottomWidth: 3,
+        borderBottomColor: '#7c3a00',
+        paddingBottom: 12,
+        marginBottom: 20,
+      },
+      brandBlock: { alignItems: 'flex-end' },
+      brandName: { fontSize: 18, fontWeight: 700, color: '#7c3a00' },
+      brandSub:  { fontSize: 10, color: '#888888', marginTop: 2 },
+      metaBlock: { alignItems: 'flex-start' },
+      metaText:  { fontSize: 10, color: '#555555' },
+      subjectBox: {
+        backgroundColor: '#fef9f0',
+        borderRightWidth: 4,
+        borderRightColor: '#c47a0a',
+        padding: 10,
+        borderRadius: 4,
+        marginBottom: 18,
+      },
+      subjectText: { fontSize: 12, fontWeight: 700, color: '#1a1a1a', textAlign: 'right' },
+      section: { marginBottom: 22 },
+      sectionHeader: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0c080',
+        paddingBottom: 4,
+        marginBottom: 10,
+      },
+      sectionHeading: { fontSize: 13, fontWeight: 700, color: '#7c3a00' },
+      bodyText: { fontSize: 12, lineHeight: 1.9, color: '#1a1a1a', textAlign: 'right' },
+      /* Articles */
+      articleItem: { marginBottom: 12 },
+      articleBadge: { fontSize: 10, fontWeight: 700, color: '#7c3a00', marginBottom: 2 },
+      articleTextBlock: {
+        fontSize: 11,
+        color: '#333333',
+        backgroundColor: '#fafafa',
+        borderRightWidth: 3,
+        borderRightColor: '#c47a0a',
+        padding: 6,
+        marginTop: 4,
+        borderRadius: 2,
+        textAlign: 'right',
+      },
+      articleRelevance: { fontSize: 10, color: '#666666', marginTop: 3, textAlign: 'right' },
+      /* Strengths / Weaknesses */
+      swRow: { flexDirection: 'row-reverse', gap: 10, marginBottom: 4 },
+      swBlock: { flex: 1, padding: 8, borderRadius: 4 },
+      swHeading: { fontSize: 11, fontWeight: 700, marginBottom: 4 },
+      swItem: { fontSize: 11, marginBottom: 3, textAlign: 'right' },
+      /* Options */
+      optionCard: {
+        marginBottom: 10,
+        padding: 10,
+        backgroundColor: '#fafaf8',
+        borderWidth: 1,
+        borderColor: '#e5e5e5',
+        borderRadius: 4,
+      },
+      optionTitle: { fontSize: 12, fontWeight: 700, color: '#1a1a1a', textAlign: 'right', marginBottom: 4 },
+      optionDesc:  { fontSize: 11, color: '#444444', textAlign: 'right', marginBottom: 4 },
+      optionNote:  { fontSize: 10, color: '#555555', textAlign: 'right' },
+      /* Steps */
+      stepItem: { flexDirection: 'row-reverse', marginBottom: 8, gap: 8 },
+      stepNum:  { fontSize: 11, fontWeight: 700, color: '#7c3a00', minWidth: 18 },
+      stepText: { flex: 1 },
+      stepAction:    { fontSize: 12, fontWeight: 700, color: '#1a1a1a', textAlign: 'right' },
+      stepAuthority: { fontSize: 10, color: '#7c3a00', textAlign: 'right', marginTop: 1 },
+      stepNote:      { fontSize: 10, color: '#666666', textAlign: 'right', marginTop: 2 },
+      /* Deadlines */
+      deadlineItem: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+        padding: '4 8',
+        backgroundColor: '#fffbea',
+        borderRadius: 3,
+      },
+      deadlineEvent:    { fontSize: 11, fontWeight: 700, color: '#92400e' },
+      deadlineDuration: { fontSize: 11, color: '#b45309' },
+      deadlineSource:   { fontSize: 10, color: '#b45309' },
+      /* Memo */
+      refCountText: { fontSize: 11, fontWeight: 700 },
+      memoText: { fontSize: 12, lineHeight: 1.9, color: '#1a1a1a', textAlign: 'right' },
+      /* References */
+      refItem:   { marginBottom: 8 },
+      refTitle:  { fontSize: 11, fontWeight: 700, color: '#1a1a1a', textAlign: 'right' },
+      refExcerpt:{ fontSize: 10, color: '#555555', marginTop: 2, textAlign: 'right' },
+      /* Disclaimer */
+      disclaimer: {
+        marginTop: 20,
+        padding: 10,
+        backgroundColor: '#fffbea',
+        borderWidth: 1,
+        borderColor: '#ffe08a',
+        borderRadius: 4,
+      },
+      disclaimerText: { fontSize: 10, color: '#7a5f00', textAlign: 'right' },
+      /* Watermark */
+      watermark: {
+        position: 'absolute',
+        top: '38%',
+        left: -30,
+        right: -30,
+        textAlign: 'center',
+        fontSize: 32,
+        color: 'rgba(180,0,0,0.10)',
+        fontWeight: 700,
+        transform: 'rotate(-40deg)',
+      },
+    });
+
+    const refCount = report.references?.length ?? 0;
+
+    const docElement = (
+      <Document title={`RABAB LEGAL — ${question}`} author="RABAB LEGAL AI">
+        <Page size="A4" style={S.page}>
+          {/* Per-page diagonal watermark for unverified exports */}
+          {isUnverified && (
+            <Text style={S.watermark} fixed>
+              {mode === 'full' ? 'تقرير غير موثّق — للاسترشاد فقط' : 'مذكرة غير موثّقة — للاسترشاد فقط'}
+            </Text>
+          )}
+
+          {/* ── Header ── */}
+          <View style={S.header} fixed>
+            <View style={S.brandBlock}>
+              <Text style={S.brandName}>RABAB LEGAL</Text>
+              <Text style={S.brandSub}>محاميتك الرقمية</Text>
+            </View>
+            <View style={S.metaBlock}>
+              <Text style={S.metaText}>التاريخ: {today}</Text>
+              <Text style={S.metaText}>مُعدّ بواسطة الذكاء الاصطناعي</Text>
+            </View>
+          </View>
+
+          {/* ── Subject ── */}
+          <View style={S.subjectBox}>
+            <Text style={S.subjectText}>الموضوع: {question}</Text>
+          </View>
+
+          {/* ── 1. Summary ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>أولاً: الملخص القانوني</Text>
+            </View>
+            {report.summary ? (
+              <Text style={S.bodyText}>{report.summary}</Text>
+            ) : (
+              <Text style={[S.bodyText, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+            )}
+          </View>
+
+          {/* ── 2. Articles ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>ثانياً: المواد النظامية ذات الصلة</Text>
+            </View>
+            {report.articles?.length > 0 ? report.articles.map((a, i) => (
+              <View key={i} style={S.articleItem}>
+                <Text style={S.articleBadge}>
+                  المادة ({a.article}) — {a.law}
+                </Text>
+                {a.text ? (
+                  <Text style={S.articleTextBlock}>«{a.text}»</Text>
+                ) : null}
+                {a.relevance ? (
+                  <Text style={S.articleRelevance}>وجه الصلة: {a.relevance}</Text>
+                ) : null}
+              </View>
+            )) : (
+              <Text style={[S.bodyText, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+            )}
+          </View>
+
+          {/* ── 3. Strengths & Weaknesses ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>ثالثاً: تقييم الموقف القانوني</Text>
+            </View>
+            {(report.strengths?.length > 0 || report.weaknesses?.length > 0) ? (
+              <View style={S.swRow}>
+                <View style={[S.swBlock, { backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0' }]}>
+                  <Text style={[S.swHeading, { color: '#166534' }]}>نقاط القوة</Text>
+                  {report.strengths?.length > 0 ? report.strengths.map((s, i) => (
+                    <Text key={i} style={[S.swItem, { color: '#166534' }]}>✓ {s}</Text>
+                  )) : (
+                    <Text style={[S.swItem, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+                  )}
+                </View>
+                <View style={[S.swBlock, { backgroundColor: '#fff1f2', borderWidth: 1, borderColor: '#fecdd3' }]}>
+                  <Text style={[S.swHeading, { color: '#991b1b' }]}>نقاط الضعف</Text>
+                  {report.weaknesses?.length > 0 ? report.weaknesses.map((w, i) => (
+                    <Text key={i} style={[S.swItem, { color: '#991b1b' }]}>⚠ {w}</Text>
+                  )) : (
+                    <Text style={[S.swItem, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+                  )}
+                </View>
+              </View>
+            ) : (
+              <Text style={[S.bodyText, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+            )}
+          </View>
+
+          {/* ── 4. Options ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>رابعاً: الخيارات القانونية المتاحة</Text>
+            </View>
+            {report.options?.length > 0 ? report.options.map((opt, i) => (
+              <View key={i} style={S.optionCard}>
+                <Text style={S.optionTitle}>{i + 1}. {opt.title}  [{opt.recommendation}]</Text>
+                <Text style={S.optionDesc}>{opt.description}</Text>
+                {opt.pros ? <Text style={[S.optionNote, { color: '#166534' }]}>+ {opt.pros}</Text> : null}
+                {opt.cons ? <Text style={[S.optionNote, { color: '#991b1b' }]}>− {opt.cons}</Text> : null}
+              </View>
+            )) : (
+              <Text style={[S.bodyText, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+            )}
+          </View>
+
+          {/* ── 5. Procedure Steps ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>خامساً: خطوات الإجراء</Text>
+            </View>
+            {report.procedure_steps?.length > 0 ? report.procedure_steps.map((s, i) => (
+              <View key={i} style={S.stepItem}>
+                <Text style={S.stepNum}>{s.step}.</Text>
+                <View style={S.stepText}>
+                  <Text style={S.stepAction}>{s.action}</Text>
+                  <Text style={S.stepAuthority}>{s.authority}</Text>
+                  {s.note ? <Text style={S.stepNote}>{s.note}</Text> : null}
+                </View>
+              </View>
+            )) : (
+              <Text style={[S.bodyText, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+            )}
+          </View>
+
+          {/* ── 6. Key Deadlines ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>سادساً: المهل والمواعيد القانونية</Text>
+            </View>
+            {report.key_deadlines?.length > 0 ? report.key_deadlines.map((d, i) => (
+              <View key={i} style={S.deadlineItem}>
+                <Text style={S.deadlineEvent}>{d.event}</Text>
+                <Text style={S.deadlineDuration}>{d.duration}</Text>
+                {d.source ? <Text style={S.deadlineSource}>{d.source}</Text> : null}
+              </View>
+            )) : (
+              <Text style={[S.bodyText, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+            )}
+          </View>
+
+          {/* ── 7. Memo ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>سابعاً: المذكرة القانونية</Text>
+              <Text style={[S.refCountText, { color: refCount > 0 ? '#16a34a' : '#dc2626' }]}>
+                عدد المراجع الموثّقة: {refCount}
+              </Text>
+            </View>
+            <Text style={S.memoText}>{report.memo}</Text>
+          </View>
+
+          {/* ── 8. References ── */}
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeading}>المراجع والمصادر</Text>
+            </View>
+            {refCount > 0 ? report.references.map((r, i) => (
+              <View key={i} style={S.refItem}>
+                <Text style={S.refTitle}>{r.title}</Text>
+                {r.excerpt ? (
+                  <Text style={S.refExcerpt}>«{r.excerpt}»</Text>
+                ) : null}
+              </View>
+            )) : (
+              <Text style={[S.bodyText, { color: '#888888', fontStyle: 'italic' }]}>لا توجد بيانات متاحة</Text>
+            )}
+          </View>
+
+          {/* ── Disclaimer ── */}
+          <View style={S.disclaimer}>
+            <Text style={S.disclaimerText}>
+              {report.disclaimer ||
+                'هذا التقرير لأغراض البحث والتوعية القانونية — يُنصح بمراجعة محامٍ مرخّص والتحقق من المصادر الرسمية قبل الاستخدام الرسمي.'}
+            </Text>
+          </View>
+        </Page>
+      </Document>
+    );
+
+    const blob = await pdf(docElement).toBlob();
+    return URL.createObjectURL(blob);
+  };
+
+  const handleExportPdf = async () => {
+    if (!report?.memo) return;
+    if (report.hasCitations === false) {
+      const confirmed = window.confirm(
+        'تنبيه: هذه المذكرة غير موثّقة بمصادر معتمدة.\n\nسيتم تصدير الملف مع علامة مائية واضحة: "مذكرة غير موثّقة — للاسترشاد فقط"\n\nهل تريد المتابعة؟'
+      );
+      if (!confirmed) return;
+    }
+    const dateStr = new Date().toISOString().slice(0, 10);
+    setExportingPdf(true);
+    try {
+      const url = await doExportPdf('memo');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rabab-legal-memo-${dateStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handleExportFullReportPdf = async () => {
+    if (!report?.memo) return;
+    if (report.hasCitations === false) {
+      const confirmed = window.confirm(
+        'تنبيه: هذا التقرير غير موثّق بمصادر معتمدة.\n\nسيتم تصدير الملف مع علامة مائية واضحة: "تقرير غير موثّق — للاسترشاد فقط"\n\nهل تريد المتابعة؟'
+      );
+      if (!confirmed) return;
+    }
+    const dateStr = new Date().toISOString().slice(0, 10);
+    setExportingFullPdf(true);
+    try {
+      const url = await doExportPdf('full');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rabab-legal-full-report-${dateStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingFullPdf(false);
+    }
+  };
+
+  const handlePreviewPdf = async () => {
+    if (!report?.memo) return;
+    setPreviewingPdf(true);
+    try {
+      const url = await doExportPdf('memo');
+      setPreviewUrl(url);
+      setPreviewOpen(true);
+    } finally {
+      setPreviewingPdf(false);
+    }
+  };
+
+  const handlePreviewFullReportPdf = async () => {
+    if (!report?.memo) return;
+    setPreviewingFullPdf(true);
+    try {
+      const url = await doExportPdf('full');
+      setPreviewUrl(url);
+      setPreviewOpen(true);
+    } finally {
+      setPreviewingFullPdf(false);
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl('');
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Header banner */}
+      <div className="bg-gradient-to-r from-primary/8 to-amber-50 border border-primary/20 rounded-2xl p-4">
+        <p className="font-bold text-primary text-sm mb-2">⚖️ الباحثة القانونية العملية</p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-foreground/70">
+          <span>📋 مواد نظامية بنصوصها الحرفية</span>
+          <span>🔍 بحث في المصادر الرسمية مباشرة</span>
+          <span>⚡ تقييم نقاط القوة والضعف</span>
+          <span>🗂 مقارنة الخيارات وخطوات الإجراء</span>
+          <span>📅 المهل والمواعيد القانونية</span>
+          <span>📝 مذكرة قانونية جاهزة للنسخ</span>
+        </div>
+      </div>
+
+      {upgradeRequired && (
+        <div className="p-5 bg-primary/5 border-2 border-primary/30 rounded-2xl text-center">
+          <Lock className="w-8 h-8 text-primary mx-auto mb-2" />
+          <p className="font-bold text-primary mb-1">خدمة مدفوعة</p>
+          <p className="text-muted-foreground text-xs mb-3">البحث القانوني الشامل متاح للمشتركين فقط</p>
+          <Link href="/pricing"><button className="px-5 py-2 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90">ترقية الباقة</button></Link>
+        </div>
+      )}
+      {error && <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{error}</div>}
+
+      <form onSubmit={handleResearch} className="space-y-3">
+        <textarea
+          value={question} onChange={e => setQuestion(e.target.value)}
+          rows={4} disabled={loading}
+          placeholder="صِف وضعك بدقة — مثال: أنا موظف صدر بحقي فصل تعسفي بعد 7 سنوات خدمة دون إنذار مسبق، ما خياراتي أمام المحكمة العمالية؟"
+          className="w-full border-2 border-secondary/60 rounded-2xl px-4 py-3 text-sm outline-none focus:outline-none focus:ring-0 focus:border-secondary transition-colors resize-none bg-background"
+        />
+        <button
+          type="submit" disabled={!question.trim() || loading}
+          className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading
+            ? <><Loader2 className="w-4 h-4 animate-spin" />{LOADING_STEPS[loadingStep]}</>
+            : <><Gavel className="w-4 h-4" />ابدأ البحث القانوني</>}
+        </button>
+      </form>
+
+      {/* ── Live search indicator ── */}
+      {loading && livePhase === 'searching' && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
+          <span className="text-lg leading-none animate-pulse">🌐</span>
+          <span className="text-xs font-semibold text-blue-700">جارٍ البحث في الإنترنت…</span>
+          <div className="flex items-center gap-1 mr-1">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Report */}
+      {report && (
+        <div className="space-y-4">
+
+          {/* AI Disclaimer for report */}
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-amber-800 leading-snug">هذه إجابة صادرة عن الذكاء الاصطناعي، وهي للاسترشاد ولا تُعد رأياً قانونياً ملزماً، ولا تغني عن مراجعة المحامية المختصة والتحقق من المصدر الرسمي.</p>
+          </div>
+
+          {/* Top actions bar */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {report.sources_used && (
+                <>بُني التقرير من {report.sources_used.kb} مرجع داخلي{report.sources_used.web > 0 ? ` + ${report.sources_used.web} مصدر ويب` : ''}</>
+              )}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copyFullReport}
+                disabled={report.hasCitations === false}
+                title={report.hasCitations === false ? 'لا يمكن نسخ التقرير بدون استشهادات موثّقة' : undefined}
+                className={cn(
+                  "flex items-center gap-1.5 text-xs border border-border rounded-lg px-3 py-1.5 transition-colors",
+                  report.hasCitations === false
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:bg-muted/50"
+                )}
+              >
+                {copiedFull ? <><Check className="w-3.5 h-3.5 text-green-600" />تم نسخ التقرير</> : <><Copy className="w-3.5 h-3.5" />نسخ التقرير كاملاً</>}
+              </button>
+              <button
+                onClick={handlePreviewFullReportPdf}
+                disabled={previewingFullPdf}
+                title="معاينة التقرير قبل التنزيل"
+                className="flex items-center gap-1.5 text-xs border border-border rounded-lg px-3 py-1.5 transition-colors hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {previewingFullPdf
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />جارٍ التحضير...</>
+                  : <><Eye className="w-3.5 h-3.5" />معاينة PDF</>
+                }
+              </button>
+              <button
+                onClick={handleExportFullReportPdf}
+                disabled={exportingFullPdf}
+                title={report.hasCitations === false ? 'تصدير التقرير الكامل مع علامة مائية تحذيرية' : 'تنزيل التقرير الكامل PDF'}
+                className={cn(
+                  "flex items-center gap-1.5 text-xs border rounded-lg px-3 py-1.5 font-semibold transition-colors",
+                  exportingFullPdf
+                    ? "opacity-40 cursor-not-allowed border-border bg-muted text-muted-foreground"
+                    : report.hasCitations === false
+                      ? "border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200"
+                      : "border-border bg-primary/8 text-primary hover:bg-primary/15"
+                )}
+              >
+                {exportingFullPdf
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />جارٍ التنزيل...</>
+                  : report.hasCitations === false
+                    ? <><AlertTriangle className="w-3.5 h-3.5" />تنزيل التقرير مع تحذير</>
+                    : <><FileDown className="w-3.5 h-3.5" />تنزيل التقرير PDF</>
+                }
+              </button>
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-3 text-primary font-bold text-sm"><BookOpen className="w-4 h-4" />الملخص التنفيذي</div>
+            <p className="text-sm leading-relaxed text-foreground/90">{report.summary}</p>
+          </div>
+
+          {/* Articles table */}
+          {report.articles?.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="flex items-center gap-2 px-5 py-3 bg-primary/5 border-b border-border">
+                <ScrollText className="w-4 h-4 text-primary" />
+                <span className="text-sm font-bold text-primary">المواد النظامية ذات الصلة</span>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{report.articles.length} مادة</span>
+              </div>
+              <div className="divide-y divide-border/40">
+                {report.articles.map((a, i) => (
+                  <div key={i} className={cn("px-5 py-4", a.verified === false && "bg-amber-50/40")}>
+                    <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+                      <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-lg">المادة {a.article}</span>
+                      <span className="text-xs font-semibold text-foreground">{a.law}</span>
+                      {a.verified === true && (
+                        <span className="text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full">
+                          ✓ {a.foundIn === 'web' ? 'موثق من الويب' : 'موثق من قاعدة المعرفة'}
+                        </span>
+                      )}
+                      {a.verified === false && (
+                        <span className="text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                          ⚠ يحتاج تحقق
+                        </span>
+                      )}
+                    </div>
+                    {a.text && (
+                      <p className={cn(
+                        "text-xs leading-relaxed text-foreground/80 bg-muted/30 rounded-xl p-3 mb-2 font-mono-arabic border-r-2 pr-3",
+                        a.verified === false ? "border-amber-400" : "border-primary/30"
+                      )}>
+                        "{a.text}"
+                      </p>
+                    )}
+                    {a.verified === false && (
+                      <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 mb-1.5">
+                        ⚠️ لم يُعثر على هذه المادة في مصادر قاعدة المعرفة — يُرجى التحقق من المصدر الرسمي:{' '}
+                        <a href="https://laws.boe.gov.sa" target="_blank" rel="noopener noreferrer" className="underline font-semibold">laws.boe.gov.sa</a>
+                      </p>
+                    )}
+                    {a.relevance && (
+                      <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground/70">وجه الصلة:</span> {a.relevance}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strengths & Weaknesses */}
+          {(report.strengths.length > 0 || report.weaknesses.length > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {report.strengths.length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+                  <div className="flex items-center gap-1.5 mb-3 text-green-800 font-bold text-sm"><ShieldCheck className="w-4 h-4" />نقاط القوة</div>
+                  <ul className="space-y-2">
+                    {report.strengths.map((s, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-green-900">
+                        <span className="mt-0.5 text-green-600 font-bold shrink-0">✓</span>{s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {report.weaknesses.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+                  <div className="flex items-center gap-1.5 mb-3 text-red-800 font-bold text-sm"><AlertTriangle className="w-4 h-4" />نقاط الضعف</div>
+                  <ul className="space-y-2">
+                    {report.weaknesses.map((w, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-red-900">
+                        <span className="mt-0.5 text-red-600 font-bold shrink-0">⚠</span>{w}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Options */}
+          {report.options.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4 text-primary font-bold text-sm"><GitCompare className="w-4 h-4" />الخيارات القانونية المتاحة</div>
+              <div className="space-y-3">
+                {report.options.map((opt, i) => (
+                  <div key={i} className="border border-border/60 rounded-xl p-4 bg-muted/20">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg">خيار {i + 1}</span>
+                      <span className="text-sm font-bold flex-1">{opt.title}</span>
+                      <RecommendationBadge rec={opt.recommendation} />
+                    </div>
+                    <p className="text-xs text-foreground/80 leading-relaxed mb-2">{opt.description}</p>
+                    {(opt.pros || opt.cons) && (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {opt.pros && <div className="text-xs bg-green-50 border border-green-100 rounded-lg p-2"><span className="font-bold text-green-700">+ </span><span className="text-green-900">{opt.pros}</span></div>}
+                        {opt.cons && <div className="text-xs bg-red-50 border border-red-100 rounded-lg p-2"><span className="font-bold text-red-700">− </span><span className="text-red-900">{opt.cons}</span></div>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Procedure steps */}
+          {report.procedure_steps?.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4 text-primary font-bold text-sm">
+                <ArrowRight className="w-4 h-4" />خطوات الإجراء
+              </div>
+              <ol className="space-y-3">
+                {report.procedure_steps.map((s, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-foreground">{s.action}</p>
+                      <p className="text-xs text-primary/80 font-medium">{s.authority}</p>
+                      {s.note && <p className="text-xs text-muted-foreground mt-0.5 bg-muted/40 rounded-lg px-2 py-1">{s.note}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {/* Key deadlines */}
+          {report.key_deadlines?.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3 text-amber-800 font-bold text-sm">
+                <span>📅</span>المهل والمواعيد القانونية
+              </div>
+              <div className="space-y-2">
+                {report.key_deadlines.map((d, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-white/60 border border-amber-100 rounded-xl px-4 py-2.5">
+                    <div className="flex-1">
+                      <span className="text-xs font-bold text-amber-900">{d.event}</span>
+                      <span className="text-xs text-amber-700 mr-2">← {d.duration}</span>
+                    </div>
+                    {d.source && <span className="text-xs text-amber-600 shrink-0">{d.source}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Legal Memo */}
+          {report.memo && (
+            <div className="border border-border rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-muted/50 border-b border-border">
+                <div className="flex items-center gap-2 text-sm font-bold text-primary">
+                  <FileEdit className="w-4 h-4" />المذكرة القانونية
+                  {report.citableCount != null && report.citableCount > 0 && (
+                    <span className="text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full">
+                      {report.citableCount} مرجع موثّق
+                    </span>
+                  )}
+                  {report.hasCitations === false && (
+                    <span className="text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded-full">
+                      ⚠ بدون استشهادات
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setMemoExpanded(v => !v)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                    {memoExpanded ? <><ChevronUp className="w-3.5 h-3.5" />طيّ</> : <><ChevronDown className="w-3.5 h-3.5" />توسيع</>}
+                  </button>
+                  <button
+                    onClick={copyMemo}
+                    disabled={report.hasCitations === false}
+                    title={report.hasCitations === false ? 'لا يمكن نسخ المذكرة بدون استشهادات موثّقة' : undefined}
+                    className={cn(
+                      "flex items-center gap-1 text-xs",
+                      report.hasCitations === false
+                        ? "opacity-40 cursor-not-allowed text-muted-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {copiedMemo ? <><Check className="w-3.5 h-3.5 text-green-600" />تم النسخ</> : <><Copy className="w-3.5 h-3.5" />نسخ</>}
+                  </button>
+                  {/* ── Word Export (primary) ── */}
+                  {canExport ? (
+                    <button
+                      onClick={handleExportMemoWord}
+                      disabled={exportingWord}
+                      title="تنزيل المذكرة Word — مع ملف ملاحظات المحامي منفصلاً"
+                      className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg font-semibold transition-colors bg-secondary/90 text-primary hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {exportingWord
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />جارٍ التصدير...</>
+                        : <><Download className="w-3.5 h-3.5" />Word .docx</>
+                      }
+                    </button>
+                  ) : (
+                    <a
+                      href="/pricing"
+                      className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg font-semibold bg-secondary/20 text-secondary hover:bg-secondary/30 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />اشترك للتصدير
+                    </a>
+                  )}
+                  <button
+                    onClick={handlePreviewPdf}
+                    disabled={previewingPdf}
+                    title="معاينة المذكرة قبل التنزيل"
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg font-semibold transition-colors bg-muted/60 text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {previewingPdf
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />جارٍ التحضير...</>
+                      : <><Eye className="w-3.5 h-3.5" />معاينة PDF</>
+                    }
+                  </button>
+                  {canExport && (
+                    <button
+                      onClick={handleExportPdf}
+                      disabled={exportingPdf}
+                      title={report.hasCitations === false ? 'تصدير مع علامة مائية تحذيرية' : 'تنزيل المذكرة PDF'}
+                      className={cn(
+                        "flex items-center gap-1 text-xs px-2 py-1 rounded-lg font-semibold transition-colors",
+                        exportingPdf
+                          ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground"
+                          : report.hasCitations === false
+                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300"
+                            : "bg-primary/10 text-primary hover:bg-primary/20"
+                      )}
+                    >
+                      {exportingPdf
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />جارٍ التنزيل...</>
+                        : report.hasCitations === false
+                  

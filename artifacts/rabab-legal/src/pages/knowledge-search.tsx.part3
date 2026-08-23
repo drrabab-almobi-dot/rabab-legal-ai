@@ -1,0 +1,511 @@
+        ? <><AlertTriangle className="w-3.5 h-3.5" />تنزيل مع تحذير</>
+                          : <><FileDown className="w-3.5 h-3.5" />تنزيل PDF</>
+                      }
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* No-citations warning banner */}
+              {report.hasCitations === false && (
+                <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 border-b border-amber-200">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    <span className="font-bold">تنبيه: لم تُوثَّق مصادر الاستشهاد لهذه المذكرة</span> — يمكن تصدير الملف مع علامة مائية تحذيرية واضحة: <span className="font-semibold">"مذكرة غير موثّقة — للاسترشاد فقط"</span>. يُنصح بمراجعة محامٍ مرخّص أو إعادة البحث بمعلومات أكثر تفصيلاً.
+                  </p>
+                </div>
+              )}
+
+              <LegalMarkdown className="p-5 transition-all" maxHeight={memoExpanded ? undefined : '15rem'}>{report.memo}</LegalMarkdown>
+              {!memoExpanded && <div className="h-8 bg-gradient-to-t from-card to-transparent -mt-8 relative pointer-events-none" />}
+              <div className="px-4 py-3 bg-amber-50 border-t border-amber-100">
+                <p className="text-xs text-amber-800">هذه إجابة صادرة عن الذكاء الاصطناعي، وهي للاسترشاد ولا تُعد رأياً قانونياً ملزماً، ولا تغني عن مراجعة المحامية المختصة والتحقق من المصدر الرسمي.</p>
+              </div>
+            </div>
+          )}
+
+          {/* References */}
+          {report.references.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4 text-primary font-bold text-sm"><BookMarked className="w-4 h-4" />المراجع والمصادر</div>
+              <div className="space-y-3">
+                {report.references.map((ref, i) => (
+                  <div key={i} className="flex items-start gap-2 border-r-2 border-primary/30 pr-3">
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-primary mb-0.5">{ref.title}</p>
+                      {ref.excerpt && <p className="text-xs text-muted-foreground leading-relaxed">"{ref.excerpt}"</p>}
+                    </div>
+                    {ref.source_type && (
+                      <span className={cn("text-xs px-1.5 py-0.5 rounded-md shrink-0",
+                        ref.source_type === 'ويب' ? 'bg-blue-50 text-blue-700' : 'bg-muted text-muted-foreground')}>
+                        {ref.source_type === 'قاعدة_المعرفة' ? '📚' : ref.source_type === 'ويب' ? '🌐' : '⚖️'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── PDF Preview Modal ── */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/80" dir="rtl">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-background border-b border-border shrink-0">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold text-primary">معاينة PDF</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href={previewUrl}
+                download={`rabab-legal-preview-${new Date().toISOString().slice(0, 10)}.pdf`}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                تنزيل
+              </a>
+              <button
+                onClick={closePreview}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                إغلاق
+              </button>
+            </div>
+          </div>
+          {/* PDF iframe */}
+          <iframe
+            src={previewUrl}
+            className="flex-1 w-full bg-white"
+            title="معاينة PDF"
+          />
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function KnowledgeSearch() {
+  setPageSEO({ title: 'البحث في الأنظمة السعودية | RABAB LEGAL AI', description: 'ابحث في نصوص الأنظمة السعودية — نظام العمل السعودي، نظام الأحوال الشخصية السعودي، التعاميم واللوائح الرسمية.', canonical: 'https://rabablegal.com/knowledge-search' });
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+  const { lang, t } = useLang();
+  const [activeTab, setActiveTab] = useState<SearchTab>(() => {
+    const param = new URLSearchParams(window.location.search).get('tab') as SearchTab | null;
+    const valid: SearchTab[] = ['contract', 'consult', 'research', 'regulation', 'circular', 'codex'];
+    return param && valid.includes(param) ? param : 'research';
+  });
+  const [queries, setQueries] = useState<Record<string, string>>({});
+  const [results, setResults] = useState<Record<string, SearchResult[]>>({});
+  const [smartSummary, setSmartSummary] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [searched, setSearched] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<Record<string, string>>({});
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
+  const [fallback, setFallback] = useState<Record<string, boolean>>({});
+  // Citation filters (judicial tab only)
+  const [filterCourt, setFilterCourt] = useState('');
+  const [filterStage, setFilterStage] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [citableCount, setCitableCount] = useState<Record<string, { citable: number; total: number }>>({});
+  // Tracks when results existed but all failed the 70% relevance gate
+  const [noSufficientSources, setNoSufficientSources] = useState<Record<string, boolean>>({});
+  // Tracks when each tab's results were last fetched (for stale-while-revalidate)
+  const [lastFetched, setLastFetched] = useState<Record<string, number>>({});
+
+  const STALE_TIME = 60_000; // 60 seconds
+
+  const tab = TABS.find(t => t.id === activeTab)!;
+  const query = queries[activeTab] ?? '';
+  const tabResults = results[activeTab] ?? [];
+  const tabLoading = loading[activeTab] ?? false;
+  const tabSearched = searched[activeTab] ?? false;
+  const tabError = error[activeTab] ?? '';
+
+  // Core search executor — accepts explicit tabId/query/category so it can be
+  // called both from the form handler and from the stale-data effect.
+  const runSearch = useCallback(async (tabId: string, q: string, tabCategory: string | undefined, court: string, stage: string) => {
+    if (!q.trim()) return;
+    if (!isAuthenticated) { setLocation(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+    setLoading(p => ({ ...p, [tabId]: true }));
+    setError(p => ({ ...p, [tabId]: '' }));
+    setSearched(p => ({ ...p, [tabId]: true }));
+    setUpgradeRequired(false);
+    try {
+      const params = new URLSearchParams({ q, category: tabCategory ?? '' });
+      if (tabId === 'judicial') {
+        if (court) params.set('court', court);
+        if (stage) params.set('stage', stage);
+      }
+      const res = await fetch(
+        `${API_BASE}/api/knowledge/search?${params}`,
+        { credentials: 'include' }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === 'UPGRADE_REQUIRED') { setUpgradeRequired(true); setResults(p => ({ ...p, [tabId]: [] })); return; }
+        throw new Error(err.error || 'فشل البحث');
+      }
+      const data = await res.json();
+      setResults(p => ({ ...p, [tabId]: data.results ?? [] }));
+      setSmartSummary(p => ({ ...p, [tabId]: data.smartSummary ?? '' }));
+      setFallback(p => ({ ...p, [tabId]: !!data.fallback }));
+      setNoSufficientSources(p => ({ ...p, [tabId]: !!data.noSufficientSources }));
+      if (data.citableCount !== undefined) {
+        setCitableCount(p => ({ ...p, [tabId]: { citable: data.citableCount, total: data.totalCount ?? data.results?.length ?? 0 } }));
+      }
+      setLastFetched(p => ({ ...p, [tabId]: Date.now() }));
+    } catch (err: any) {
+      setError(p => ({ ...p, [tabId]: err.message }));
+    } finally {
+      setLoading(p => ({ ...p, [tabId]: false }));
+    }
+  }, [isAuthenticated, setLocation]);
+
+  const handleSearch = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (tabLoading) return;
+    runSearch(activeTab, query, tab.category, filterCourt, filterStage);
+  }, [query, activeTab, tabLoading, tab.category, filterCourt, filterStage, runSearch]);
+
+  // Auto-refetch when switching to a tab whose results are stale (> STALE_TIME ms old).
+  // Only fires when the tab has already been searched and has a saved query — no
+  // unnecessary loading spinners on tabs that haven't been used yet.
+  const queriesRef = React.useRef(queries);
+  queriesRef.current = queries;
+  const loadingRef = React.useRef(loading);
+  loadingRef.current = loading;
+  const lastFetchedRef = React.useRef(lastFetched);
+  lastFetchedRef.current = lastFetched;
+  const searchedRef = React.useRef(searched);
+  searchedRef.current = searched;
+
+  React.useEffect(() => {
+    const savedQuery = queriesRef.current[activeTab] ?? '';
+    const alreadySearched = searchedRef.current[activeTab] ?? false;
+    const isLoading = loadingRef.current[activeTab] ?? false;
+    const fetchedAt = lastFetchedRef.current[activeTab] ?? 0;
+    const isStale = fetchedAt === 0 || Date.now() - fetchedAt > STALE_TIME;
+
+    if (alreadySearched && savedQuery.trim() && !isLoading && isStale) {
+      const currentTab = TABS.find(t => t.id === activeTab)!;
+      runSearch(activeTab, savedQuery, currentTab.category, filterCourt, filterStage);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const clearTab = () => {
+    setQueries(p => ({ ...p, [activeTab]: '' }));
+    setResults(p => ({ ...p, [activeTab]: [] }));
+    setSmartSummary(p => ({ ...p, [activeTab]: '' }));
+    setSearched(p => ({ ...p, [activeTab]: false }));
+    setError(p => ({ ...p, [activeTab]: '' }));
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <Navbar />
+      <main className="flex-1 container mx-auto px-4 py-10 max-w-7xl">
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <BookOpen className="w-7 h-7 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-primary mb-1">{t('الباحثة القانونية الذكية', 'Smart Legal Research')}</h1>
+          <p className="text-muted-foreground text-sm">{t('ابحث في مصادر قانونية موثوقة بالذكاء الاصطناعي', 'AI-powered search across trusted legal sources')}</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-amber-50 border border-amber-200 rounded-2xl p-1 mb-6 overflow-x-auto">
+          {TABS.map(tb => (
+            <button
+              key={tb.id}
+              onClick={() => setActiveTab(tb.id)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-1 justify-center',
+                activeTab === tb.id
+                  ? 'bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-md shadow-amber-200'
+                  : 'text-amber-700 hover:bg-amber-100'
+              )}
+            >
+              {tb.icon}
+              <span>{tb.labelAr}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-5" />
+
+        {/* ── Consult tab ── */}
+        {activeTab === 'consult' && (
+          <div className="text-center py-12 space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto">
+              <MessageSquare className="w-10 h-10 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-primary mb-2">طلب استشارة قانونية</h2>
+              <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                احصل على استشارة قانونية دقيقة مخصصة لوضعك — تتضمن تحليل المسألة، المستند القانوني، والخطوات المقترحة.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/consultation">
+                <button className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors">
+                  ابدأ استشارة جديدة
+                </button>
+              </Link>
+              <Link href="/dashboard">
+                <button className="px-6 py-3 border border-border rounded-xl font-medium text-sm hover:bg-muted/50 transition-colors">
+                  استشاراتي السابقة
+                </button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* ── Regulatory researcher tab ── */}
+        {activeTab === 'regulation' && <RegulatoryResearcher />}
+
+        {/* ── MOJ Circulars tab ── */}
+        {activeTab === 'circular' && <MojCircularBrowser />}
+
+        {/* ── Contract drafter tab ── */}
+        {activeTab === 'contract' && <ContractDrafter />}
+
+        {/* ── Legal research report tab ── */}
+        {activeTab === 'research' && <LegalResearcher />}
+
+        {/* ── Legal codex browser tab ── */}
+        {activeTab === 'codex' && <LegalCodexBrowser />}
+
+        {/* ── Search tabs (judicial / circular / regulation) ── */}
+        {!tab.actionOnly && (
+          <>
+            <form onSubmit={handleSearch} className="mb-6">
+              <div className="relative">
+                <Search className={cn('absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground', lang === 'ar' ? 'right-4' : 'left-4')} />
+                <input
+                  value={query}
+                  onChange={e => setQueries(p => ({ ...p, [activeTab]: e.target.value }))}
+                  placeholder={tab.placeholder}
+                  className={cn(
+                    'w-full h-14 rounded-2xl border-2 border-secondary/60 bg-background text-sm outline-none focus:outline-none focus:ring-0 focus:border-secondary transition-colors shadow-sm',
+                    lang === 'ar' ? 'pr-12 pl-20' : 'pl-12 pr-20'
+                  )}
+                />
+                {query && (
+                  <button type="button" onClick={clearTab}
+                    className={cn('absolute top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground', lang === 'ar' ? 'left-14' : 'right-14')}>
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={!query.trim() || tabLoading}
+                  className={cn(
+                    'absolute top-1/2 -translate-y-1/2 h-10 px-4 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50',
+                    lang === 'ar' ? 'left-2' : 'right-2'
+                  )}
+                >
+                  {tabLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('بحث', 'Search')}
+                </button>
+              </div>
+            </form>
+
+            {/* Upgrade */}
+            {upgradeRequired && (
+              <div className="mb-6 p-6 bg-primary/5 border-2 border-primary/30 rounded-2xl text-center">
+                <Lock className="w-10 h-10 text-primary mx-auto mb-3" />
+                <h3 className="font-bold text-primary text-lg mb-2">خدمة مدفوعة</h3>
+                <p className="text-muted-foreground text-sm mb-4">الباحثة القانونية متاحة للمشتركين — اختر إحدى الباقات للوصول</p>
+                <Link href="/pricing">
+                  <button className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90">
+                    ترقية الباقة الآن
+                  </button>
+                </Link>
+              </div>
+            )}
+
+            {/* Error */}
+            {tabError && (
+              <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{tabError}</div>
+            )}
+
+            {/* Fallback notice */}
+            {fallback[activeTab] && !tabLoading && (
+              <div className="mb-4 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+                <span>⚡</span>
+                <span>لم نجد نتائج في هذا القسم — نعرض من كافة المصادر المتاحة</span>
+              </div>
+            )}
+
+            {/* No sufficient sources notice — shown when results existed but all below 70% */}
+            {noSufficientSources[activeTab] && !tabLoading && (tabResults.length === 0) && (
+              <div className="mb-4 px-4 py-4 bg-destructive/5 border border-destructive/20 rounded-xl text-sm text-destructive/90 text-center">
+                <p className="font-bold mb-1">⚠️ لا توجد مصادر كافية للإجابة</p>
+                <p className="text-xs text-muted-foreground">
+                  وُجدت نتائج لكن درجة صلتها بالسؤال أقل من 70% — عرضها يُضلّل أكثر مما يُفيد في السياق القانوني.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 حاول إعادة صياغة السؤال بمصطلحات أكثر تحديداً، أو ابحث بالمادة / النظام مباشرةً.
+                </p>
+              </div>
+            )}
+
+            {/* Results count + filter toggle (judicial) */}
+            {tabSearched && !tabLoading && !upgradeRequired && (
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {tabResults.length === 0 ? t('لم يُعثر على نتائج مطابقة', 'No matching results') : `${tabResults.length} ${t('نتيجة', 'results')}`}
+                  </p>
+                  {activeTab === 'judicial' && citableCount[activeTab] && citableCount[activeTab].citable > 0 && (
+                    <p className="text-xs text-primary mt-0.5">
+                      {citableCount[activeTab].citable} {t('نتيجة قابلة للاستشهاد', 'citable')} {citableCount[activeTab].total > citableCount[activeTab].citable ? `${t('من', 'of')} ${citableCount[activeTab].total}` : ''}
+                    </p>
+                  )}
+                </div>
+                {activeTab === 'judicial' && (
+                  <button
+                    onClick={() => setShowFilters(v => !v)}
+                    className={cn(
+                      "flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors",
+                      showFilters
+                        ? "bg-primary/10 border-primary/30 text-primary"
+                        : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                    )}
+                  >
+                    <Search className="w-3 h-3" />
+                    {t('تصفية حسب المحكمة / الدرجة', 'Filter by court / stage')}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Citation filter panel */}
+            {activeTab === 'judicial' && showFilters && (
+              <div className="mb-4 p-4 bg-muted/30 border border-border/50 rounded-xl space-y-3">
+                <div className="flex gap-3 flex-wrap">
+                  <div className="flex-1 min-w-[160px]">
+                    <label className="text-xs text-muted-foreground mb-1 block">المحكمة / الدائرة</label>
+                    <input
+                      value={filterCourt}
+                      onChange={e => setFilterCourt(e.target.value)}
+                      placeholder="مثال: المحكمة التجارية بالرياض"
+                      className="w-full text-xs px-3 py-1.5 rounded-lg border border-border bg-background focus:outline-none focus:border-primary/50"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="text-xs text-muted-foreground mb-1 block">درجة التقاضي</label>
+                    <select
+                      value={filterStage}
+                      onChange={e => setFilterStage(e.target.value)}
+                      className="w-full text-xs px-3 py-1.5 rounded-lg border border-border bg-background focus:outline-none focus:border-primary/50"
+                    >
+                      <option value="">الكل</option>
+                      <option value="ابتدائي">ابتدائي</option>
+                      <option value="استئناف">استئناف</option>
+                      <option value="تمييز">تمييز</option>
+                      <option value="ديوان_المظالم">ديوان المظالم</option>
+                    </select>
+                  </div>
+                </div>
+                {(filterCourt || filterStage) && (
+                  <button
+                    onClick={() => { setFilterCourt(''); setFilterStage(''); }}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    ✕ إزالة التصفية
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Istishad notice for judicial results */}
+            {activeTab === 'judicial' && tabSearched && tabResults.length > 0 && !tabLoading && (
+              <div className="mb-4 px-4 py-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>تنبيه: السوابق القضائية في المملكة العربية السعودية للاستئناس لا للإلزام. يُنصح بمراجعة محامٍ مرخّص قبل الاستناد إليها.</span>
+              </div>
+            )}
+
+            {/* Smart summary */}
+            {smartSummary[activeTab] && !tabLoading && tabResults.length > 0 && (
+              <div className="mb-5 p-4 bg-primary/5 border border-primary/20 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold text-primary uppercase tracking-wide">✨ {t('ملخص ذكي', 'Smart Summary')}</span>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground/90">{smartSummary[activeTab]}</p>
+                <p className="text-[10px] text-muted-foreground mt-2">{t('مستخلص من المصادر أدناه — يُنصح بمراجعة النصوص الأصلية', 'Extracted from sources below — verify against original texts')}</p>
+              </div>
+            )}
+
+            {/* Results */}
+            <div className="space-y-3">
+              {tabResults.map((r, i) => (
+                  <div key={i} className="bg-card border border-border/60 rounded-xl p-5 hover:border-primary/30 transition-colors shadow-sm">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <span className="text-xs text-primary/70 font-medium">
+                        {activeTab === 'judicial' ? '⚖️ سابقة قضائية'
+                         : activeTab === 'circular' ? '📋 تعميم'
+                         : '📜 نظام / لائحة'}
+                      </span>
+                      {/* Phase-1: literal match badge — shown when chunk was retrieved by exact number/phrase */}
+                      {r.literalMatch && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                          <span>🎯</span> مطابقة حرفية
+                        </span>
+                      )}
+                      <span className="flex-1" />
+                      {/* Relevance score — separate from source verification */}
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full font-medium",
+                        r.similarity >= 0.85 ? "bg-green-100 text-green-700"
+                        : r.similarity >= 0.75 ? "bg-primary/10 text-primary"
+                        : "bg-amber-100 text-amber-700"
+                      )}>
+                        صلة {Math.round(r.similarity * 100)}%
+                      </span>
+                    </div>
+                    {/* Phase-1: extracted refs from auto-link — shown for linked results */}
+                    {r.extractedRefs && r.extractedRefs.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {r.extractedRefs.map((ref, ri) => (
+                          <span key={ri} className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
+                            🔗 {ref}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-sm leading-relaxed text-foreground/90">
+                      {trimContent(sanitizeText(r.content))}
+                    </p>
+                    <CitationCard result={r} />
+                  </div>
+                ))}
+            </div>
+
+            {/* Empty state */}
+            {!tabSearched && (
+              <div className="text-center py-14 text-muted-foreground">
+                <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  {React.cloneElement(tab.icon as React.ReactElement, { className: 'w-8 h-8 text-muted-foreground' })}
+                </div>
+                <p className="text-sm font-medium mb-1">{tab.labelAr}</p>
+                <p className="text-xs">{t('اكتب موضوعاً للبدء', 'Type a topic to begin')}</p>
+              </div>
+            )}
+          </>
+        )}
+
+      </main>
+      <Footer />
+    </div>
+  );
+}

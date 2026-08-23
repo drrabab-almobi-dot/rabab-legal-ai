@@ -1,0 +1,1271 @@
+9 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.555 4.12 1.523 5.85L0 24l6.31-1.502A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.814 9.814 0 01-4.9-1.307l-.351-.208-3.645.868.934-3.542-.228-.363A9.79 9.79 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.432 0 9.818 4.388 9.818 9.818 0 5.432-4.386 9.818-9.818 9.818z"/>
+                  </svg>
+                  تواصلي معنا عبر واتساب
+                </a>
+              </div>
+            </div>
+            {msg.messageId && consultationId && (
+              <div className="flex items-center gap-2 mt-2 pt-1.5" dir="rtl">
+                <button
+                  onClick={handleRate}
+                  disabled={rating !== 'idle'}
+                  className={cn(
+                    "flex items-center gap-1.5 text-[11px] rounded-full px-3 py-1 transition-all border",
+                    rating === 'done'
+                      ? "bg-green-50 border-green-200 text-green-700 cursor-default"
+                      : "bg-muted/60 border-border/50 text-muted-foreground hover:bg-primary/10 hover:border-primary/30 hover:text-primary active:scale-95"
+                  )}
+                >
+                  {rating === 'loading' ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <ThumbsUp className={cn("w-3 h-3", rating === 'done' ? "fill-green-600 text-green-600" : "")} />
+                  )}
+                  {rating === 'done' ? 'شكراً على تقييمكم' : 'الإجابة مفيدة؟'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Typing Indicator ─────────────────────────────────────────────────────────
+function TypingIndicator({ phase }: { phase?: 'searching' | 'generating' | null }) {
+  const isSearching = phase === 'searching';
+  const isGenerating = phase === 'generating';
+  return (
+    <div className="flex gap-3 mb-4">
+      <div className="w-8 h-8 rounded-full bg-secondary text-primary border border-secondary/50 flex items-center justify-center shrink-0">
+        <Scale className="w-4 h-4" />
+      </div>
+      {isSearching ? (
+        <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm flex items-center gap-2">
+          <span className="text-xs font-semibold text-foreground/70">جارٍ إعداد الرأي القانوني…</span>
+          <div className="flex items-center gap-1 mr-1">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+        </div>
+      ) : isGenerating ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm flex items-center gap-2">
+          <span className="text-lg leading-none animate-pulse">⚖️</span>
+          <span className="text-xs font-semibold text-amber-800">جارٍ صياغة الرأي القانوني…</span>
+          <div className="flex items-center gap-1 mr-1">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-card border border-border/60 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-1.5 h-5">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full bg-primary/40 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Task Params Summary ──────────────────────────────────────────────────────
+const FIELD_LABEL_MAP: Record<string, string> = {
+  facts: 'وقائع الاستشارة',
+  documents: 'المستندات المتوفرة',
+  subject: 'موضوع النزاع',
+  dispute_type: 'نوع النزاع',
+  dispute_date: 'تاريخ نشأة النزاع',
+  contract_terms: 'بنود العقد',
+  termination_clause: 'بند الإنهاء',
+  service_details: 'مدة الخدمة والراتب',
+  property_info: 'العقار ونوعه',
+  enforcement_deed: 'السند التنفيذي',
+  arbitration_clause: 'شرط التحكيم',
+  arbitration_session_details: 'تفاصيل جلسة التحكيم',
+  session_notes: 'ملاحظات الجلسة',
+  arbitration_award: 'حكم التحكيم',
+  opinion_text: 'نص الاستشارة',
+  initial_info: 'المعلومات الأولية',
+  events: 'الأحداث والتواريخ',
+  planned_action: 'الإجراء المُقترح',
+  goal: 'الهدف المنشود',
+  amount: 'قيمة النزاع',
+  questions: 'الأسئلة المُحالة',
+  settlement_willingness: 'مستوى الاستعداد للتسوية',
+  responseLanguage: 'لغة الاستشارة',
+};
+
+function TaskParamsSummary({
+  taskParams,
+  onEdit,
+}: {
+  taskParams: Record<string, string>;
+  onEdit?: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const entries = Object.entries(taskParams).filter(([, v]) => v?.trim());
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="shrink-0 bg-secondary/5 border-b border-secondary/20" dir="rtl">
+      <div className="px-4 py-1.5 flex items-center justify-between">
+        <button
+          onClick={() => setExpanded(p => !p)}
+          className="flex items-center gap-1.5 text-xs text-secondary/80 hover:text-secondary transition-colors"
+        >
+          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          <span className="font-semibold">📋 معطيات المهمة المحفوظة ({entries.length} حقل)</span>
+        </button>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1 text-xs text-primary/60 hover:text-primary transition-colors border border-border/40 rounded-md px-2 py-0.5 hover:bg-primary/5"
+          >
+            <Pencil className="w-3 h-3" />
+            <span>تعديل المعطيات</span>
+          </button>
+        )}
+      </div>
+      {expanded && (
+        <div className="px-4 pb-3 space-y-1.5 max-h-52 overflow-y-auto">
+          {entries.map(([key, val]) => (
+            <div key={key} className="text-xs">
+              <span className="font-bold text-primary/70">{FIELD_LABEL_MAP[key] ?? key}:</span>{' '}
+              <span className="text-foreground/80 whitespace-pre-wrap">{key === 'responseLanguage' ? responseLanguageLabel(val) : val}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Edit Params Modal ────────────────────────────────────────────────────────
+function EditParamsModal({
+  taskType,
+  currentParams,
+  area,
+  onSave,
+  onClose,
+}: {
+  taskType: string;
+  currentParams: Record<string, string>;
+  area: string;
+  onSave: (params: Record<string, string>) => void;
+  onClose: () => void;
+}) {
+  const taskConfig = TASK_TYPES.find(t => t.id === taskType);
+  const [params, setParams] = useState<Record<string, string>>({ ...currentParams });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const setParam = (key: string, val: string) => {
+    setParams(prev => ({ ...prev, [key]: val }));
+    setErrors(prev => { const e = { ...prev }; delete e[key]; return e; });
+  };
+
+  const handleSave = () => {
+    if (!taskConfig) { onSave(params); return; }
+    const e: Record<string, string> = {};
+    for (const f of taskConfig.fields) {
+      if (f.required && !params[f.key]?.trim()) {
+        e[f.key] = `حقل "${f.label}" إلزامي`;
+      }
+    }
+    setErrors(e);
+    if (Object.keys(e).length > 0) return;
+    onSave(params);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" dir="rtl">
+      <div className="bg-card w-full sm:max-w-lg sm:mx-4 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+        {/* accent bar */}
+        <div className="h-1.5 bg-gradient-to-l from-secondary via-yellow-400 to-secondary shrink-0" />
+
+        {/* header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/40 shrink-0">
+          <div>
+            <h3 className="font-bold text-base text-primary">تعديل معطيات المهمة</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {taskConfig ? `${taskConfig.icon} ${taskConfig.name}` : area}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* body */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
+            ✏️ التعديلات هنا ستُحقن في رسالة النظام للرسالة التالية فقط — المحادثة السابقة لن تتغير.
+          </div>
+
+          {taskConfig ? (
+            taskConfig.fields.map(field => (
+              <div key={field.key} className="space-y-1.5">
+                <label className="text-sm font-bold text-foreground">
+                  {field.label}
+                  {field.required && <span className="text-destructive mr-0.5">*</span>}
+                </label>
+                {field.type === 'textarea' ? (
+                  <textarea
+                    value={params[field.key] ?? ''}
+                    onChange={e => setParam(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    rows={field.rows ?? 3}
+                    style={{ direction: 'rtl', resize: 'vertical' }}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                ) : field.type === 'select' ? (
+                  <select
+                    value={params[field.key] ?? ''}
+                    onChange={e => setParam(field.key, e.target.value)}
+                    className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    {field.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    value={params[field.key] ?? ''}
+                    onChange={e => setParam(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                )}
+                {errors[field.key] && <p className="text-xs text-destructive">{errors[field.key]}</p>}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">لا توجد حقول قابلة للتعديل لهذا النوع من المهام.</p>
+          )}
+        </div>
+
+        {/* footer */}
+        <div className="shrink-0 px-5 py-4 border-t border-border/40 flex gap-3">
+          <Button onClick={handleSave} className="flex-1 font-bold">
+            حفظ التعديلات
+          </Button>
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            إلغاء
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Chat Screen ──────────────────────────────────────────────────────────────
+function ChatScreen({
+  consultationId,
+  area,
+  title,
+  taskType,
+  taskParams: initialTaskParams,
+  initialMessages,
+  initialAttachment,
+  initialMessage,
+  remaining,
+  questionsAllowed,
+  onReset,
+}: {
+  consultationId: number;
+  area: string;
+  title: string;
+  taskType?: string;
+  taskParams?: Record<string, string>;
+  initialMessages: ChatMessage[];
+  initialAttachment?: PreparedAttachment | null;
+  initialMessage?: string;
+  remaining: number | null;
+  questionsAllowed: number | null;
+  onReset: () => void;
+}) {
+  const [, setLocation] = useLocation();
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [input, setInput] = useState(initialMessage ?? '');
+  const [sending, setSending] = useState(false);
+  const [sendingPhase, setSendingPhase] = useState<'searching' | 'generating' | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [confirmedAttachment, setConfirmedAttachment] = useState<PreparedAttachment | null>(initialAttachment ?? null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractReview, setExtractReview] = useState<{
+    open: boolean;
+    text: string;
+    fileName: string;
+    truncated: boolean;
+  }>({ open: false, text: '', fileName: '', truncated: false });
+  const [quota, setQuota] = useState(remaining);
+  const [localTaskParams, setLocalTaskParams] = useState<Record<string, string>>(initialTaskParams ?? {});
+  const serviceTitle = getServiceTitle(
+    taskType,
+    localTaskParams.service,
+    Boolean(localTaskParams.ipType),
+  );
+  const [editingParams, setEditingParams] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: sub } = useGetMySubscription();
+  const canExport = sub != null && sub.type !== 'free';
+  const isTrial   = sub?.type === 'free';
+  const isDraftService = taskType === 'pleadings' || taskType === 'contract_draft';
+  const { confirm: confirmQuota } = useQuotaConfirm();
+  const [isMaximized, setIsMaximized] = React.useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const [customLanguage, setCustomLanguage] = useState('');
+  const autoStartInitialMessageRef = useRef(false);
+  const selectedResponseLanguage = responseLanguageLabel(localTaskParams.responseLanguage);
+
+  const setResponseLanguage = async (languageCode: string) => {
+    const updatedParams = { ...localTaskParams, responseLanguage: languageCode };
+    setLocalTaskParams(updatedParams);
+    setLanguageMenuOpen(false);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/consultations/${consultationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ taskParams: updatedParams }),
+      });
+      if (!response.ok) throw new Error('تعذر حفظ لغة الاستشارة');
+      toast({
+        title: 'تم تحديث لغة الاستشارة',
+        description: `ستظهر الردود التالية باللغة: ${responseLanguageLabel(languageCode)}`,
+      });
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'تعذر حفظ لغة الاستشارة',
+        description: 'سيُطبّق اختيارك على الرسالة الحالية، ثم يمكنك المحاولة مرة أخرى.',
+      });
+    }
+  };
+
+  // Task types that do NOT trigger proactive KB search (return null from buildProactiveQuery)
+  const NO_PROACTIVE_TASK_TYPES = new Set([
+    'peer_review', 'fact_gathering', 'legal_classification', 'gap_analysis',
+    'case_strength', 'strengths_weaknesses', 'opponent_defenses', 'legal_opinion', 'timeline',
+  ]);
+  const hasProactiveSearch = !!taskType && !NO_PROACTIVE_TASK_TYPES.has(taskType);
+
+  // True while the server-side proactive KB search is still running (polled via API)
+  const [preparingSources, setPreparingSources] = useState<boolean>(
+    () => hasProactiveSearch && initialMessages.length === 0
+  );
+  // Whether the search completed with a valid cache hit (vs. errored / skipped)
+  const [sourcesReady, setSourcesReady] = useState(false);
+
+  // Poll /proactive-status until search completes or 15 s safety cap
+  useEffect(() => {
+    if (!preparingSources) return;
+    let cancelled = false;
+    const maxUntil = Date.now() + 15_000;
+    const poll = async () => {
+      if (cancelled) return;
+      if (Date.now() >= maxUntil) {
+        if (!cancelled) setPreparingSources(false);
+        return;
+      }
+      try {
+        const r = await fetch(`${API_BASE}/api/consultations/${consultationId}/proactive-status`, {
+          credentials: 'include',
+        });
+        if (r.ok) {
+          const d = await r.json();
+          if (d.ready) {
+            if (!cancelled) {
+              setSourcesReady(!!d.hasCachedResult);
+              setPreparingSources(false);
+            }
+            return;
+          }
+        }
+      } catch { /* network hiccup — keep polling */ }
+      if (!cancelled) setTimeout(poll, 1500);
+    };
+    const t = setTimeout(poll, 600); // first check after 0.6 s
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [consultationId]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Also clear immediately when first AI reply arrives (belt-and-suspenders)
+  useEffect(() => {
+    if (preparingSources && messages.some(m => m.role === 'assistant')) {
+      setPreparingSources(false);
+    }
+  }, [messages]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => { scrollToBottom(); }, [messages, sending]);
+
+  const send = async () => {
+    const text = input.trim();
+    const hasConfirmedAttachment = !!confirmedAttachment;
+    if ((!text && !hasConfirmedAttachment) || sending) return;
+    if (quota !== null && quota <= 0) return;
+
+    // تأكيد الخصم عند أول رسالة فقط (رسائل المتابعة لا تُخصم)
+    if (messages.length === 0 && quota !== null) {
+      const ok = await confirmQuota({ cost: 1, remaining: quota, serviceLabel: 'الاستشارة القانونية' });
+      if (!ok) return;
+    }
+
+    const visibleText = text || 'يرجى تحليل المستند المرفق وتحديد المعلومات اللازمة لاستكمال الاستشارة.';
+    const messageForAnalysis = hasConfirmedAttachment
+      ? `${visibleText}\n\n${ATTACHMENT_CONTEXT_START}\nاسم الملف: ${confirmedAttachment.fileName}\n${confirmedAttachment.text}\n${ATTACHMENT_CONTEXT_END}`
+      : visibleText;
+    const userMsg: ChatMessage = {
+      role: 'user',
+      content: visibleText,
+      attachmentName: confirmedAttachment?.fileName ?? null,
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setAttachedFile(null);
+    setConfirmedAttachment(null);
+    setSending(true);
+    setSendingPhase(null);
+
+    // Open SSE stream to receive real-time phase updates from the server.
+    // We connect before sending the POST so we don't miss the 'searching' event.
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource(`${API_BASE}/api/consultations/${consultationId}/chat-status`, { withCredentials: true });
+      es.onmessage = (e) => {
+        const p = e.data as string;
+        if (p === 'searching' || p === 'generating') setSendingPhase(p as 'searching' | 'generating');
+        if (p === 'done') { es?.close(); es = null; setSendingPhase(null); }
+      };
+      es.onerror = () => { es?.close(); es = null; };
+    } catch {
+      // SSE not critical — fall back to generic indicator
+    }
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/consultations/${consultationId}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: messageForAnalysis,
+          taskType,
+          taskParams: localTaskParams,
+          attachmentName: confirmedAttachment?.fileName,
+        }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        if (err.code === 'QUOTA_EXHAUSTED' || err.code === 'TRIAL_EXHAUSTED' || err.code === 'NO_SUBSCRIPTION') {
+          setQuota(0);
+        } else {
+          throw new Error(err.error || 'خطأ في الخادم');
+        }
+        return;
+      }
+
+      const data = await resp.json();
+      setMessages(prev => {
+        // Clear suggestedQuestions on all previous messages when new one arrives
+        const cleared = prev.map(m => m.suggestedQuestions ? { ...m, suggestedQuestions: undefined } : m);
+        return [...cleared, {
+          role: 'assistant' as const,
+          content: data.reply,
+          messageId: data.messageId ?? undefined,
+          verification: data.verification ?? undefined,
+          usedLiveSearch: data.usedLiveSearch ?? false,
+          suggestedQuestions: data.suggestedQuestions ?? undefined,
+        }];
+      });
+      if (data.questionsRemaining !== null && data.questionsRemaining !== undefined) {
+        setQuota(data.questionsRemaining);
+      }
+      queryClient.invalidateQueries({ queryKey: getGetMySubscriptionQueryKey() });
+    } catch (err: any) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: err.message || 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.',
+        error: true,
+      }]);
+    } finally {
+      es?.close();
+      setSending(false);
+      setSendingPhase(null);
+      textareaRef.current?.focus();
+    }
+  };
+
+  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  };
+
+  // عند إدخال طلب أو إرفاق مستند في مرحلة تجهيز الاستشارة، يبدأ الحوار بعد
+  // إنشائها. تأكيد الحصة يبقى في send()، لذلك لا يُخصم شيء دون موافقة المستخدم.
+  useEffect(() => {
+    if (
+      !initialMessage ||
+      messages.length > 0 ||
+      sending ||
+      autoStartInitialMessageRef.current
+    ) return;
+    autoStartInitialMessageRef.current = true;
+    void send();
+  // send deliberately stays out of dependencies to run this one-time transfer only.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessage, messages.length, sending]);
+
+  // ── رفع الملفات لجميع أنواع الاستشارات ──
+  const attachmentsAvailable = true; // المرفقات متاحة لجميع الاستشارات
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedFile(file);
+    setConfirmedAttachment(null);
+    setExtracting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/api/contract/extract`, {
+        method: 'POST', credentials: 'include', body: formData,
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'فشل استخراج النص');
+      const data = await res.json();
+      // عرض النص في drawer للمراجعة قبل الإرسال
+      setExtractReview({ open: true, text: data.extractedText, fileName: file.name, truncated: !!data.wasTruncated });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'خطأ في استخراج الملف', description: err.message });
+      setAttachedFile(null);
+    } finally {
+      setExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const confirmExtractedText = () => {
+    const { text, fileName, truncated } = extractReview;
+    setConfirmedAttachment({ fileName, text, truncated });
+    setExtractReview({ open: false, text: '', fileName: '', truncated: false });
+    textareaRef.current?.focus();
+  };
+
+  const cancelExtractedText = () => {
+    setExtractReview({ open: false, text: '', fileName: '', truncated: false });
+    setAttachedFile(null);
+  };
+
+  const quotaExhausted = quota !== null && quota <= 0;
+  const showTotal = questionsAllowed !== null && questionsAllowed < 999;
+
+  return (
+    <div className="h-[100svh] flex flex-col bg-muted/10" dir="rtl">
+      {/* Quota exhausted full modal */}
+      {quotaExhausted && (
+        <QuotaExhaustedModal onGoToPricing={() => setLocation('/pricing')} />
+      )}
+
+      {/* ── مراجعة النص المستخرج قبل الإرسال ── */}
+      {extractReview.open && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4" dir="rtl">
+          <div className="w-full max-w-2xl bg-background rounded-2xl shadow-2xl border border-border/60 flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border/40 shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-primary" />
+                <div>
+                  <p className="text-sm font-bold text-foreground">مراجعة النص المستخرج</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-xs">{extractReview.fileName}</p>
+                </div>
+              </div>
+              <button onClick={cancelExtractedText} className="p-1 rounded-lg hover:bg-muted transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            {/* Instruction */}
+            <div className="px-5 py-3 bg-blue-50 border-b border-blue-100 shrink-0">
+              <p className="text-xs text-blue-700">
+                ✏️ تحقق من دقة النص المستخرج وعدّله إن لزم — خاصةً في ملفات المسح الضوئي. عند تأكيده سيُرسل للتحليل.
+              </p>
+            </div>
+            {/* Editable text area */}
+            <div className="flex-1 overflow-y-auto p-5 min-h-0">
+              {extractReview.truncated && (
+                <div className="mb-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>النص طويل — تم اقتصاصه عند الحد الأقصى. يمكنك تعديله قبل الإرسال.</span>
+                </div>
+              )}
+              <textarea
+                value={extractReview.text}
+                onChange={e => setExtractReview(prev => ({ ...prev, text: e.target.value }))}
+                className="w-full h-64 text-sm leading-relaxed bg-muted/30 border border-border/50 rounded-xl p-3 resize-none focus:outline-none focus:border-primary transition-colors font-mono"
+                dir="rtl"
+                placeholder="النص المستخرج..."
+              />
+            </div>
+            {/* Actions */}
+            <div className="flex items-center gap-3 px-5 py-4 border-t border-border/40 shrink-0">
+              <button
+                onClick={confirmExtractedText}
+                className="flex-1 h-10 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                تأكيد واستمرار
+              </button>
+              <button
+                onClick={cancelExtractedText}
+                className="h-10 px-5 border border-border rounded-xl text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Navbar — مخفي عند التكبير */}
+      {!isMaximized && <Navbar />}
+      {!isMaximized && <ServiceContextHeader title={serviceTitle} />}
+
+      {/* Area chip + consultation controls */}
+      <div className="shrink-0 bg-muted/50 border-b border-border/40 px-4 py-2 flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          {/* زر الرجوع */}
+          <button
+            onClick={onReset}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-secondary hover:bg-secondary/10 transition-colors shrink-0 border border-secondary/30"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+            <span>رجوع</span>
+          </button>
+          <span className="font-bold text-secondary shrink-0">{area}</span>
+          <span className="text-secondary/40">·</span>
+          <span className="truncate text-secondary/80">{title}</span>
+          {/* زر تحرير مذكرة مرتبطة بالقضية */}
+          {taskType === 'case_management' && (
+            <a
+              href={`/legal-assistant?service=pleadings&caseId=${consultationId}`}
+              className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+              title="افتح محرر المذكرات مع ربط هذه القضية تلقائياً"
+            >
+              <Pencil className="w-3 h-3" />
+              تحرير مذكرة
+            </a>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {quota !== null && showTotal && questionsAllowed !== null && (
+            <QuotaBadge remaining={quota} total={questionsAllowed} size="sm" />
+          )}
+          {quota !== null && !showTotal && (
+            <Badge variant="secondary" className="text-xs font-bold px-2 py-0.5">غير محدود</Badge>
+          )}
+          <div className="relative">
+            <button
+              onClick={() => setLanguageMenuOpen(open => !open)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-muted transition-colors text-[11px] text-muted-foreground font-medium"
+              title={`لغة الاستشارة: ${selectedResponseLanguage}`}
+              aria-haspopup="menu"
+              aria-expanded={languageMenuOpen}
+            >
+              <Languages className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{selectedResponseLanguage}</span>
+            </button>
+            {languageMenuOpen && (
+              <div
+                className="absolute left-0 top-full mt-2 z-50 w-64 rounded-xl border border-border bg-card p-2 shadow-xl"
+                dir="rtl"
+                role="menu"
+                aria-label="اختيار لغة الاستشارة"
+              >
+                <p className="px-2 pb-2 text-xs font-bold text-foreground">لغة الاستشارة</p>
+                <p className="px-2 pb-2 text-[11px] leading-relaxed text-muted-foreground">
+                  تُطبَّق اللغة المختارة على الردود التالية فقط، دون تغيير لغة واجهة المنصة.
+                </p>
+                <div className="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto">
+                  {CONSULTATION_LANGUAGES.map(language => {
+                    const active = localTaskParams.responseLanguage === language.code ||
+                      (!localTaskParams.responseLanguage && language.code === 'ar');
+                    return (
+                      <button
+                        key={language.code}
+                        role="menuitemradio"
+                        aria-checked={active}
+                        onClick={() => setResponseLanguage(language.code)}
+                        className={cn(
+                          'rounded-lg px-2 py-1.5 text-right text-xs transition-colors',
+                          active
+                            ? 'bg-primary/10 font-bold text-primary'
+                            : 'text-foreground hover:bg-muted'
+                        )}
+                      >
+                        {language.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 border-t border-border/60 pt-2">
+                  <label className="block px-2 pb-1 text-[11px] font-medium text-muted-foreground">
+                    لغة أخرى
+                  </label>
+                  <div className="flex gap-1">
+                    <input
+                      value={customLanguage}
+                      onChange={event => setCustomLanguage(event.target.value)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' && customLanguage.trim().length >= 2) {
+                          setResponseLanguage(`custom:${customLanguage.trim()}`);
+                        }
+                      }}
+                      placeholder="اكتب اسم اللغة"
+                      maxLength={50}
+                      className="h-8 min-w-0 flex-1 rounded-lg border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                    <button
+                      onClick={() => setResponseLanguage(`custom:${customLanguage.trim()}`)}
+                      disabled={customLanguage.trim().length < 2}
+                      className="rounded-lg bg-primary px-2 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      تطبيق
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          {messages.length > 0 && (
+            canExport ? (
+              <button
+                onClick={() => exportWordDocx({ messages: messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })), area, title })}
+                title="تنزيل Word قابل للتحرير"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-muted transition-colors text-[11px] text-muted-foreground font-medium"
+              >
+                <Download className="w-3.5 h-3.5" />Word
+              </button>
+            ) : (
+              <a href="/pricing" className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/10 hover:bg-secondary/20 transition-colors text-[11px] text-secondary font-bold">
+                <Download className="w-3.5 h-3.5" />اشترك للتصدير
+              </a>
+            )
+          )}
+          {/* زر التكبير — يخفي الـ Navbar ويوسّع منطقة العمل */}
+          <button
+            onClick={() => setIsMaximized(prev => !prev)}
+            title={isMaximized ? "استعادة العرض" : "تكبير منطقة العمل"}
+            className="flex items-center px-2 py-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+          >
+            {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Saved task params summary (collapsible) */}
+      {Object.entries(localTaskParams).filter(([, v]) => v?.trim()).length > 0 && (
+        <TaskParamsSummary
+          taskParams={localTaskParams}
+          onEdit={taskType ? () => setEditingParams(true) : undefined}
+        />
+      )}
+
+      {/* Edit params modal */}
+      {editingParams && taskType && (
+        <EditParamsModal
+          taskType={taskType}
+          currentParams={localTaskParams}
+          area={area}
+          onSave={async (updated) => {
+            setLocalTaskParams(updated);
+            setEditingParams(false);
+            toast({ title: 'تم حفظ التعديلات', description: 'ستُطبَّق المعطيات الجديدة على رسالتك التالية.' });
+            // Persist to DB so params survive page reload
+            try {
+              await fetch(`${API_BASE}/api/consultations/${consultationId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ taskParams: updated }),
+              });
+            } catch {
+              // Non-fatal: params already applied in local state
+            }
+          }}
+          onClose={() => setEditingParams(false)}
+        />
+      )}
+
+      {/* hidden file input — available for every consultation */}
+      {attachmentsAvailable && (
+        <input ref={fileInputRef} type="file" accept=".pdf,.txt,.docx,.png,.jpg,.jpeg,.webp" className="hidden" onChange={handleFileSelect} />
+      )}
+
+      {/* ── Intake welcome — shown only before any message is sent ── */}
+      {messages.length === 0 && (
+        <div className="flex gap-3 mb-4 px-1 pt-4" style={{ direction: 'rtl' }}>
+          <div className="w-8 h-8 rounded-full bg-secondary text-primary border border-secondary/50 flex items-center justify-center shrink-0 mt-1">
+            <Scale className="w-4 h-4" />
+          </div>
+          <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm max-w-2xl">
+            <p className="text-sm font-semibold text-foreground mb-3">
+              أهلاً بك في خدمة الاستشارة القانونية
+              {localTaskParams.country ? ` في ${localTaskParams.country}` : ''} — لأقدّم لك رأياً دقيقاً أحتاج إلى المعلومات التالية:
+            </p>
+            <ol className="space-y-1.5 text-sm text-foreground/80 list-none">
+              {[
+                'الدولة والمدينة أو الإمارة (إن كانت مؤثرة في الاختصاص)',
+                'نوع المسألة القانونية',
+                'صفتك في النزاع أو العلاقة القانونية',
+                'ملخص الوقائع بترتيب زمني',
+                'تاريخ الواقعة وأهم التواريخ والمواعيد',
+                'الأطراف ذات العلاقة وصفة كل طرف',
+                'العقود والمستندات والمراسلات والأدلة المتاحة',
+                'الإجراءات التي اتخذتها حتى الآن',
+                'هل يوجد دعوى أو بلاغ أو مطالبة أو إنذار قائم؟',
+                'النتيجة التي تريد الوصول إليها',
+              ].map((item, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-xs text-muted-foreground/60 border-t border-border/40 pt-3">
+              يمكنك الكتابة بصورة حرة أو إرفاق مستند — سأحلل الوقائع والمرفقات، ثم أطلب فقط المعلومات المؤثرة قبل إعطاء الرأي النهائي.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Proactive KB search banner — visible until server confirms readiness ── */}
+      {preparingSources && (
+        <div className="shrink-0 flex justify-center px-4 py-1.5" dir="rtl">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/20 text-primary text-sm animate-pulse">
+            <span className="text-base">⚡</span>
+            <span className="font-medium">جارٍ تحضير مصادر قانونية ذات صلة…</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Input bar — always at TOP ── */}
+      <div className="shrink-0 border-b border-border/50 bg-background px-4 py-3">
+        {/* Quick-action chips: only when there are messages and not sending */}
+        {messages.length >= 2 && !sending && (
+        <div className="flex gap-2 mb-2 max-w-6xl mx-auto flex-wrap" dir="rtl">
+            <button
+              onClick={() => { setInput('حوّل هذا الحوار إلى تقرير قانوني منظم'); textareaRef.current?.focus(); }}
+              className="text-[11px] flex items-center gap-1.5 bg-muted/60 border border-border/50 text-muted-foreground hover:bg-secondary/10 hover:text-secondary hover:border-secondary/30 rounded-full px-3 py-1 transition-colors"
+            >
+              <FileText className="w-3 h-3" />
+              <span>تحويل لتقرير</span>
+            </button>
+            <button
+              onClick={() => { setInput('ما الخطوة الأولى التي أبدأ بها الآن؟'); textareaRef.current?.focus(); }}
+              className="text-[11px] flex items-center gap-1.5 bg-muted/60 border border-border/50 text-muted-foreground hover:bg-secondary/10 hover:text-secondary hover:border-secondary/30 rounded-full px-3 py-1 transition-colors"
+            >
+              <span>الخطوة الأولى</span>
+            </button>
+          </div>
+        )}
+        {/* attached file badge */}
+        {confirmedAttachment && (
+        <div className="flex items-center gap-2 mb-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-1.5 max-w-6xl mx-auto">
+            <FileText className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-xs text-primary flex-1 truncate">مرفق جاهز للتحليل: {confirmedAttachment.fileName}</span>
+            <button onClick={() => { setAttachedFile(null); setConfirmedAttachment(null); }} className="text-muted-foreground hover:text-destructive" aria-label="إزالة المرفق">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2 items-end max-w-6xl mx-auto">
+          <div className="relative flex-1">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              disabled={sending || quotaExhausted}
+              placeholder={
+                quotaExhausted ? 'انتهت استشاراتك المجانية — اختاري باقة للمتابعة'
+                : extracting ? 'جارٍ استخراج نص المرفق...'
+                : 'اكتب تفاصيل طلبك أو استفسارك هنا…'
+              }
+              rows={1}
+              style={{ direction: 'rtl', resize: 'none', minHeight: '44px', maxHeight: '120px', ...(attachmentsAvailable ? { paddingBottom: '32px' } : {}) }}
+              className={cn("w-full rounded-xl border-[3px] border-secondary/70 bg-muted/40 px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all", quotaExhausted && "opacity-50 cursor-not-allowed")}
+              onInput={e => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }}
+              maxLength={2000}
+            />
+            {attachmentsAvailable && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sending || quotaExhausted || extracting}
+                className="absolute bottom-3 left-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+              >
+                {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" /> : <Paperclip className="w-3.5 h-3.5" />}
+                <span>{extracting ? 'جارٍ الاستخراج...' : 'إضافة مرفق'}</span>
+              </button>
+            )}
+          </div>
+          <Button onClick={send} disabled={(!input.trim() && !confirmedAttachment) || sending || quotaExhausted} size="icon" className="h-11 w-11 rounded-xl shrink-0">
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Messages area — scrolls below input ── */}
+      <div className="flex-1 overflow-y-auto" style={{ direction: 'rtl' }}>
+        <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-6">
+          {messages.map((m, i) => (
+            <ChatBubble
+              key={i}
+              msg={m}
+              consultationId={consultationId}
+              onRated={(mid) => setMessages(prev => prev.map(x => x.messageId === mid ? { ...x, rated: true } : x))}
+              isTrial={isTrial}
+              isDraftService={isDraftService}
+            />
+          ))}
+          {sending && <TypingIndicator phase={sendingPhase} />}
+
+          {/* ── Suggested follow-up questions chips ── */}
+          {!sending && (() => {
+            const lastAsst = [...messages].reverse().find(m => m.role === 'assistant' && !m.error);
+            if (!lastAsst?.suggestedQuestions?.length) return null;
+            return (
+              <div className="flex flex-wrap gap-2 px-1 pb-2 pt-1 justify-end" dir="rtl">
+                {lastAsst.suggestedQuestions.map((q, qi) => (
+                  <button
+                    key={qi}
+                    onClick={() => {
+                      setInput(q);
+                      textareaRef.current?.focus();
+                    }}
+                    className="text-xs bg-secondary/8 border border-secondary/25 text-secondary hover:bg-secondary/18 hover:border-secondary/50 rounded-full px-3 py-1.5 transition-colors text-right leading-snug max-w-[90%]"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
+
+          {messages.length > 0 && !sending && (
+            <p className="text-center text-[11px] text-muted-foreground/40 mt-4 mb-1">
+              الإجابات إرشادية أولية · لا تُعدّ رأيًا قانونيًا نهائيًا
+            </p>
+          )}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+export default function Consultation() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  const [phase, setPhase] = useState<'setup' | 'chat'>('setup');
+  const [consultationId, setConsultationId] = useState<number | null>(null);
+  const [area, setArea] = useState('');
+  const [title, setTitle] = useState('');
+  const [taskType, setTaskType] = useState('');
+  const [taskParams, setTaskParams] = useState<Record<string, string>>({});
+  const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
+  const [initialAttachment, setInitialAttachment] = useState<PreparedAttachment | null>(null);
+  const [initialMessage, setInitialMessage] = useState('');
+  const [isStarting, setIsStarting] = useState(false);
+
+  const { data: subscription, isLoading: subLoading } = useGetMySubscription({
+    query: { retry: false, gcTime: 0 },
+  });
+
+  const createCons = useCreateConsultation();
+
+  const questionsAllowed = subscription?.questionsAllowed ?? null;
+  const remaining =
+    subscription?.status === 'active'
+      ? subscription.questionsAllowed >= 999
+        ? null
+        : subscription.questionsAllowed - subscription.questionsUsed
+      : 0;
+
+  const hasAccess =
+    subscription?.status === 'active' &&
+    (subscription.questionsAllowed >= 999 ||
+      subscription.questionsAllowed - subscription.questionsUsed > 0);
+
+  const quotaExhaustedNoAccess =
+    subscription?.status === 'active' &&
+    subscription.questionsAllowed < 999 &&
+    subscription.questionsAllowed - subscription.questionsUsed <= 0;
+
+  const handleStart = async (
+    selectedArea: string,
+    selectedTitle: string,
+    selectedTaskType: string,
+    selectedTaskParams: Record<string, string>,
+    attachment: PreparedAttachment | null = null,
+    message = '',
+  ) => {
+    if (!isAuthenticated) {
+      const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+      setLocation(`/login?returnTo=${returnTo}`);
+      return;
+    }
+    setIsStarting(true);
+    // Generate a per-session UUID for grace-period dedup (10 min edit window)
+    const clientSession = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
+    createCons.mutate(
+      { data: { title: selectedTitle, areaAr: selectedArea, taskType: selectedTaskType, taskParams: selectedTaskParams, clientSession } as any },
+      {
+        onSuccess: res => {
+          setConsultationId(res.id);
+          setArea(selectedArea);
+          setTitle(selectedTitle);
+          setTaskType(selectedTaskType);
+          setTaskParams(selectedTaskParams);
+          setInitialAttachment(attachment);
+          setInitialMessage(message);
+          setPhase('chat');
+          setIsStarting(false);
+        },
+        onError: (err: any) => {
+          const code = (err as any)?.code ?? '';
+          if (code === 'TRIAL_EXHAUSTED') {
+            // Redirect to pricing with explanation
+            toast({ variant: 'destructive', title: 'انتهت خدماتك المجانية', description: 'اشترك في إحدى الباقات للمتابعة' });
+            setLocation('/pricing');
+          } else {
+            toast({ variant: 'destructive', title: 'خطأ', description: err.error || 'فشل إنشاء الاستشارة' });
+          }
+          setIsStarting(false);
+        },
+      }
+    );
+  };
+
+  const handleReset = () => {
+    setPhase('setup');
+    setConsultationId(null);
+    setArea('');
+    setTitle('');
+    setTaskType('');
+    setTaskParams({});
+    setInitialAttachment(null);
+    setInitialMessage('');
+    // Remove id param from URL if present
+    setLocation('/consultation');
+  };
+
+  // ── Load existing consultation by URL param ──────────────────────────────
+  const params = useParams<{ id?: string }>();
+  const urlConsultationId = params?.id ? parseInt(params.id, 10) : null;
+  const consultationSearchParams = new URLSearchParams(
+    typeof window !== 'undefined' ? window.location.search : '',
+  );
+  const requestedTaskType = consultationSearchParams.get('type') ?? undefined;
+  const requestedServiceMode = consultationSearchParams.get('settlementService') ?? undefined;
+  const serviceTitle = getServiceTitle(
+    requestedTaskType,
+    consultationSearchParams.get('service') ?? undefined,
+    consultationSearchParams.has('ipType'),
+  );
+
+  useEffect(() => {
+    if (!urlConsultationId || isNaN(urlConsultationId)) return;
+    if (phase === 'chat' && consultationId === urlConsultationId) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/consultations/${urlConsultationId}`, {
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          toast({ variant: 'destructive', title: 'خطأ', description: 'تعذّر تحميل الاستشارة' });
+          return;
+        }
+        const data = await res.json();
+
+        // Load messages
+        const msgsRes = await fetch(`${API_BASE}/api/consultations/${urlConsultationId}/messages`, {
+          credentials: 'include',
+        });
+        const rawMsgs: ChatMessage[] = msgsRes.ok ? await msgsRes.json() : [];
+        // For assistant messages that have stored sources, reconstruct the
+        // verification panel so CitationCards render on re-open.
+        const msgs: ChatMessage[] = rawMsgs.map(m => {
+          const displayMessage = m.role === 'user'
+            ? { ...m, content: withoutAttachmentContext(m.content) }
+            : m;
+          if (displayMessage.role === 'assistant' && displayMessage.sources && displayMessage.sources.length > 0 && !displayMessage.verification) {
+            return { ...displayMessage, verification: sourcesToVerification(displayMessage.sources) };
+          }
+          return displayMessage;
+        });
+
+        setConsultationId(urlConsultationId);
+        setArea(data.areaAr ?? '');
+        setTitle(data.title ?? '');
+        setTaskType(data.taskType ?? '');
+        setTaskParams((data.taskParams as Record<string, string>) ?? {});
+        setInitialMessages(msgs);
+        setInitialAttachment(null);
+        setInitialMessage('');
+        setPhase('chat');
+      } catch {
+        toast({ variant: 'destructive', title: 'خطأ', description: 'تعذّر تحميل الاستشارة' });
+      }
+    })();
+  }, [urlConsultationId]);
+
+  if (subLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-muted/20">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
+
+  // No subscription at all → offer recovery first, then pricing
+  if (!subscription) {
+    if (!isAuthenticated) {
+      return (
+        <SetupScreen
+          onStart={handleStart}
+          remaining={null}
+          questionsAllowed={null}
+          isStarting={false}
+          requestedTaskType={requestedTaskType}
+          serviceTitle={serviceTitle}
+          requestedServiceMode={requestedServiceMode}
+        />
+      );
+    }
+    return (
+      <div className="min-h-screen flex flex-col bg-muted/20">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center max-w-sm space-y-4">
+            <Scale className="w-16 h-16 text-primary/30 mx-auto" />
+            <h2 className="text-2xl font-bold text-primary">لا يوجد اشتراك نشط</h2>
+            <p className="text-muted-foreground text-sm">
+              سجّلي حساباً جديداً للحصول على 3 استشارات مجانية، أو اختاري إحدى الباقات للمتابعة.
+            </p>
+            <Button onClick={() => setLocation('/pricing')} size="lg" className="w-full">
+              عرض الباقات والأسعار
+            </Button>
+            {/* Recovery path: user already paid but callback didn't complete */}
+            <div className="pt-2 border-t border-border/50">
+              <p className="text-xs text-muted-foreground mb-2">دفعتِ مسبقاً ولا تزالين ترين هذه الرسالة؟</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={async () => {
+                  try {
+                    const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+                    const r = await fetch(`${BASE}/api/payments/recover`, {
+                      method: 'POST',
+                      credentials: 'include',
+                    });
+                    const data = await r.json();
+                    if (data.recovered) {
+                      // Subscription was just activated — reload page
+                      window.location.reload();
+                    } else {
+                      window.location.href = `${BASE}/payment/callback${window.location.search}`;
+                    }
+                  } catch {
+                    setLocation('/payment/callback');
+                  }
+                }}
+              >
+                استعادة الاشتراك تلقائياً
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Quota exhausted (subscription exists but used all questions) → show setup with modal overlay
+  if (quotaExhaustedNoAccess && phase === 'setup') {
+    return (
+      <>
+        <SetupScreen
+          onStart={handleStart}
+          remaining={0}
+          questionsAllowed={questionsAllowed}
+          isStarting={false}
+          requestedTaskType={requestedTaskType}
+          serviceTitle={serviceTitle}
+          requestedServiceMode={requestedServiceMode}
+        />
+        <QuotaExhaustedModal onGoToPricing={() => setLocation('/pricing')} />
+      </>
+    );
+  }
+
+  if (phase === 'chat' && consultationId !== null) {
+    return (
+      <ChatScreen
+        consultationId={consultationId}
+        area={area}
+        title={title}
+        taskType={taskType}
+        taskParams={taskParams}
+        initialMessages={initialMessages}
+        initialAttachment={initialAttachment}
+        initialMessage={initialMessage}
+        remaining={remaining}
+        questionsAllowed={questionsAllowed}
+        onReset={handleReset}
+      />
+    );
+  }
+
+  return (
+    <SetupScreen
+      onStart={handleStart}
+      remaining={remaining}
+      questionsAllowed={questionsAllowed}
+      isStarting={isStarting}
+      requestedTaskType={requestedTaskType}
+      serviceTitle={serviceTitle}
+      requestedServiceMode={requestedServiceMode}
+    />
+  );
+}

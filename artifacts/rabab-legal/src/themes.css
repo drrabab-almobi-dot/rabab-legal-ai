@@ -1,0 +1,205 @@
+/*
+ * themes.css — متغيرات الثيمات الإضافية
+ * الثيم الافتراضي (التقني) يبقى في index.css بلا تغيير.
+ * هنا فقط: الزيتوني الذهبي والعنابي الذهبي.
+ * كل المتغيرات هنا تُغلّف قيم index.css عند تطبيق data-theme.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   الثيم الزيتوني الذهبي — نهاري فاتح
+   Palette: bg #F5F1E8 · card #FFFDF7 · olive #0F6E56 · gold #C9A227
+   ══════════════════════════════════════════════════════════════════════════════ */
+[data-theme="olive"] {
+  /* ── الخلفيات ─────────────────────────────────────────────────────────── */
+  --background:           42 38% 93%;   /* #F5F1E8 */
+  --card:                 45 100% 98%;  /* #FFFDF7 */
+  --card-foreground:      155 38% 11%;
+  --card-border:          52 24% 82%;   /* #DCD9C6 */
+  --popover:              45 100% 98%;
+  --popover-foreground:   155 38% 11%;
+  --popover-border:       52 24% 82%;
+  --muted:                45 28% 88%;
+  --input:                48 40% 94%;
+
+  /* ── النصوص ───────────────────────────────────────────────────────────── */
+  --foreground:           155 38% 11%;  /* #12281F */
+  --muted-foreground:     127 9% 39%;   /* #5A6B5C */
+
+  /* ── الألوان المميزة ───────────────────────────────────────────────────── */
+  --primary:              165 76% 24%;  /* #0F6E56 زيتوني — أزرار، روابط، footer */
+  --primary-foreground:   0 0% 100%;    /* أبيض على الزيتوني */
+  --secondary:            46 68% 47%;   /* #C9A227 ذهبي */
+  --secondary-foreground: 155 38% 11%;
+  --accent:               46 68% 47%;   /* ذهبي للشارات واللمسات */
+  --accent-foreground:    155 38% 11%;
+
+  /* ── الحدود والتركيز ──────────────────────────────────────────────────── */
+  --border:               52 24% 82%;   /* #DCD9C6 */
+  --ring:                 165 76% 24%;
+
+  /* ── التحذيرات ────────────────────────────────────────────────────────── */
+  --destructive:          0 78% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* ── الشريط الجانبي ───────────────────────────────────────────────────── */
+  --sidebar:              165 60% 18%;
+  --sidebar-foreground:   0 0% 98%;
+  --sidebar-border:       165 40% 28%;
+  --sidebar-primary:      46 68% 47%;
+  --sidebar-primary-foreground: 155 38% 11%;
+  --sidebar-accent:       165 50% 23%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-ring:         46 68% 47%;
+
+  /* ── متغيرات مخصصة ────────────────────────────────────────────────────── */
+  --navbar-bg:            hsl(165 56% 10%);  /* داكن عميق للبار العلوي */
+  --button-outline:       rgba(15, 110, 86, 0.18);
+  --badge-outline:        rgba(201, 162, 39, 0.14);
+  --elevate-1:            rgba(15, 110, 86, 0.04);
+  --elevate-2:            rgba(15, 110, 86, 0.07);
+  --opaque-button-border-intensity: 8;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   الثيم العنابي الذهبي — ليلي داكن
+   Palette: bg #20140F · card #2E1C15 · gold #D4AF37
+   ══════════════════════════════════════════════════════════════════════════════ */
+[data-theme="burgundy"] {
+  /* ── الخلفيات ─────────────────────────────────────────────────────────── */
+  --background:           18 36% 9%;    /* #20140F */
+  --card:                 17 37% 13%;   /* #2E1C15 */
+  --card-foreground:      31 57% 93%;
+  --card-border:          15 39% 20%;   /* #47291F */
+  --popover:              17 37% 13%;
+  --popover-foreground:   31 57% 93%;
+  --popover-border:       15 39% 20%;
+  --muted:                17 35% 16%;
+  --input:                17 36% 15%;
+
+  /* ── النصوص ───────────────────────────────────────────────────────────── */
+  --foreground:           31 57% 93%;   /* #F7EDE2 */
+  --muted-foreground:     20 30% 67%;   /* #C4A392 */
+
+  /* ── الألوان المميزة ───────────────────────────────────────────────────── */
+  --primary:              18 36% 7%;    /* خلفية داكنة جداً (نفس نمط الثيم التقني) */
+  --primary-foreground:   46 65% 52%;   /* #D4AF37 ذهبي على الداكن */
+  --secondary:            46 65% 52%;   /* #D4AF37 ذهبي */
+  --secondary-foreground: 18 36% 9%;
+  --accent:               46 65% 52%;   /* ذهبي */
+  --accent-foreground:    18 36% 9%;
+
+  /* ── الحدود والتركيز ──────────────────────────────────────────────────── */
+  --border:               15 39% 20%;   /* #47291F */
+  --ring:                 46 65% 52%;   /* ذهبي للفوكس */
+
+  /* ── التحذيرات ────────────────────────────────────────────────────────── */
+  --destructive:          0 78% 48%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* ── الشريط الجانبي ───────────────────────────────────────────────────── */
+  --sidebar:              18 36% 7%;
+  --sidebar-foreground:   31 57% 93%;
+  --sidebar-border:       15 39% 20%;
+  --sidebar-primary:      46 65% 52%;
+  --sidebar-primary-foreground: 18 36% 9%;
+  --sidebar-accent:       17 35% 16%;
+  --sidebar-accent-foreground: 31 57% 93%;
+  --sidebar-ring:         46 65% 52%;
+
+  /* ── متغيرات مخصصة ────────────────────────────────────────────────────── */
+  --navbar-bg:            hsl(18 40% 6%);   /* عنابي داكن جداً للبار */
+  --button-outline:       rgba(212, 175, 55, 0.15);
+  --badge-outline:        rgba(212, 175, 55, 0.08);
+  --elevate-1:            rgba(212, 175, 55, 0.04);
+  --elevate-2:            rgba(212, 175, 55, 0.08);
+  --opaque-button-border-intensity: 9;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   شبكة أمان التباين — تضمن قراءة النصوص في الثيمات الثلاثة
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * الثيم الزيتوني فاتح:
+ * text-white داخل بطاقات/خلفيات فاتحة = غير مرئي.
+ * نُعيد توجيهه داخل أي عنصر يحمل bg-card أو bg-background أو bg-muted.
+ * استثناء: bg-primary/bg-black/navbar-bg دائماً داكنة — text-white صحيح فيها.
+ */
+[data-theme="olive"] .bg-card .text-white,
+[data-theme="olive"] .bg-card .text-white\/90,
+[data-theme="olive"] .bg-card .text-white\/80,
+[data-theme="olive"] .bg-card .text-white\/70,
+[data-theme="olive"] .bg-card .text-white\/60,
+[data-theme="olive"] .bg-card .text-white\/55,
+[data-theme="olive"] .bg-card .text-white\/40 {
+  color: hsl(var(--card-foreground)) !important;
+}
+
+[data-theme="olive"] .bg-muted\/30 .text-white,
+[data-theme="olive"] .bg-muted\/30 .text-white\/90,
+[data-theme="olive"] .bg-muted\/30 .text-white\/80,
+[data-theme="olive"] .bg-muted\/30 .text-white\/70,
+[data-theme="olive"] .bg-muted\/30 .text-white\/60,
+[data-theme="olive"] .bg-muted\/30 .text-white\/55,
+[data-theme="olive"] .bg-muted\/30 .text-white\/40,
+[data-theme="olive"] .bg-background .text-white,
+[data-theme="olive"] .bg-background .text-white\/90,
+[data-theme="olive"] .bg-background .text-white\/80,
+[data-theme="olive"] .bg-background .text-white\/70,
+[data-theme="olive"] .bg-background .text-white\/60,
+[data-theme="olive"] .bg-background .text-white\/55,
+[data-theme="olive"] .bg-background .text-white\/40 {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* حدود بيضاء شبه شفافة تكاد تختفي على الخلفية الفاتحة */
+[data-theme="olive"] .bg-card .border-white\/10,
+[data-theme="olive"] .bg-card .border-white\/15,
+[data-theme="olive"] .bg-card .border-white\/20,
+[data-theme="olive"] .bg-muted\/30 .border-white\/10,
+[data-theme="olive"] .bg-muted\/30 .border-white\/15 {
+  border-color: hsl(var(--border)) !important;
+}
+
+/* خلفيات شفافة بيضاء تصبح مرئية على الفاتح */
+[data-theme="olive"] .bg-card .bg-white\/10,
+[data-theme="olive"] .bg-muted\/30 .bg-white\/10 {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/*
+ * الثيم العنابي الداكن:
+ * text-gray-900 / text-gray-800 / text-gray-700 = نص داكن جداً على خلفية داكنة.
+ * نُعيد توجيهها لـ foreground.
+ * استثناء: الأزرار ذات bg ملون خاص بها (bg-blue-600, bg-red-600...) صحيحة.
+ */
+[data-theme="burgundy"] .text-gray-900 { color: hsl(var(--foreground)) !important; }
+[data-theme="burgundy"] .text-gray-800 { color: hsl(var(--foreground)) !important; }
+[data-theme="burgundy"] .text-gray-700 { color: hsl(var(--foreground)) !important; }
+[data-theme="burgundy"] .text-gray-600 { color: hsl(var(--muted-foreground)) !important; }
+[data-theme="burgundy"] .text-gray-500 { color: hsl(var(--muted-foreground)) !important; }
+[data-theme="burgundy"] .text-gray-400 { color: hsl(var(--muted-foreground)) !important; }
+
+/* خلفيات فاتحة صريحة داخل الثيم الداكن */
+[data-theme="burgundy"] .bg-gray-50  { background-color: hsl(var(--muted)) !important; }
+[data-theme="burgundy"] .bg-gray-100 { background-color: hsl(var(--muted)) !important; }
+[data-theme="burgundy"] .border-gray-200 { border-color: hsl(var(--border)) !important; }
+
+/* الثيم الزيتوني: نفس إصلاح gray للحالات المتبقية */
+[data-theme="olive"] .bg-gray-50  { background-color: hsl(var(--muted)) !important; }
+[data-theme="olive"] .bg-gray-100 { background-color: hsl(var(--muted)) !important; }
+[data-theme="olive"] .border-gray-200 { border-color: hsl(var(--border)) !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   انتقال سلس عند تبديل الثيم
+   ══════════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+/* استثناء العناصر التفاعلية من الانتقال لضمان الاستجابة الفورية */
+button, a, input, select, textarea, [role="button"] {
+  transition-duration: 80ms;
+}

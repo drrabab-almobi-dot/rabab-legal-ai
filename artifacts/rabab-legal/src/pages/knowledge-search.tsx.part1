@@ -1,0 +1,1634 @@
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { LegalMarkdown } from '@/components/legal-markdown';
+import { LegalCodexBrowser } from '@/components/LegalCodexBrowser';
+import { setPageSEO } from '@/lib/seo';
+import { Link, useLocation } from 'wouter';
+import { Navbar, Footer } from '@/components/layout';
+import {
+  Search, BookOpen, Loader2, FileText, X, Scale, Bell,
+  Lock, ScrollText, FileSignature, MessageSquare, ExternalLink,
+  Copy, Check, Send, Gavel, ChevronDown, ChevronUp, ShieldCheck, AlertTriangle, GitCompare, FileEdit, BookMarked, ArrowRight,
+  Calendar, Map, Clock, Layers, BookMarked as BookMarkedIcon, TriangleAlert, FileDown, Eye, Download,
+} from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useGetMySubscription } from '@workspace/api-client-react';
+import { exportMemoWord, exportMemoPdf } from '@/lib/export-word';
+import { useLang } from '@/hooks/use-language';
+import { cn } from '@/lib/utils';
+
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// ── Citation types ────────────────────────────────────────────────────────────
+interface CaseMetadata {
+  caseNumber?: string | null;
+  rulingNumber?: string | null;
+  hijriDate?: string | null;
+  gregorianDate?: string | null;
+  court?: string | null;
+  litigationStage?: string | null;
+  disputeSubject?: string | null;
+  deedNumber?: string | null;
+  confidence?: Record<string, 'high' | 'medium' | 'low'>;
+}
+
+interface SearchResult {
+  documentName: string;
+  documentId?: number | null;
+  content: string;
+  similarity: number;
+  pageStart?: number | null;
+  pageEnd?: number | null;
+  caseMetadata?: CaseMetadata | null;
+  /** Phase-1: true when this chunk was retrieved by literal match (circular/article number or exact phrase) */
+  literalMatch?: boolean;
+  /** Phase-1: legal references extracted from this chunk for auto-linking */
+  extractedRefs?: string[];
+}
+
+// ── Citation card component ───────────────────────────────────────────────────
+function CitationCard({ result }: { result: SearchResult }) {
+  const [copied, setCopied] = useState(false);
+  const m = result.caseMetadata;
+  const hasPage = result.pageStart != null;
+  const hasMeta = m && (m.court || m.caseNumber || m.rulingNumber || m.hijriDate || m.gregorianDate);
+
+  if (!hasMeta && !hasPage) return null;
+
+  const parts: string[] = [];
+  if (m?.court)           parts.push(m.court);
+  if (m?.litigationStage) parts.push(m.litigationStage);
+  if (m?.caseNumber)      parts.push(`قضية رقم: ${m.caseNumber}`);
+  if (m?.rulingNumber)    parts.push(`حكم رقم: ${m.rulingNumber}`);
+  if (m?.hijriDate || m?.gregorianDate) {
+    const dates = [m?.hijriDate && `${m.hijriDate}هـ`, m?.gregorianDate && `${m.gregorianDate}م`].filter(Boolean);
+    parts.push(`بتاريخ: ${dates.join(' / ')}`);
+  }
+  parts.push(`المصدر: ${result.documentName}`);
+  if (hasPage) parts.push(`ص${result.pageStart}`);
+  const citationText = parts.join('، ');
+
+  const copyCitation = () => {
+    navigator.clipboard.writeText(citationText).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openAtPage = () => {
+    const url = `${API_BASE}/api/documents/${result.documentId}/view#page=${result.pageStart}`;
+    window.open(url, '_blank', 'noopener');
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/40 space-y-2">
+      {/* Metadata badges */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
+        {m?.court           && <span className="text-xs text-muted-foreground">🏛 {m.court}</span>}
+        {m?.litigationStage && <span className="text-xs text-muted-foreground">⚖️ {m.litigationStage}</span>}
+        {m?.caseNumber      && <span className="text-xs text-muted-foreground">📋 ق: {m.caseNumber}</span>}
+        {m?.rulingNumber    && <span className="text-xs text-muted-foreground">📄 ح: {m.rulingNumber}</span>}
+        {(m?.hijriDate || m?.gregorianDate) && (
+          <span className="text-xs text-muted-foreground">
+            📅 {[m?.hijriDate && `${m.hijriDate}هـ`, m?.gregorianDate && `${m.gregorianDate}م`].filter(Boolean).join(' / ')}
+          </span>
+        )}
+        {hasPage && (
+          <span className="text-xs font-bold text-primary">
+            📄 ص{result.pageStart}{result.pageEnd !== result.pageStart ? `–${result.pageEnd}` : ''}
+          </span>
+        )}
+      </div>
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={copyCitation}
+          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        >
+          {copied ? <><Check className="w-3 h-3" />تم النسخ</> : <><Copy className="w-3 h-3" />نسخ الاستشهاد</>}
+        </button>
+        {hasPage && result.documentId && (
+          <button
+            onClick={openAtPage}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-border/60 text-muted-foreground hover:bg-muted/40 transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" />فتح عند ص{result.pageStart}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type SearchTab = 'judicial' | 'circular' | 'regulation' | 'contract' | 'consult' | 'research' | 'codex';
+
+interface TabMeta {
+  id: SearchTab;
+  labelAr: string;
+  icon: React.ReactNode;
+  placeholder: string;
+  description: string;
+  category?: string;
+  actionOnly?: boolean;
+}
+
+const TABS: TabMeta[] = [
+  {
+    id: 'research',
+    labelAr: 'باحث ذكي',
+    icon: <Gavel className="w-4 h-4" />,
+    placeholder: '',
+    description: 'تقرير قانوني عملي: تلخيص + نقاط القوة + الخيارات + مذكرة',
+    actionOnly: true,
+  },
+  {
+    id: 'circular',
+    labelAr: 'تعاميم وزارة العدل',
+    icon: <Bell className="w-4 h-4" />,
+    placeholder: '',
+    description: 'تعاميم رسمية من منصة وزارة العدل — نصوص رقمية سليمة',
+    actionOnly: true,
+  },
+  {
+    id: 'codex',
+    labelAr: 'المدونات القضائية',
+    icon: <BookOpen className="w-4 h-4" />,
+    placeholder: '',
+    description: 'بحث في قضايا وأحكام المدونات القضائية الرسمية — عارض الصفحات الأصلية',
+    actionOnly: true,
+  },
+  {
+    id: 'regulation',
+    labelAr: 'باحث نظامي',
+    icon: <Scale className="w-4 h-4" />,
+    placeholder: '',
+    description: 'بحث في الأنظمة واللوائح والتعاميم',
+    actionOnly: true,
+  },
+  {
+    id: 'contract',
+    labelAr: 'صياغة عقد',
+    icon: <FileSignature className="w-4 h-4" />,
+    placeholder: '',
+    description: 'صف العقد الذي تحتاجه والذكاء الاصطناعي يصيغه',
+    actionOnly: true,
+  },
+  {
+    id: 'consult',
+    labelAr: 'استشارة',
+    icon: <MessageSquare className="w-4 h-4" />,
+    placeholder: '',
+    description: 'احصل على استشارة قانونية مخصصة',
+    actionOnly: true,
+  },
+];
+
+function sanitizeText(text: string): string {
+  return text
+    .replace(/[\uFFFD\uFFFE\uFFFF\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(/[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\w\s\d.,،؛:؟!()[\]«»\-\/\u0020-\u007E]+/g, ' ')
+    .replace(/\s{3,}/g, '  ')
+    .trim();
+}
+
+/** Trim content to max 500 chars at sentence boundary */
+function trimContent(text: string, max = 500): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const lastPeriod = Math.max(cut.lastIndexOf('،'), cut.lastIndexOf('.'), cut.lastIndexOf('\n'));
+  return (lastPeriod > max * 0.6 ? cut.slice(0, lastPeriod + 1) : cut).trim() + '...';
+}
+
+// ── Smart source badge ────────────────────────────────────────────────────────
+function SourceBadge({ tabId, content }: { tabId: SearchTab; content: string }) {
+  // Try to extract case number and date from judicial content
+  const caseMatch = content.match(/(\d{4,})[\/\-](\d{1,4})/);
+  const yearMatch = content.match(/1[34]\d{2}هـ|20\d{2}م/);
+
+  if (tabId === 'regulation') {
+    return (
+      <a
+        href="https://laws.boe.gov.sa"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+      >
+        <ExternalLink className="w-3 h-3" />
+        هيئة الخبراء بمجلس الوزراء
+      </a>
+    );
+  }
+
+  if (tabId === 'judicial') {
+    const query = [
+      caseMatch ? `قضية ${caseMatch[0]}` : '',
+      yearMatch ? yearMatch[0] : '',
+    ].filter(Boolean).join(' ');
+    const url = query
+      ? `https://www.moj.gov.sa/ar/OpenData/Pages/JudicialDecisions.aspx?q=${encodeURIComponent(query)}`
+      : 'https://www.moj.gov.sa/ar/OpenData/Pages/JudicialDecisions.aspx';
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+      >
+        <ExternalLink className="w-3 h-3" />
+        {caseMatch ? `وزارة العدل — قضية ${caseMatch[0]}` : 'وزارة العدل'}
+      </a>
+    );
+  }
+
+  return null;
+}
+
+// ── MOJ Official Circulars (منصة التعاميم الرسمية لوزارة العدل) ───────────────
+
+interface MojCircular {
+  id: number;
+  tameemId: number;
+  tameemNo: string;
+  hdate: string;
+  hdateYear: string;
+  subject: string;
+  bodyText: string;
+  status: string;
+  sourceUrl: string;
+  hasImage: boolean;
+  createdAt: string;
+}
+
+interface StructuredSummary {
+  title?: string;
+  type?: string;
+  number?: string;
+  date_hijri?: string;
+  date_gregorian?: string;
+  issuer?: string;
+  basis?: string;
+  purpose?: string;
+  opening_para?: string;
+  highlights?: Array<{ title: string; detail: string }>;
+  objectives?: string[] | null;
+  status?: string;
+  addressees?: string | null;
+  relation_note?: string | null;
+}
+
+interface MojCircularDetail extends MojCircular {
+  relatedTameemIds: number[];
+  updatedAt: string;
+  fetchedAt: string;
+  structuredSummary?: StructuredSummary;
+}
+
+function mojStatusBadge(status: string) {
+  const s = (status || '').trim();
+  if (s === 'نافذ') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">✓ نافذ</span>;
+  if (s === 'معدل') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">⚠ معدل</span>;
+  if (s === 'ملغى') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">✕ ملغى</span>;
+  return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-muted text-muted-foreground">غير محدد</span>;
+}
+
+function MojCircularBrowser() {
+  const { isAuthenticated } = useAuth();
+
+  // List state
+  const [circulars, setCirculars] = useState<MojCircular[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Filters
+  const [query, setQuery] = useState('');
+  const [yearFilter, setYearFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [years, setYears] = useState<string[]>([]);
+
+  // Detail state
+  const [detail, setDetail] = useState<MojCircularDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [textExpanded, setTextExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  const fetchList = async (pg = 1, q = query, year = yearFilter, status = statusFilter) => {
+    setLoading(true);
+    setError('');
+    try {
+      const params = new URLSearchParams({ page: String(pg), limit: '50' });
+      if (q.trim()) params.set('q', q.trim());
+      if (year) params.set('year', year);
+      if (status) params.set('status', status);
+      const r = await fetch(`${API_BASE}/api/knowledge/moj-circulars?${params}`, { credentials: 'include' });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'فشل التحميل');
+      const data = await r.json();
+      setCirculars(data.circulars ?? []);
+      setTotal(data.total ?? 0);
+      setPage(data.page ?? 1);
+      setPages(data.pages ?? 1);
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const fetchYears = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/knowledge/moj-circulars-years`, { credentials: 'include' });
+      if (r.ok) { const d = await r.json(); setYears(d.years ?? []); }
+    } catch { /* silent */ }
+  };
+
+  const fetchedRef = useRef(false);
+  useEffect(() => {
+    if (!isAuthenticated || fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetchList(1);
+    fetchYears();
+  }, [isAuthenticated]);
+
+  const openDetail = async (c: MojCircular) => {
+    setDetail(null);
+    setDetailError('');
+    setTextExpanded(false);
+    setImgError(false);
+    setCopied(false);
+    setDetailLoading(true);
+    try {
+      const r = await fetch(`${API_BASE}/api/knowledge/moj-circulars/${c.tameemId}`, { credentials: 'include' });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'فشل التحميل');
+      const data = await r.json();
+      setDetail(data.circular ?? null);
+    } catch (e: any) { setDetailError(e.message); }
+    finally { setDetailLoading(false); }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    fetchList(1, query, yearFilter, statusFilter);
+  };
+
+  const copyCitation = () => {
+    if (!detail) return;
+    const citation = `تعميم وزارة العدل رقم ${detail.tameemNo || detail.tameemId}، بتاريخ ${detail.hdate}هـ، بشأن: ${detail.subject}، المصدر: ${detail.sourceUrl}`;
+    navigator.clipboard.writeText(citation).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  // ── Detail View ──────────────────────────────────────────────────────────────
+  if (detailLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 gap-3 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span className="text-sm">جارٍ تحميل التعميم...</span>
+      </div>
+    );
+  }
+
+  if (detail) {
+    const imageUrl = `${API_BASE}/api/knowledge/moj-circulars/${detail.tameemId}/image`;
+    return (
+      <div className="space-y-4" dir="rtl">
+        <button
+          onClick={() => { setDetail(null); setDetailError(''); }}
+          className="flex items-center gap-2 text-sm text-primary hover:underline font-medium"
+        >
+          <ArrowRight className="w-4 h-4" />
+          العودة إلى قائمة التعاميم
+        </button>
+
+        {detailError && (
+          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{detailError}</div>
+        )}
+
+        {/* Header */}
+        <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 px-5 py-3 bg-muted/30 border-b border-border/40">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1">
+              🌐 وزارة العدل
+            </span>
+            <span className="flex-1 text-sm font-bold text-foreground">{detail.subject}</span>
+            {mojStatusBadge(detail.status)}
+          </div>
+
+          {/* Meta */}
+          <div className="flex flex-wrap gap-4 px-5 py-3 text-xs text-muted-foreground border-b border-border/30">
+            {detail.tameemNo && (
+              <span className="flex items-center gap-1">
+                <span className="font-semibold text-foreground">رقم التعميم:</span> {detail.tameemNo}
+              </span>
+            )}
+            {detail.hdate && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span className="font-semibold text-foreground">التاريخ الهجري:</span> {detail.hdate}
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <span className="font-semibold text-foreground">الجهة المصدرة:</span> وزارة العدل
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="font-semibold text-foreground">الرقم التسلسلي:</span> {detail.tameemId}
+            </span>
+          </div>
+
+          {/* ── الملخص الهيكلي + الوثيقة الأصلية: تخطيط عمودين ── */}
+          <div className="flex flex-col md:flex-row gap-0 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse border-b border-border/30">
+
+            {/* عمود الملخص الهيكلي (الأوسع) */}
+            <div className="flex-1 px-5 py-4 space-y-4 min-w-0">
+              {detail.structuredSummary && Object.keys(detail.structuredSummary).length > 0 ? (
+                <StructuredSummaryBlock
+                  summary={detail.structuredSummary}
+                  hasDocument={detail.hasImage}
+                  onOpenDocument={detail.hasImage ? () => window.open(imageUrl, '_blank') : undefined}
+                />
+              ) : (
+                /* Fallback: raw body text while GPT is generating */
+                detail.bodyText && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-primary">نص التعميم</p>
+                    <div
+                      className={cn('text-sm leading-relaxed text-foreground/85 bg-muted/20 rounded-xl p-3 whitespace-pre-wrap font-sans', !textExpanded && 'max-h-48 overflow-hidden relative')}
+                      dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}
+                    >
+                      {detail.bodyText}
+                      {!textExpanded && detail.bodyText.length > 400 && (
+                        <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-card to-transparent" />
+                      )}
+                    </div>
+                    {detail.bodyText.length > 400 && (
+                      <button onClick={() => setTextExpanded(p => !p)} className="mt-1 text-xs text-primary hover:underline">
+                        {textExpanded ? '▲ طيّ النص' : '▼ عرض النص كاملاً'}
+                      </button>
+                    )}
+                    <p className="text-xs text-muted-foreground">⏳ جارٍ تحليل الوثيقة وبناء الملخص الهيكلي — سيظهر عند فتح التعميم مرة أخرى.</p>
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* عمود صورة الوثيقة الأصلية */}
+            <div className="md:w-64 lg:w-80 shrink-0 px-4 py-4">
+              <p className="text-xs font-bold text-primary mb-2">الوثيقة الأصلية</p>
+              {detail.hasImage && !imgError ? (
+                <div className="space-y-2">
+                  <div className="relative rounded-xl overflow-hidden border border-border/40 bg-muted/20">
+                    <img
+                      src={imageUrl}
+                      alt={`تعميم ${detail.tameemNo || detail.tameemId}`}
+                      className="w-full object-contain"
+                      onError={() => setImgError(true)}
+                    />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <a href={imageUrl} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                      <Eye className="w-3 h-3" /> بالحجم الكامل
+                    </a>
+                    <a href={imageUrl} download={`تعميم-${detail.tameemId}.jpg`}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                      <FileDown className="w-3 h-3" /> تحميل
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                  <p className="text-xs text-amber-800">
+                    <span className="font-bold">⚠️ الصورة الأصلية غير متاحة</span> — النص مأخوذ مباشرةً من منصة التعاميم الرسمية.
+                  </p>
+                  <a href={detail.sourceUrl} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline self-start">
+                    <ExternalLink className="w-3 h-3" />
+                    فتح في منصة وزارة العدل
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Citation card */}
+          <div className="mx-5 mb-5 p-4 bg-muted/30 border border-border/50 rounded-2xl space-y-2">
+            <p className="text-xs font-bold text-foreground mb-2">📋 بطاقة الاستشهاد</p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              {detail.tameemNo && <p><span className="font-semibold text-foreground">رقم التعميم:</span> {detail.tameemNo}</p>}
+              <p><span className="font-semibold text-foreground">التاريخ الهجري:</span> {detail.hdate || 'غير محدد'}</p>
+              <p><span className="font-semibold text-foreground">الجهة المصدرة:</span> وزارة العدل</p>
+              <p><span className="font-semibold text-foreground">الموضوع:</span> {detail.subject}</p>
+              <p><span className="font-semibold text-foreground">الرقم التسلسلي:</span> {detail.tameemId}</p>
+              <p>
+                <span className="font-semibold text-foreground">المصدر الرسمي: </span>
+                <a href={detail.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{detail.sourceUrl}</a>
+              </p>
+              <p><span className="font-semibold text-foreground">تاريخ آخر تحقق:</span> {new Date(detail.fetchedAt).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={copyCitation}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
+              >
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copied ? 'تم النسخ!' : 'نسخ الاستشهاد'}
+              </button>
+              <a
+                href={detail.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-xl text-xs font-medium hover:bg-muted/50 transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" />
+                فتح المصدر الرسمي
+              </a>
+            </div>
+          </div>
+
+          {/* Related circulars */}
+          {detail.relatedTameemIds?.length > 0 && (
+            <div className="px-5 pb-4">
+              <p className="text-xs font-bold text-foreground mb-1.5">التعاميم ذات الصلة</p>
+              <div className="flex flex-wrap gap-1.5">
+                {detail.relatedTameemIds.map(tid => (
+                  <button
+                    key={tid}
+                    onClick={() => { setDetail(null); openDetail({ tameemId: tid } as any); }}
+                    className="px-2.5 py-1 bg-blue-50 border border-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-100 transition-colors"
+                  >
+                    تعميم #{tid}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── List View ────────────────────────────────────────────────────────────────
+  return (
+    <div className="space-y-4">
+      {/* Search form */}
+      <form onSubmit={handleSearch} className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="ابحث في التعاميم... رقم التعميم أو الموضوع أو النص"
+            className="flex-1 h-11 rounded-2xl border-2 border-border bg-background px-4 text-sm focus:outline-none focus:border-primary transition-colors shadow-sm"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-11 px-4 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            بحث
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={yearFilter}
+            onChange={e => { setYearFilter(e.target.value); setPage(1); fetchList(1, query, e.target.value, statusFilter); }}
+            className="flex-1 h-9 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:border-primary"
+          >
+            <option value="">كل السنوات الهجرية</option>
+            {years.map(y => <option key={y} value={y}>{y}هـ</option>)}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setPage(1); fetchList(1, query, yearFilter, e.target.value); }}
+            className="flex-1 h-9 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:border-primary"
+          >
+            <option value="">كل الحالات</option>
+            <option value="نافذ">نافذ</option>
+            <option value="معدل">معدل</option>
+            <option value="ملغى">ملغى</option>
+            <option value="غير محدد">غير محدد</option>
+          </select>
+        </div>
+      </form>
+
+      {error && <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{error}</div>}
+
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Bell className="w-4 h-4 text-primary" />
+        <h3 className="text-sm font-bold text-foreground">تعاميم وزارة العدل الرسمية</h3>
+        {total > 0 && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{total} تعميم</span>}
+        <span className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 text-blue-600 px-2 py-0.5 rounded-full">🌐 منصة وزارة العدل الرسمية</span>
+        <Link href="/legal-search" className="flex items-center gap-1 text-xs text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-full transition-colors mr-auto">
+          <ExternalLink className="w-3 h-3" />الباحث الذكي
+        </Link>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm">جارٍ تحميل التعاميم...</span>
+        </div>
+      )}
+
+      {!loading && circulars.length === 0 && (
+        <div className="text-center py-14 text-muted-foreground">
+          <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Bell className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium mb-1">لم يُجلب أي تعميم بعد</p>
+          <p className="text-xs">انتظري حتى يُنشَّط الجلب من المصدر الرسمي أو تواصلي مع الإدارة</p>
+        </div>
+      )}
+
+      {circulars.length > 0 && (
+        <div className="space-y-2">
+          {circulars.map(c => (
+            <button
+              key={c.tameemId}
+              onClick={() => openDetail(c)}
+              className="w-full text-right bg-card border border-border/60 rounded-xl px-4 py-3.5 hover:border-primary/40 hover:bg-primary/5 transition-all shadow-sm group"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <Bell className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <p className="text-sm font-semibold text-foreground leading-snug">{c.subject}</p>
+                    {mojStatusBadge(c.status)}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                    {c.tameemNo && <span className="font-medium text-foreground/70">رقم {c.tameemNo}</span>}
+                    {c.hdate && <span className="flex items-center gap-0.5"><Calendar className="w-3 h-3" />{c.hdate}هـ</span>}
+                    {c.hasImage && <span className="text-green-600">📎 صورة أصلية متاحة</span>}
+                  </div>
+                  {c.bodyText && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed" dir="rtl">{c.bodyText}</p>
+                  )}
+                </div>
+                <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => { const p = page - 1; setPage(p); fetchList(p); }}
+            disabled={page <= 1 || loading}
+            className="px-3 py-1.5 border border-border rounded-xl text-sm disabled:opacity-40 hover:bg-muted/50"
+          >
+            السابق
+          </button>
+          <span className="text-sm text-muted-foreground">صفحة {page} من {pages}</span>
+          <button
+            onClick={() => { const p = page + 1; setPage(p); fetchList(p); }}
+            disabled={page >= pages || loading}
+            className="px-3 py-1.5 border border-border rounded-xl text-sm disabled:opacity-40 hover:bg-muted/50"
+          >
+            التالي
+          </button>
+        </div>
+      )}
+
+      {/* Official source notice */}
+      <p className="text-xs text-muted-foreground text-center pb-1">
+        المصدر:{' '}
+        <a href="https://portaleservices.moj.gov.sa/TameemPortal/TameemList.aspx" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+          منصة التعاميم الرسمية — بوابة خدمات وزارة العدل
+        </a>
+        {' '}· نصوص رقمية سليمة (لا مشكلة في القراءة)
+      </p>
+    </div>
+  );
+}
+
+// ── Circular search agent ─────────────────────────────────────────────────────
+interface CircularResult {
+  issuer: string;
+  number: string;
+  date: string;
+  status: string;
+  addressees?: string;
+  text: string;
+  summary: string;
+  practical_effect: string;
+  url?: string;
+  relation_note?: string;
+  // New template fields (v2 GPT output)
+  title?: string;
+  type?: string;
+  date_hijri?: string;
+  date_gregorian?: string;
+  basis?: string;
+  purpose?: string;
+  opening_para?: string;
+  highlights?: Array<{ title: string; detail: string }>;
+  objectives?: string[] | null;
+}
+
+interface CircularListItem {
+  id: number;
+  filename: string;
+  createdAt: string;
+  totalChunks: number;
+  sourceUrl?: string | null;
+}
+
+function statusBadge(status: string) {
+  if (!status) return null;
+  const s = status.trim();
+  if (s === 'نافذ') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">✓ نافذ</span>;
+  if (s === 'معدل') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">⚠ معدل</span>;
+  if (s === 'ملغى') return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">✕ ملغى</span>;
+  return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-muted text-muted-foreground">{s}</span>;
+}
+
+// ── القالب الإلزامي للملخص ────────────────────────────────────────────────────
+function StructuredSummaryBlock({
+  summary,
+  onOpenDocument,
+  hasDocument,
+}: {
+  summary: StructuredSummary;
+  onOpenDocument?: () => void;
+  hasDocument?: boolean;
+}) {
+  return (
+    <div className="space-y-4 text-sm" dir="rtl">
+      {/* عنوان قصير */}
+      {summary.title && (
+        <h3 className="text-base font-bold text-foreground leading-snug">{summary.title}</h3>
+      )}
+
+      {/* فقرة افتتاحية */}
+      {summary.opening_para && (
+        <p className="text-sm leading-relaxed text-foreground/85 border-r-2 border-primary/50 pr-3">
+          {summary.opening_para}
+        </p>
+      )}
+
+      {/* أبرز ما جاء في الوثيقة */}
+      {summary.highlights && summary.highlights.length > 0 && (
+        <div className="space-y-2.5">
+          <p className="text-xs font-bold text-foreground">أبرز ما جاء في الوثيقة</p>
+          <ul className="space-y-3">
+            {summary.highlights.map((h, i) => (
+              <li key={i} className="flex gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                <div className="text-sm leading-relaxed">
+                  <span className="font-bold text-foreground">{h.title}:</span>{' '}
+                  <span className="text-foreground/85">{h.detail}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* أهداف القرار — فقط إذا وردت صراحةً */}
+      {summary.objectives && summary.objectives.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-foreground">أهداف القرار</p>
+          <ul className="space-y-2">
+            {summary.objectives.map((obj, i) => (
+              <li key={i} className="flex gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                <span className="text-sm text-foreground/85 leading-relaxed">{obj}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* جملة ختامية وزر الوثيقة */}
+      <div className="pt-3 border-t border-border/30 space-y-2.5">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          ⚠️ الملخص أعلاه مُولَّد مساعداً للقراءة من نص الوثيقة الرسمية حصراً.
+          المعتمد هو نص الوثيقة الأصلية. يُرجى الاطلاع على تفاصيل المواد ونطاق السريان في الوثيقة المرفقة.
+        </p>
+        {onOpenDocument && hasDocument && (
+          <button
+            onClick={onOpenDocument}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors"
+          >
+            <Eye className="w-3 h-3" />
+            فتح الوثيقة الأصلية
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Renders a fully-structured circular card (shared between browse and search views) */
+function CircularCard({ c, i, expandedText, onToggleExpand }: {
+  c: CircularResult;
+  i: number;
+  expandedText: Record<number, boolean>;
+  onToggleExpand: (i: number) => void;
+}) {
+  return (
+    <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm">
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-2 px-5 py-3 bg-muted/30 border-b border-border/40">
+        <span className="text-sm font-bold text-primary flex-1">{c.issuer || 'جهة غير محددة'}</span>
+        {statusBadge(c.status)}
+      </div>
+
+      {/* Meta */}
+      <div className="flex flex-wrap gap-4 px-5 py-3 text-xs text-muted-foreground border-b border-border/30">
+        {c.number && c.number !== 'غير محدد' && (
+          <span className="flex items-center gap-1">
+            <span className="font-semibold text-foreground">رقم التعميم:</span> {c.number}
+          </span>
+        )}
+        {c.date && c.date !== 'غير محدد' && (
+          <span className="flex items-center gap-1">
+            <span className="font-semibold text-foreground">التاريخ:</span> {c.date}
+          </span>
+        )}
+        {c.addressees && c.addressees !== 'غير محدد' && (
+          <span className="flex items-center gap-1">
+            <span className="font-semibold text-foreground">المخاطَبون:</span> {c.addressees}
+          </span>
+        )}
+      </div>
+
+      <div className="px-5 py-4">
+        {/* القالب الهيكلي الجديد عند توفّر highlights */}
+        {c.highlights && c.highlights.length > 0 ? (
+          <StructuredSummaryBlock
+            summary={c as StructuredSummary}
+            hasDocument={false}
+          />
+        ) : (
+          /* Fallback للبيانات القديمة المخزّنة */
+          <div className="space-y-4">
+            {c.text && (
+              <div>
+                <p className="text-xs font-bold text-primary mb-1.5">نص التعميم</p>
+                <div className={cn('text-sm leading-relaxed text-foreground/85 bg-muted/20 rounded-xl p-3', !expandedText[i] && 'max-h-32 overflow-hidden relative')} dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
+                  <div className="whitespace-pre-wrap font-sans">{c.text}</div>
+                  {!expandedText[i] && c.text.length > 300 && (
+                    <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-card to-transparent" />
+                  )}
+                </div>
+                {c.text.length > 300 && (
+                  <button onClick={() => onToggleExpand(i)} className="mt-1 text-xs text-primary hover:underline">
+                    {expandedText[i] ? '▲ طيّ النص' : '▼ عرض النص كاملاً'}
+                  </button>
+                )}
+              </div>
+            )}
+            {c.summary && (
+              <div>
+                <p className="text-xs font-bold text-amber-700 mb-1">الملخص</p>
+                <p className="text-sm leading-relaxed text-foreground/85">{c.summary}</p>
+              </div>
+            )}
+            {c.practical_effect && (
+              <div>
+                <p className="text-xs font-bold text-green-700 mb-1">الأثر العملي</p>
+                <p className="text-sm leading-relaxed text-foreground/85">{c.practical_effect}</p>
+              </div>
+            )}
+            {c.relation_note && c.relation_note !== 'غير محدد' && (
+              <div className="px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-800">
+                ℹ️ {c.relation_note}
+              </div>
+            )}
+            {c.url && (
+              <a href={c.url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                <ExternalLink className="w-3 h-3" />
+                الرابط الرسمي
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CircularAgent() {
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // ── Browse state ──
+  const [browseList, setBrowseList] = useState<CircularListItem[]>([]);
+  const [browseLoading, setBrowseLoading] = useState(false);
+  const [browseError, setBrowseError] = useState('');
+
+  // ── Detail (single circular) state ──
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<CircularResult | null>(null);
+  const [detailFilename, setDetailFilename] = useState('');
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [expandedDetail, setExpandedDetail] = useState<Record<number, boolean>>({});
+
+  // ── Search state ──
+  const [topic, setTopic] = useState('');
+  const [searchResults, setSearchResults] = useState<CircularResult[]>([]);
+  const [searchMessage, setSearchMessage] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [searchFallback, setSearchFallback] = useState(false);
+  const [expandedSearch, setExpandedSearch] = useState<Record<number, boolean>>({});
+
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
+
+  // Load browse list on mount
+  const fetchedRef = useRef(false);
+  useEffect(() => {
+    if (!isAuthenticated || fetchedRef.current) return;
+    fetchedRef.current = true;
+    setBrowseLoading(true);
+    fetch(`${API_BASE}/api/knowledge/circulars`, { credentials: 'include' })
+      .then(async r => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          if (err.code === 'UPGRADE_REQUIRED') { setUpgradeRequired(true); return; }
+          throw new Error(err.error || 'فشل التحميل');
+        }
+        const data = await r.json();
+        setBrowseList(data.circulars ?? []);
+      })
+      .catch(e => setBrowseError(e.message))
+      .finally(() => setBrowseLoading(false));
+  }, [isAuthenticated]);
+
+  const openDetail = async (item: CircularListItem) => {
+    setSelectedId(item.id);
+    setDetail(null);
+    setDetailFilename(item.filename);
+    setDetailError('');
+    setExpandedDetail({});
+    setDetailLoading(true);
+    try {
+      const r = await fetch(`${API_BASE}/api/knowledge/circulars/${item.id}`, { credentials: 'include' });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.error || 'فشل التحميل');
+      }
+      const data = await r.json();
+      setDetail(data.circular ?? null);
+    } catch (e: any) {
+      setDetailError(e.message);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setSelectedId(null);
+    setDetail(null);
+    setDetailError('');
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!topic.trim() || searchLoading) return;
+    if (!isAuthenticated) { setLocation(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+    setSearchLoading(true);
+    setSearchError('');
+    setUpgradeRequired(false);
+    setSearched(false);
+    setSearchResults([]);
+    setSearchMessage('');
+    setSearchFallback(false);
+    setSelectedId(null);
+    setDetail(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/knowledge/search-circular`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === 'UPGRADE_REQUIRED') { setUpgradeRequired(true); return; }
+        throw new Error(err.error || 'فشل البحث');
+      }
+      const data = await res.json();
+      setSearchResults(data.circulars ?? []);
+      setSearchFallback(!!data.fallback);
+      setSearchMessage(data.message ?? '');
+      setSearched(true);
+    } catch (err: any) {
+      setSearchError(err.message);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // ── Detail view ──
+  if (selectedId !== null) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={closeDetail}
+          className="flex items-center gap-2 text-sm text-primary hover:underline font-medium"
+        >
+          <ArrowRight className="w-4 h-4" />
+          العودة إلى قائمة التعاميم
+        </button>
+
+        {detailLoading && (
+          <div className="flex items-center justify-center py-16 text-muted-foreground gap-3">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="text-sm">جارٍ تحليل التعميم...</span>
+          </div>
+        )}
+
+        {detailError && (
+          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{detailError}</div>
+        )}
+
+        {detail && !detailLoading && (
+          <>
+            <CircularCard c={detail} i={0} expandedText={expandedDetail} onToggleExpand={i => setExpandedDetail(p => ({ ...p, [i]: !p[i] }))} />
+            <p className="text-xs text-muted-foreground text-center pb-2">
+              ⚠️ النتائج مستخرجة من قاعدة المعرفة — يُنصح بالتحقق من المصدر الرسمي
+            </p>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ── Search results view ──
+  if (searched) {
+    return (
+      <div className="space-y-5">
+        {/* Search form */}
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <input
+            value={topic}
+            onChange={e => setTopic(e.target.value)}
+            placeholder="أدخل موضوع التعميم... مثال: إجازة الأمومة، الحضور والانصراف، العمل عن بُعد"
+            className="flex-1 h-12 rounded-2xl border-2 border-border bg-background px-4 text-sm focus:outline-none focus:border-primary transition-colors shadow-sm"
+            disabled={searchLoading}
+          />
+          <button type="submit" disabled={!topic.trim() || searchLoading}
+            className="h-12 px-5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+            {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            {searchLoading ? 'جارٍ البحث...' : 'ابحث'}
+          </button>
+        </form>
+
+        <button onClick={() => { setSearched(false); setSearchResults([]); setTopic(''); }}
+          className="flex items-center gap-2 text-sm text-primary hover:underline font-medium">
+          <ArrowRight className="w-4 h-4" />
+          العودة إلى قائمة التعاميم
+        </button>
+
+        {searchFallback && (
+          <div className="px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+            <span>⚡</span>
+            <span>لم نجد تعاميم في تصنيف التعاميم — النتائج مستخرجة من كافة مصادر قاعدة المعرفة</span>
+          </div>
+        )}
+
+        {searchResults.length === 0 && searchMessage && (
+          <div className="py-10 text-center text-muted-foreground">
+            <Bell className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">{searchMessage}</p>
+          </div>
+        )}
+
+        {searchResults.length > 0 && (
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground text-center">{searchResults.length} {searchResults.length === 1 ? 'تعميم' : 'تعاميم'} ذات صلة</p>
+            {searchResults.map((c, i) => (
+              <CircularCard key={i} c={c} i={i} expandedText={expandedSearch}
+                onToggleExpand={i => setExpandedSearch(p => ({ ...p, [i]: !p[i] }))} />
+            ))}
+            <p className="text-xs text-muted-foreground text-center pb-2">
+              ⚠️ النتائج مستخرجة من قاعدة المعرفة — يُنصح بالتحقق من المصدر الرسمي
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Main view: browse index + search form ──
+  return (
+    <div className="space-y-5">
+      {/* Search form */}
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <input
+          value={topic}
+          onChange={e => setTopic(e.target.value)}
+          placeholder="أدخل موضوع التعميم... مثال: إجازة الأمومة، الحضور والانصراف، العمل عن بُعد"
+          className="flex-1 h-12 rounded-2xl border-2 border-border bg-background px-4 text-sm focus:outline-none focus:border-primary transition-colors shadow-sm"
+          disabled={searchLoading}
+        />
+        <button type="submit" disabled={!topic.trim() || searchLoading}
+          className="h-12 px-5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+          {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+          {searchLoading ? 'جارٍ البحث...' : 'بحث بموضوع'}
+        </button>
+      </form>
+
+      {searchError && <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{searchError}</div>}
+
+      {/* Browse index — free for all authenticated users */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Bell className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-bold text-foreground">التعاميم المفهرسة</h3>
+          {browseList.length > 0 && (
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{browseList.length}</span>
+          )}
+          <Link href="/legal-search" className="flex items-center gap-1 text-xs text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-full transition-colors mr-auto">
+            <ExternalLink className="w-3 h-3" />الباحث الذكي
+          </Link>
+        </div>
+
+        {browseLoading && (
+          <div className="flex items-center justify-center py-10 text-muted-foreground gap-3">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">جارٍ تحميل التعاميم...</span>
+          </div>
+        )}
+
+        {browseError && (
+          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{browseError}</div>
+        )}
+
+        {!browseLoading && !browseError && browseList.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Bell className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium mb-1">لا توجد تعاميم مفهرسة بعد</p>
+            <p className="text-xs">استخدم البحث أو انتظر حتى يُضاف محتوى من المسؤول</p>
+          </div>
+        )}
+
+        {browseList.length > 0 && (
+          <div className="space-y-2">
+            {browseList.map(item => (
+              <button
+                key={item.id}
+                onClick={() => openDetail(item)}
+                className="w-full text-right bg-card border border-border/60 rounded-xl px-4 py-3.5 hover:border-primary/40 hover:bg-primary/5 transition-all shadow-sm flex items-center gap-3 group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                  {(item as any).sourceUrl ? '🌐' : <Bell className="w-4 h-4 text-amber-600" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{item.filename}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                    {new Date(item.createdAt).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    {item.totalChunks > 0 && <> · {item.totalChunks} جزء</>}
+                    {(item as any).sourceUrl && (
+                      <span className="inline-flex items-center gap-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded px-1.5 py-0.5 text-[10px] font-medium">
+                        🌐 وزارة العدل
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <FileText className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Upgrade prompt for AI-powered search */}
+        {upgradeRequired && (
+          <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-2xl text-center">
+            <Lock className="w-6 h-6 text-primary mx-auto mb-1.5" />
+            <p className="font-bold text-primary text-sm mb-1">البحث الذكي للمشتركين</p>
+            <p className="text-muted-foreground text-xs mb-3">تصفح التعاميم أعلاه مجاناً، أو اشترك للبحث بالموضوع</p>
+            <Link href="/pricing">
+              <button className="px-4 py-1.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90">ترقية الباقة</button>
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Regulatory Researcher ─────────────────────────────────────────────────────
+
+type DocStatus = 'نافذ' | 'ملغى' | 'معدّل' | 'غير محدد';
+type AuditStatus = 'موثقة وصالحة للاستخدام' | 'صحيحة مع نقص محدود' | 'تحتاج إعادة تحقق' | 'غير صالحة للاعتماد';
+
+interface RegSource { title: string; url: string; content: string; fetchedAt: string; score?: number; }
+interface RegArticle { articleNumber: string; articleText: string; law: string; relevance: string; verified: boolean; sourceUrl?: string; }
+interface LegMapItem { type: string; name: string; issuingDecree?: string; date?: string; status: DocStatus; relation: string; verified: boolean; sourceUrl?: string; }
+interface Amend { date: string; decree: string; description: string; publishDate?: string; effectiveDate?: string; articles?: string; verified: boolean; }
+interface RegulatoryResult {
+  fetchedAt: string; query: string; synonymsUsed: string[]; searchTermsUsed: string[];
+  legalClassification: string; legalQuestion: string; keywords: string[];
+  mainLaw: { name: string; issuingDecree?: string; publishDate?: string; effectiveDate?: string; status: DocStatus; issuingAuthority?: string; sourceUrl?: string; verified: boolean } | null;
+  legislativeMap: LegMapItem[]; amendments: Amend[];
+  applicableArticles: RegArticle[];
+  temporalApplicability?: { applicableVersion: string; reason: string; transitionalNote?: string };
+  conditions: string[]; exceptions: string[];
+  applicationAnalysis: string; conflicts: string[]; conclusion: string; pendingIssues: string[];
+  sources: RegSource[];
+  auditStatus: AuditStatus; auditNotes: string[];
+}
+
+function AuditBadge({ status, notes }: { status: AuditStatus; notes: string[] }) {
+  const [open, setOpen] = useState(false);
+  const cfg: Record<AuditStatus, { bg: string; text: string; icon: string }> = {
+    'موثقة وصالحة للاستخدام': { bg: 'bg-green-50 border-green-300 text-green-800',  text: 'text-green-800',  icon: '✓' },
+    'صحيحة مع نقص محدود':     { bg: 'bg-amber-50 border-amber-300 text-amber-800',   text: 'text-amber-800',  icon: '⚡' },
+    'تحتاج إعادة تحقق':       { bg: 'bg-orange-50 border-orange-300 text-orange-800', text: 'text-orange-800', icon: '⚠' },
+    'غير صالحة للاعتماد':      { bg: 'bg-red-50 border-red-300 text-red-800',         text: 'text-red-800',    icon: '✕' },
+  };
+  const c = cfg[status] ?? cfg['تحتاج إعادة تحقق'];
+  return (
+    <div className={cn('border rounded-xl px-3 py-2', c.bg)}>
+      <button onClick={() => setOpen(v => !v)} className="flex items-center gap-2 w-full text-right">
+        <span className="font-bold text-sm">{c.icon} تدقيق النتيجة: {status}</span>
+        {notes.length > 0 && <span className="text-xs opacity-70">{open ? '▲' : '▼'}</span>}
+      </button>
+      {open && notes.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {notes.map((n, i) => <li key={i} className="text-xs opacity-80">• {n}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function StatusPill({ status }: { status: DocStatus }) {
+  if (status === 'نافذ')   return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">✓ نافذ</span>;
+  if (status === 'ملغى')   return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">✕ ملغى</span>;
+  if (status === 'معدّل')  return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">⚡ معدّل</span>;
+  return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">{status}</span>;
+}
+
+function VerifiedBadge({ verified }: { verified: boolean }) {
+  return verified
+    ? <span className="text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full">✓ محقق من مصدر رسمي</span>
+    : <span className="text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠ غير متحقق منه</span>;
+}
+
+const DOC_TYPE_COLORS: Record<string, string> = {
+  'نظام': 'bg-blue-100 text-blue-800',
+  'لائحة تنفيذية': 'bg-indigo-100 text-indigo-800',
+  'قرار وزاري': 'bg-purple-100 text-purple-800',
+  'تعميم': 'bg-amber-100 text-amber-800',
+  'ضوابط': 'bg-teal-100 text-teal-800',
+  'دليل إرشادي': 'bg-muted text-muted-foreground border border-border',
+  'أمر ملكي': 'bg-red-100 text-red-800',
+  'نموذج معتمد': 'bg-cyan-100 text-cyan-800',
+};
+
+const SEARCH_TYPES = [
+  { id: 'comprehensive',   label: 'بحث شامل',                icon: '🔍', desc: 'تكييف + خريطة تشريعية + مواد + تعديلات' },
+  { id: 'legislative-map', label: 'الخريطة التشريعية',       icon: '🗺️', desc: 'هيكل النظام ومستنداته المكملة بالكامل' },
+  { id: 'temporal',        label: 'النص الواجب التطبيق زمنياً', icon: '📅', desc: 'أدخل تواريخ الواقعة لتحديد النسخة المطبّقة' },
+  { id: 'article-lookup',  label: 'مادة محددة',              icon: '📋', desc: 'ابحث عن نص مادة بعينها بالرقم أو الموضوع' },
+  { id: 'definition',      label: 'تعريف مصطلح',             icon: '📖', desc: 'التعريف النظامي في كل قانون عرّفه' },
+];
+
+function SectionHeader({ icon, title, count }: { icon: React.ReactNode; title: string; count?: number }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border-b border-border">
+      {icon}
+      <span className="text-sm font-bold text-primary">{title}</span>
+      {count !== undefined && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{count}</span>}
+    </div>
+  );
+}
+
+function RegulatoryResearcher() {
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const [query, setQuery] = useState('');
+  const [searchType, setSearchType] = useState('comprehensive');
+  const [relationDate, setRelationDate] = useState('');
+  const [incidentDate, setIncidentDate] = useState('');
+  const [claimDate, setClaimDate] = useState('');
+
+  const [result, setResult] = useState<RegulatoryResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [livePhase, setLivePhase] = useState<'searching' | 'generating' | null>(null);
+  const [expandedArticles, setExpandedArticles] = useState<Record<number, boolean>>({});
+  const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const esRef = useRef<EventSource | null>(null);
+
+  const LOADING_STEPS = [
+    'جارٍ توسيع الاستعلام بالمرادفات القانونية...',
+    'جارٍ البحث في بوابة هيئة الخبراء (laws.boe.gov.sa)...',
+    'جارٍ البحث في اللوائح التنفيذية والتعديلات...',
+    'جارٍ البحث في التعاميم والقرارات الوزارية...',
+    'جارٍ استخراج الخريطة التشريعية والتحقق من المواد...',
+  ];
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim() || loading) return;
+    if (!isAuthenticated) { setLocation(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+
+    const requestId = crypto.randomUUID();
+
+    // Open SSE connection before POSTing so we catch the first phase event
+    const es = new EventSource(`${API_BASE}/api/knowledge/research-status/${requestId}`, { withCredentials: true });
+    esRef.current = es;
+    es.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        if (data.phase === 'done') { setLivePhase(null); es.close(); }
+        else if (data.phase === 'searching' || data.phase === 'generating') setLivePhase(data.phase);
+      } catch { /* ignore */ }
+    };
+    es.onerror = () => { setLivePhase(null); es.close(); };
+
+    setLoading(true); setError(''); setUpgradeRequired(false); setResult(null);
+    setLoadingStep(0); setExpandedArticles({}); setLivePhase(null);
+    loadingTimerRef.current = setInterval(() => {
+      setLoadingStep(s => Math.min(s + 1, LOADING_STEPS.length - 1));
+    }, 3200);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/knowledge/regulatory-research`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, searchType, relationDate, incidentDate, claimDate, requestId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === 'UPGRADE_REQUIRED') { setUpgradeRequired(true); return; }
+        throw new Error(err.error || 'فشل البحث');
+      }
+      setResult(await res.json());
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setLivePhase(null);
+      esRef.current?.close(); esRef.current = null;
+      if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+
+      {/* ── Header ── */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4">
+        <p className="font-bold text-blue-900 text-sm mb-2">⚖️ الباحث النظامي المحترف</p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-blue-800/70">
+          <span>🗺️ خريطة تشريعية متكاملة</span>
+          <span>📜 مواد بنصوصها + التحقق منها</span>
+          <span>🔄 تتبع التعديلات والمراسيم</span>
+          <span>📅 النص الواجب التطبيق زمنياً</span>
+          <span>🔍 توسيع بالمرادفات القانونية</span>
+          <span>✓ قواعد جلب إلزامية محدّثة</span>
+        </div>
+      </div>
+
+      {/* ── Search type selector ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {SEARCH_TYPES.map(st => (
+          <button
+            key={st.id}
+            onClick={() => setSearchType(st.id)}
+            className={cn(
+              'text-right px-3 py-2.5 rounded-xl border text-xs transition-all',
+              searchType === st.id
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'border-border/60 hover:border-primary/40 hover:bg-muted/40'
+            )}
+          >
+            <div className="font-bold mb-0.5">{st.icon} {st.label}</div>
+            <div className={cn('text-[10px] leading-tight', searchType === st.id ? 'opacity-80' : 'text-muted-foreground')}>
+              {st.desc}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Form ── */}
+      <form onSubmit={handleSearch} className="space-y-3">
+        <textarea
+          value={query} onChange={e => setQuery(e.target.value)}
+          rows={3} disabled={loading}
+          placeholder={
+            searchType === 'article-lookup'  ? 'مثال: المادة 77 نظام العمل — أو: شروط انتهاء عقد العمل في نظام العمل' :
+            searchType === 'definition'      ? 'مثال: تعريف "المنشأة" في الأنظمة السعودية — أو: ما المقصود بالعامل؟' :
+            searchType === 'temporal'        ? 'مثال: نظام الشركات — أدخل التواريخ أدناه لتحديد النسخة المطبّقة' :
+            searchType === 'legislative-map' ? 'مثال: نظام العمل — أو: نظام مكافحة الغش التجاري' :
+            'مثال: نظام الإيجار التمويلي — أو: شروط الفسخ في نظام التأمين'
+          }
+          className="w-full border-2 border-secondary/60 rounded-2xl px-4 py-3 text-sm outline-none focus:outline-none focus:ring-0 focus:border-secondary transition-colors resize-none bg-background"
+        />
+
+        {/* Date inputs for temporal applicability */}
+        {searchType === 'temporal' && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <div>
+              <label className="text-xs font-semibold text-amber-800 mb-1 block">تاريخ نشوء العلاقة</label>
+              <input type="text" value={relationDate} onChange={e => setRelationDate(e.target.value)}
+                placeholder="مثال: 1443/05/01 هـ"
+                className="w-full text-xs px-3 py-2 rounded-lg border border-amber-200 bg-white focus:outline-none focus:border-amber-400" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-amber-800 mb-1 block">تاريخ الواقعة</label>
+              <input type="text" value={incidentDate} onChange={e => setIncidentDate(e.target.value)}
+                placeholder="مثال: 1444/08/15 هـ"
+                className="w-full text-xs px-3 py-2 rounded-lg border border-amber-200 bg-white focus:outline-none focus:border-amber-400" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-amber-800 mb-1 block">تاريخ المطالبة</label>
+              <input type="text" value={claimDate} onChange={e => setClaimDate(e.target.value)}
+                placeholder="مثال: 1445/01/10 هـ"
+                className="w-full text-xs px-3 py-2 rounded-lg border border-amber-200 bg-white focus:outline-none focus:border-amber-400" />
+            </div>
+          </div>
+        )}
+
+        <button type="submit" disabled={!query.trim() || loading}
+          className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
+          {loading
+            ? <><Loader2 className="w-4 h-4 animate-spin" /><span className="text-xs">{LOADING_STEPS[loadingStep]}</span></>
+            : <><Search className="w-4 h-4" />ابدأ البحث النظامي</>}
+        </button>
+      </form>
+
+      {/* ── Live search indicator ── */}
+      {loading && livePhase === 'searching' && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
+          <span className="text-lg leading-none animate-pulse">🌐</span>
+          <span className="text-xs font-semibold text-blue-700">جارٍ البحث في الإنترنت…</span>
+          <div className="flex items-center gap-1 mr-1">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Upgrade ── */}
+      {upgradeRequired && (
+        <div className="p-5 bg-primary/5 border-2 border-primary/30 rounded-2xl text-center">
+          <Lock className="w-8 h-8 text-primary mx-auto mb-2" />
+          <p className="font-bold text-primary mb-1">خدمة مدفوعة</p>
+          <p className="text-muted-foreground text-xs mb-3">الباحث النظامي المحترف متاح للمشتركين فقط</p>
+          <Link href="/pricing"><button className="px-5 py-2 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90">ترقية الباقة</button></Link>
+        </div>
+      )}
+
+      {/* ── Error ── */}
+      {error && <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">{error}</div>}
+
+      {/* ══════════ RESULTS ══════════ */}
+      {result && (
+        <div className="space-y-4">
+
+          {/* Disclaimer */}
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-amber-800 leading-snug">النتائج استُخلصت من مصادر رسمية مجلوبة بتاريخ {new Date(result.fetchedAt).toLocaleDateString('ar-SA')} — للاستئناس لا للاعتماد وحده. تحقق من laws.boe.gov.sa قبل الاستشهاد.</p>
+          </div>
+
+          {/* Audit badge */}
+          <AuditBadge status={result.auditStatus} notes={result.auditNotes} />
+
+          {/* Keywords + synonyms */}
+          {(result.keywords?.length > 0 || result.synonymsUsed?.length > 0) && (
+            <div className="flex flex-wrap gap-1.5">
+              {result.keywords?.map((k, i) => (
+                <span key={i} className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{k}</span>
+              ))}
+              {result.synonymsUsed?.slice(0, 6).map((s, i) => (
+                <span key={i} className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded-full border border-border/50">↔ {s}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Legal classification + question */}
+          {(result.legalClassification || result.legalQuestion) && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <SectionHeader icon={<Scale className="w-4 h-4 text-primary" />} title="التكييف القانوني والسؤال النظامي" />
+              <div className="p-4 space-y-3">
+                {result.legalClassification && (
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground mb-1">التكييف القانوني</p>
+                    <p className="text-sm leading-relaxed">{result.legalClassification}</p>
+                  </div>
+                )}
+                {result.legalQuestion && (
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground mb-1">السؤال النظامي الدقيق</p>
+                    <p className="text-sm leading-relaxed text-primary/90 font-medium">{result.legalQuestion}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Main law */}
+          {result.mainLaw && result.mainLaw.name && result.mainLaw.name !== 'غير محدد' && (
+            <div className="bg-card border-2 border-primary/20 rounded-2xl overflow-hidden shadow-sm">
+              <SectionHeader icon={<ScrollText className="w-4 h-4 text-primary" />} title="النظام الرئيسي" />
+              <div className="p-4">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="text-base font-bold text-foreground">{result.mainLaw.name}</span>
+                  <StatusPill status={result.mainLaw.status} />
+                  <VerifiedBadge verified={result.mainLaw.verified} />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  {result.mainLaw.issuingDecree && result.mainLaw.issuingDecree !== 'غير محدد' && (
+                    <div className="bg-muted/40 rounded-lg px-3 py-2">
+                      <p className="font-semibold text-muted-foreground mb-0.5">أداة الإصدار</p>
+                      <p className="text-foreground font-medium">{result.mainLaw.issuingDecree}</p>
+                    </div>
+                  )}
+                  {result.mainLaw.publishDate && result.mainLaw.publishDate !== 'غير محدد' && (
+                    <div className="bg-muted/40 rounded-lg px-3 py-2">
+                      <p className="font-semibold text-muted-foreground mb-0.5">تاريخ النشر (أم القرى)</p>
+                      <p className="text-foreground font-medium">{result.mainLaw.publishDate}</p>
+                    </div>
+                  )}
+                  {result.mainLaw.effectiveDate && result.mainLaw.effectiveDate !== 'غير محدد' && (
+                    <div className="bg-muted/40 rounded-lg px-3 py-2">
+                      <p className="font-semibold text-muted-foreground mb-0.5">تاريخ النفاذ</p>
+                      <p className="text-foreground font-medium">{result.mainLaw.effectiveDate}</p>
+                    </div>
+                  )}
+                  {result.mainLaw.issuingAuthority && result.mainLaw.issuingAuthority !== 'غير محدد' && (
+                    <div className="bg-muted/40 rounded-lg px-3 py-2">
+                      <p className="font-semibold text-muted-foreground mb-0.5">جهة الإصدار</p>
+                      <p className="text-foreground font-medium">{result.mainLaw.issuingAuthority}</p>
+                    </div>
+                  )}
+                </div>
+                {result.mainLaw.sourceUrl && (
+                  <a href={result.mainLaw.sourceUrl} target="_blank" rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                    <ExternalLink className="w-3 h-3" />المصدر الرسمي
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Legislative map */}
+          {result.legislativeMap?.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <SectionHeader icon={<Layers className="w-4 h-4 text-primary" />} title="الخريطة التشريعية" count={result.legislativeMap.length} />
+              <div className="divide-y divide-border/40">
+                {result.legislativeMap.map((item, i) => (
+                  <div key={i} className="px-4 py-3 flex flex-wrap items-start gap-2">
+                    <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0', DOC_TYPE_COLORS[item.type] ?? 'bg-muted text-muted-foreground')}>
+                      {item.type}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                        <span className="text-sm font-semibold text-foreground">{item.name}</span>
+                        <StatusPill status={item.status} />
+                        {!item.verified && <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-1">⚠ غير متحقق</span>}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{item.relation}</p>
+                      <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground/80">
+                        {item.issuingDecree && item.issuingDecree !== 'غير محدد' && <span>📄 {item.issuingDecree}</span>}
+                        {item.date && item.date !== 'غير محدد' && <span>📅 {item.date}</span>}
+                        {item.sourceUrl && (
+                          <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-0.5">
+                            <ExternalLink className="w-2.5 h-2.5" />رابط
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Amendments timeline */}
+          {result.amendments?.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <SectionHeader icon={<Clock className="w-4 h-4 text-primary" />} title="تتبع التعديلات" count={result.amendments.length} />
+              <div className="relative p-4">
+                <div className="absolute right-6 top-4 bottom-4 w-0.5 bg-border/60" />
+                <div className="space-y-4">
+                  {result.amendments.map((a, i) => (
+                    <div key={i} className="flex gap-4 relative">
+                    
