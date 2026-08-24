@@ -1,4 +1,10 @@
 {
   "buildCommand": "pnpm run build",
-  "outputDirectory": "artifacts/rabab-legal/dist/public"
+  "outputDirectory": "artifacts/rabab-legal/dist/public",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    }
+  ]
 }
