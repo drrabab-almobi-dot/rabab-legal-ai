@@ -7,8 +7,5 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": [
-    "./index.ts",
-    "./initialize-require.ts"
-  ]
+  "files": []
 }

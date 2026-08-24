@@ -15,11 +15,19 @@ async function buildAll() {
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/index.ts")],
+    // Build two ESM entrypoints:
+    // - index.mjs starts the always-on Replit service.
+    // - app.mjs exports the Express application without starting a listener,
+    //   which is the entrypoint consumed by the Vercel function.
+    entryPoints: {
+      index: path.resolve(artifactDir, "src/index.ts"),
+      app: path.resolve(artifactDir, "src/app.ts"),
+    },
     platform: "node",
     bundle: true,
     format: "esm",
     outdir: distDir,
+    entryNames: "[name]",
     outExtension: { ".js": ".mjs" },
     logLevel: "info",
     // Some packages may not be bundleable, so we externalize them, we can add more here as needed.

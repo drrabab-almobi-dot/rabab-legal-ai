@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "pnpm run build && test -f artifacts/api-server/dist/app.mjs",
   "outputDirectory": "artifacts/rabab-legal/dist/public",
   "rewrites": [
     {
