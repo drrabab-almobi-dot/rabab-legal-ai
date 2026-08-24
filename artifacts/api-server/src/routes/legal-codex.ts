@@ -27,21 +27,22 @@ import { scanDocumentQuality } from "../lib/arabic-text-fix.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB
+const legalCasesSearchVector = sql.raw("legal_cases.search_vector");
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ADMIN ROUTES
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /** Upload a new codex PDF */
-router.post("/admin/codex/upload", requireAdmin, upload.single("file"), async (req, res) => {
+router.post("/admin/codex/upload", requireAdmin, upload.single("file"), async (req, res): Promise<void> => {
   const file = req.file;
-  if (!file) return res.status(400).json({ error: "الملف مطلوب" });
+  if (!file) { res.status(400).json({ error: "الملف مطلوب" }); return; }
   if (file.mimetype !== "application/pdf" && !file.originalname.toLowerCase().endsWith(".pdf")) {
-    return res.status(400).json({ error: "يُقبل PDF فقط" });
+    res.status(400).json({ error: "يُقبل PDF فقط" }); return;
   }
 
   const { title, publisher, court, year } = req.body as Record<string, string>;
-  if (!title?.trim()) return res.status(400).json({ error: "عنوان المدونة مطلوب" });
+  if (!title?.trim()) { res.status(400).json({ error: "عنوان المدونة مطلوب" }); return; }
 
   const fileHash = hashBuffer(file.buffer);
 
@@ -53,7 +54,7 @@ router.post("/admin/codex/upload", requireAdmin, upload.single("file"), async (r
     .limit(1);
 
   if (existing.length > 0) {
-    return res.status(409).json({ error: `هذا الملف مرفوع مسبقاً: ${existing[0].title}`, codexId: existing[0].id });
+    res.status(409).json({ error: `هذا الملف مرفوع مسبقاً: ${existing[0].title}`, codexId: existing[0].id }); return;
   }
 
   const [codex] = await db.insert(legalCodicesTable).values({
@@ -71,13 +72,13 @@ router.post("/admin/codex/upload", requireAdmin, upload.single("file"), async (r
 });
 
 /** Start case extraction job (background) */
-router.post("/admin/codex/:id/extract", requireAdmin, async (req, res) => {
-  const codexId = parseInt(req.params.id);
-  if (isNaN(codexId)) return res.status(400).json({ error: "معرّف غير صالح" });
+router.post("/admin/codex/:id/extract", requireAdmin, async (req, res): Promise<void> => {
+  const codexId = parseInt(req.params.id as string, 10);
+  if (isNaN(codexId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const job = getJob(codexId);
   if (job?.status === "running") {
-    return res.json({ message: "الاستخراج جارٍ بالفعل", job });
+    res.json({ message: "الاستخراج جارٍ بالفعل", job }); return;
   }
 
   // Start extraction in background
@@ -87,7 +88,7 @@ router.post("/admin/codex/:id/extract", requireAdmin, async (req, res) => {
 
 /** Poll extraction job progress */
 router.get("/admin/codex/:id/job-status", requireAdmin, async (req, res) => {
-  const codexId = parseInt(req.params.id);
+  const codexId = parseInt(req.params.id as string, 10);
   const job = getJob(codexId);
 
   const [codex] = await db
@@ -121,9 +122,9 @@ router.get("/admin/codex/list", requireAdmin, async (req, res) => {
 });
 
 /** Delete codex (cascades to cases) */
-router.delete("/admin/codex/:id", requireAdmin, async (req, res) => {
-  const codexId = parseInt(req.params.id);
-  if (isNaN(codexId)) return res.status(400).json({ error: "معرّف غير صالح" });
+router.delete("/admin/codex/:id", requireAdmin, async (req, res): Promise<void> => {
+  const codexId = parseInt(req.params.id as string, 10);
+  if (isNaN(codexId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   await db.delete(legalCodicesTable).where(eq(legalCodicesTable.id, codexId));
   res.json({ message: "تم الحذف" });
 });
@@ -179,12 +180,12 @@ router.get("/admin/codex/knowledge-quality-scan", requireAdmin, async (req, res)
 });
 
 /** Re-extract a single codex from scratch */
-router.post("/admin/codex/:id/reextract", requireAdmin, async (req, res) => {
-  const codexId = parseInt(req.params.id);
-  if (isNaN(codexId)) return res.status(400).json({ error: "معرّف غير صالح" });
+router.post("/admin/codex/:id/reextract", requireAdmin, async (req, res): Promise<void> => {
+  const codexId = parseInt(req.params.id as string, 10);
+  if (isNaN(codexId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const job = getJob(codexId);
-  if (job?.status === "running") return res.json({ message: "الاستخراج جارٍ بالفعل", job });
+  if (job?.status === "running") { res.json({ message: "الاستخراج جارٍ بالفعل", job }); return; }
 
   // Reset status to pending so user sees fresh state
   await db.update(legalCodicesTable)
@@ -200,16 +201,16 @@ router.post("/admin/codex/:id/reextract", requireAdmin, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /** Serve the PDF binary for the document viewer */
-router.get("/codex/:codexId/pdf", requireAuth, async (req, res) => {
-  const codexId = parseInt(req.params.codexId);
-  if (isNaN(codexId)) return res.status(400).json({ error: "معرّف غير صالح" });
+router.get("/codex/:codexId/pdf", requireAuth, async (req, res): Promise<void> => {
+  const codexId = parseInt(req.params.codexId as string, 10);
+  if (isNaN(codexId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [codex] = await db
     .select({ fileData: legalCodicesTable.fileData, title: legalCodicesTable.title })
     .from(legalCodicesTable)
     .where(eq(legalCodicesTable.id, codexId));
 
-  if (!codex || !codex.fileData) return res.status(404).json({ error: "لم يُوجد الملف" });
+  if (!codex || !codex.fileData) { res.status(404).json({ error: "لم يُوجد الملف" }); return; }
 
   const buf: Buffer = codex.fileData as unknown as Buffer;
   res.setHeader("Content-Type", "application/pdf");
@@ -252,7 +253,7 @@ router.post("/codex/smart-search", requireAuth, async (req, res): Promise<void> 
       const tsQuery = term.split(/\s+/).filter(Boolean).join(" & ");
       if (tsQuery) {
         conditions.push(or(
-          sql`${legalCasesTable.searchVector} @@ to_tsquery('arabic', ${tsQuery})`,
+          sql`${legalCasesSearchVector} @@ to_tsquery('arabic', ${tsQuery})`,
           ilike(legalCasesTable.disputeSubject, `%${term}%`),
           ilike(legalCasesTable.legalPrinciple, `%${term}%`),
           ilike(legalCasesTable.rawText, `%${term}%`),
@@ -282,7 +283,7 @@ router.post("/codex/smart-search", requireAuth, async (req, res): Promise<void> 
       })
       .from(legalCasesTable)
       .where(buildConditions(term))
-      .orderBy(sql`ts_rank(${legalCasesTable.searchVector}, to_tsquery('arabic', ${term.split(/\s+/).filter(Boolean).join(" & ")})) DESC`)
+      .orderBy(sql`ts_rank(${legalCasesSearchVector}, to_tsquery('arabic', ${term.split(/\s+/).filter(Boolean).join(" & ")})) DESC`)
       .limit(20)
     ));
 
@@ -327,7 +328,7 @@ router.get("/codex/search", requireAuth, async (req, res) => {
     const tsQuery = q.trim().split(/\s+/).join(" & ");
     conditions.push(
       or(
-        sql`${legalCasesTable.searchVector} @@ to_tsquery('arabic', ${tsQuery})`,
+        sql`${legalCasesSearchVector} @@ to_tsquery('arabic', ${tsQuery})`,
         ilike(legalCasesTable.disputeSubject, `%${q}%`),
         ilike(legalCasesTable.legalPrinciple, `%${q}%`),
         ilike(legalCasesTable.caseNo, `%${q}%`),
@@ -381,7 +382,7 @@ router.get("/codex/search", requireAuth, async (req, res) => {
     .where(whereClause)
     .orderBy(
       q.trim()
-        ? sql`ts_rank(${legalCasesTable.searchVector}, to_tsquery('arabic', ${q.trim().split(/\s+/).join(" & ")})) DESC`
+        ? sql`ts_rank(${legalCasesSearchVector}, to_tsquery('arabic', ${q.trim().split(/\s+/).join(" & ")})) DESC`
         : desc(legalCasesTable.createdAt)
     )
     .limit(limitNum)
@@ -396,9 +397,9 @@ router.get("/codex/search", requireAuth, async (req, res) => {
 });
 
 /** Case detail (full data) */
-router.get("/codex/cases/:id", requireAuth, async (req, res) => {
-  const caseId = parseInt(req.params.id);
-  if (isNaN(caseId)) return res.status(400).json({ error: "معرّف غير صالح" });
+router.get("/codex/cases/:id", requireAuth, async (req, res): Promise<void> => {
+  const caseId = parseInt(req.params.id as string, 10);
+  if (isNaN(caseId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [row] = await db
     .select({
@@ -411,7 +412,7 @@ router.get("/codex/cases/:id", requireAuth, async (req, res) => {
     .leftJoin(legalCodicesTable, eq(legalCasesTable.codexId, legalCodicesTable.id))
     .where(eq(legalCasesTable.id, caseId));
 
-  if (!row) return res.status(404).json({ error: "لم تُوجد القضية" });
+  if (!row) { res.status(404).json({ error: "لم تُوجد القضية" }); return; }
 
   // Don't send the heavy rawText to the client
   const { rawText: _, ...caseData } = row.case;

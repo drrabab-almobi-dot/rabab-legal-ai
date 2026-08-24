@@ -15,7 +15,7 @@
  * "العربية إلزامية بلا استثناء" من SYSTEM_PROMPT.
  */
 
-import TelegramBot from "node-telegram-bot-api";
+import TelegramBot, { type Message } from "node-telegram-bot-api";
 import OpenAI from "openai";
 import { db, knowledgeDocumentsTable } from "@workspace/db";
 import { eq, isNull, isNotNull } from "drizzle-orm";
@@ -280,7 +280,7 @@ async function isTelegramImportEnabled(): Promise<boolean> {
 
 // ── معالجة رفع المستندات (الأدمن فقط) ───────────────────────────────────────
 
-async function handleDocumentUpload(msg: TelegramBot.Message, silentMode = false): Promise<void> {
+async function handleDocumentUpload(msg: Message, silentMode = false): Promise<void> {
   const chatId = msg.chat.id;
   const userId = msg.from?.id ?? chatId;
 
@@ -480,7 +480,7 @@ async function handleUrlIndex(chatId: number, url: string, silentMode = false): 
 }
 
 // ── رفع الصور ─────────────────────────────────────────────────────────────────
-async function handlePhotoUpload(msg: TelegramBot.Message, silentMode = false): Promise<void> {
+async function handlePhotoUpload(msg: Message, silentMode = false): Promise<void> {
   const chatId = msg.chat.id;
   const photos = msg.photo;
   if (!photos || photos.length === 0) return;
@@ -537,15 +537,15 @@ export function startTelegramBot(): void {
   const isProduction = process.env.NODE_ENV === "production";
 
   try {
-    bot = new TelegramBot(token, {
-      polling: isProduction
-        ? false
-        : {
+    bot = isProduction
+      ? new TelegramBot(token, { polling: false })
+      : new TelegramBot(token, {
+          polling: {
             interval: 2000,
             autoStart: true,
             params: { timeout: 10, allowed_updates: [] },
           },
-    });
+        });
   } catch (err: any) {
     logger.error({ err: err?.message }, "telegram: فشل إنشاء مثيل البوت");
     return;

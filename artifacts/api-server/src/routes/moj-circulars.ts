@@ -72,7 +72,7 @@ router.post(
   requireAdmin,
   upload.single("image"),
   async (req, res): Promise<void> => {
-    const tameemId = parseInt(req.params.tameemId, 10);
+    const tameemId = parseInt(req.params.tameemId as string, 10);
     if (isNaN(tameemId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
     if (!req.file) { res.status(400).json({ error: "لم يُرفع أي ملف" }); return; }
 
@@ -91,7 +91,7 @@ router.post(
 
 // ── Admin: delete uploaded image ──────────────────────────────────────────────
 router.delete("/admin/moj-circulars/:tameemId/image", requireAdmin, async (req, res): Promise<void> => {
-  const tameemId = parseInt(req.params.tameemId, 10);
+  const tameemId = parseInt(req.params.tameemId as string, 10);
   if (isNaN(tameemId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   await db
@@ -104,7 +104,7 @@ router.delete("/admin/moj-circulars/:tameemId/image", requireAdmin, async (req, 
 
 // ── Admin: update status ──────────────────────────────────────────────────────
 router.put("/admin/moj-circulars/:tameemId/status", requireAdmin, async (req, res): Promise<void> => {
-  const tameemId = parseInt(req.params.tameemId, 10);
+  const tameemId = parseInt(req.params.tameemId as string, 10);
   if (isNaN(tameemId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const { status } = req.body as { status?: string };
@@ -124,7 +124,7 @@ router.put("/admin/moj-circulars/:tameemId/status", requireAdmin, async (req, re
 
 // ── Admin: set related circulars ──────────────────────────────────────────────
 router.put("/admin/moj-circulars/:tameemId/relate", requireAdmin, async (req, res): Promise<void> => {
-  const tameemId = parseInt(req.params.tameemId, 10);
+  const tameemId = parseInt(req.params.tameemId as string, 10);
   if (isNaN(tameemId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const { relatedTameemIds } = req.body as { relatedTameemIds?: number[] };
@@ -245,7 +245,7 @@ const CIRCULAR_TEMPLATE_SYSTEM_PROMPT = `أنت باحث قانوني متخصص
 
 // ── User: circular detail ────────────────────────────────────────────────────
 router.get("/knowledge/moj-circulars/:tameemId", requireAuth, async (req, res): Promise<void> => {
-  const tameemId = parseInt(req.params.tameemId, 10);
+  const tameemId = parseInt(req.params.tameemId as string, 10);
   if (isNaN(tameemId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [row] = await db
@@ -281,7 +281,8 @@ router.get("/knowledge/moj-circulars/:tameemId", requireAuth, async (req, res): 
   // ── Generate structured summary with GPT if body text exists ─────────────
   if (row.bodyText && row.bodyText.trim().length > 50) {
     try {
-      const apiKey = getApiKey();
+      const apiKey = process.env.OPENAI_API_KEY?.trim();
+      if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey });
 
@@ -325,7 +326,7 @@ router.get("/knowledge/moj-circulars/:tameemId", requireAuth, async (req, res): 
 
 // ── User/Admin: serve original image ─────────────────────────────────────────
 router.get("/knowledge/moj-circulars/:tameemId/image", requireAuth, async (req, res): Promise<void> => {
-  const tameemId = parseInt(req.params.tameemId, 10);
+  const tameemId = parseInt(req.params.tameemId as string, 10);
   if (isNaN(tameemId)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [row] = await db

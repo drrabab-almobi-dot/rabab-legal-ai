@@ -69,7 +69,7 @@ router.get("/admin/notifications", requireAdmin, async (_req, res): Promise<void
 
 // ── Admin: publish a notification ─────────────────────────────────────────────
 router.post("/admin/notifications/:id/publish", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   const [notif] = await db.update(notificationsTable)
     .set({ isPublished: true, publishedAt: new Date() })
     .where(eq(notificationsTable.id, id))
@@ -97,7 +97,7 @@ router.post("/admin/notifications/:id/publish", requireAdmin, async (req, res): 
 
 // ── Admin: delete notification ────────────────────────────────────────────────
 router.delete("/admin/notifications/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   await db.delete(notificationsTable).where(eq(notificationsTable.id, id));
   res.json({ success: true });
 });
@@ -130,7 +130,7 @@ router.get("/notifications", requireAuth, async (req, res): Promise<void> => {
 
 // ── User: mark notification as read ──────────────────────────────────────────
 router.post("/notifications/:id/read", requireAuth, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   await db.update(userNotificationsTable)
     .set({ readAt: new Date() })
     .where(and(

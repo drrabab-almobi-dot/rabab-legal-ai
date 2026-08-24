@@ -234,7 +234,7 @@ function getOpenAI() {
 
 // ── GET /api/consultations/:id/chat-status  (SSE — web clients) ──────────────
 router.get("/consultations/:id/chat-status", requireAuth, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [cons] = await db.select().from(consultationsTable)
@@ -261,7 +261,7 @@ router.get("/consultations/:id/chat-status", requireAuth, async (req, res): Prom
 
 // ── GET /api/consultations/:id/chat-phase  (polling — mobile clients) ─────────
 router.get("/consultations/:id/chat-phase", requireAuth, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [cons] = await db.select().from(consultationsTable)
@@ -273,7 +273,7 @@ router.get("/consultations/:id/chat-phase", requireAuth, async (req, res): Promi
 
 // GET /api/consultations/:id/messages
 router.get("/consultations/:id/messages", requireAuth, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [cons] = await db.select().from(consultationsTable)
@@ -309,7 +309,7 @@ router.get("/consultations/:id/messages", requireAuth, async (req, res): Promise
 
 // POST /api/consultations/:id/chat
 router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const { message, taskType, taskParams, attachmentName } = req.body ?? {};
@@ -1007,8 +1007,8 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
 
 // ── POST /api/consultations/:id/messages/:msgId/rate ──────────────────────────
 router.post("/consultations/:id/messages/:msgId/rate", requireAuth, async (req, res): Promise<void> => {
-  const consultationId = parseInt(req.params.id, 10);
-  const messageId      = parseInt(req.params.msgId, 10);
+  const consultationId = parseInt(req.params.id as string, 10);
+  const messageId      = parseInt(req.params.msgId as string, 10);
   if (isNaN(consultationId) || isNaN(messageId)) {
     res.status(400).json({ error: "معرّف غير صالح" }); return;
   }

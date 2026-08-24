@@ -328,7 +328,7 @@ router.get("/organizations/members", requireAuth, async (req, res): Promise<void
 // ── DELETE /organizations/members/:memberId — إزالة عضو ─────────────────────
 router.delete("/organizations/members/:memberId", requireAuth, async (req, res): Promise<void> => {
   const userId = req.userId!;
-  const memberId = parseInt(req.params.memberId, 10);
+  const memberId = parseInt(req.params.memberId as string, 10);
 
   const org = await getOrgForOwner(userId);
   if (!org) {
@@ -358,7 +358,7 @@ router.delete("/organizations/members/:memberId", requireAuth, async (req, res):
 // ── POST /organizations/join/:token — قبول الدعوة ────────────────────────────
 router.post("/organizations/join/:token", requireAuth, async (req, res): Promise<void> => {
   const userId = req.userId!;
-  const { token } = req.params;
+  const token = req.params.token as string;
 
   // تحقق من الرمز وبريد المستخدم خارج المعاملة (قراءة آمنة)
   const [invite] = await db

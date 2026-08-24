@@ -71,7 +71,7 @@ router.get("/admin/conversion-report", requireAdmin, async (_req, res): Promise<
       .where(eq(usersTable.isActive, true));
 
     // Users who have exhausted their free trial (used >= 3 sessions and still on free plan)
-    const [exhaustedRow] = await db.execute(sql`
+    const exhaustedResult = await db.execute(sql`
       SELECT COUNT(DISTINCT ss.user_id)::int AS exhausted
       FROM service_sessions ss
       JOIN subscriptions sub ON sub.id = ss.subscription_id
@@ -80,17 +80,19 @@ router.get("/admin/conversion-report", requireAdmin, async (_req, res): Promise<
       GROUP BY ss.user_id
       HAVING COUNT(*)::int >= ${FREE_TRIAL_SERVICES}
     `);
+    const exhaustedRow = exhaustedResult.rows[0] as { exhausted?: number } | undefined;
 
     // Users who converted to paid
-    const [paidRow] = await db.execute(sql`
+    const paidResult = await db.execute(sql`
       SELECT COUNT(DISTINCT s.user_id)::int AS paid
       FROM subscriptions s
       JOIN packages p ON p.id = s.package_id
       WHERE p.type != 'free' AND s.status = 'active'
     `);
+    const paidRow = paidResult.rows[0] as { paid?: number } | undefined;
 
     // Average services used before converting (users who have a paid sub and also used trial)
-    const [avgRow] = await db.execute(sql`
+    const avgResult = await db.execute(sql`
       SELECT ROUND(AVG(session_count), 2) AS avg_before_upgrade
       FROM (
         SELECT ss.user_id, COUNT(*)::int AS session_count
@@ -106,6 +108,7 @@ router.get("/admin/conversion-report", requireAdmin, async (_req, res): Promise<
         GROUP BY ss.user_id
       ) sub_counts
     `);
+    const avgRow = avgResult.rows[0] as { avg_before_upgrade?: number | string } | undefined;
 
     // Distribution by service type
     const byType = await db.execute(sql`

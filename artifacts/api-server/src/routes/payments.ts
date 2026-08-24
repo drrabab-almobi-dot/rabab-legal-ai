@@ -27,7 +27,17 @@ async function getMoyasarPayment(moyasarId: string): Promise<{ status: string; a
       headers: { Authorization: moyasarAuthHeader() },
     });
     if (!res.ok) return null;
-    return await res.json();
+    const payment: unknown = await res.json();
+    if (
+      !payment ||
+      typeof payment !== "object" ||
+      typeof (payment as { status?: unknown }).status !== "string" ||
+      typeof (payment as { amount?: unknown }).amount !== "number" ||
+      typeof (payment as { currency?: unknown }).currency !== "string"
+    ) {
+      return null;
+    }
+    return payment as { status: string; amount: number; currency: string };
   } catch {
     return null;
   }
@@ -205,9 +215,9 @@ router.post("/payments/verify", requireAuth, async (req, res): Promise<void> => 
 
   // 6. Complete the transaction atomically
   const now = new Date();
-  const endDate = pkg?.type === "monthly"
+  const endDate = pkg?.billingPeriod === "monthly"
     ? new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())
-    : pkg?.type === "annual"
+    : pkg?.billingPeriod === "annual"
     ? new Date(now.getFullYear() + 1, now.getMonth(), now.getDate())
     : null;
 
@@ -314,9 +324,9 @@ router.post("/payments/recover", requireAuth, async (req, res): Promise<void> =>
     .where(eq(packagesTable.id, paidPayment.packageId));
 
   const now = new Date();
-  const endDate = pkg?.type === "monthly"
+  const endDate = pkg?.billingPeriod === "monthly"
     ? new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())
-    : pkg?.type === "annual"
+    : pkg?.billingPeriod === "annual"
     ? new Date(now.getFullYear() + 1, now.getMonth(), now.getDate())
     : null;
 
@@ -476,9 +486,9 @@ router.post("/admin/payments/manual-verify", requireAdmin, async (req, res): Pro
     .where(eq(packagesTable.id, payment.packageId));
 
   const now = new Date();
-  const endDate = pkg?.type === "monthly"
+  const endDate = pkg?.billingPeriod === "monthly"
     ? new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())
-    : pkg?.type === "annual"
+    : pkg?.billingPeriod === "annual"
     ? new Date(now.getFullYear() + 1, now.getMonth(), now.getDate())
     : null;
 
@@ -500,7 +510,7 @@ router.post("/admin/payments/manual-verify", requireAdmin, async (req, res): Pro
       discountAmount: payment.discountAmount,
       billingName:   payment.billingName ?? "",
       billingEmail:  payment.billingEmail ?? "",
-      status:        "paid",
+      status:        "issued",
       packageNameAr: pkg?.nameAr ?? "",
     }).onConflictDoNothing();
 
@@ -644,7 +654,7 @@ router.get("/invoices/:id/pdf", requireAuth, async (req, res): Promise<void> => 
 
   // Rows
   drawRow("التاريخ", dateStr, "#f8fafc");
-  drawRow("الباقة", inv.packageName ?? "", "#ffffff");
+  drawRow("الباقة", inv.packageNameAr ?? "", "#ffffff");
   drawRow("السعر الأساسي", `${amount.toFixed(2)} ر.س`, "#f8fafc");
   if (discountAmount > 0) {
     drawRow("الخصم", `- ${discountAmount.toFixed(2)} ر.س`, "#ffffff");
@@ -697,14 +707,26 @@ router.post("/payments/dev-simulate", requireAuth, async (req, res): Promise<voi
       totalAmount:   pkg.price,
       discountAmount:"0",
       status:        "paid",
-      gateway:       "dev_simulate",
+      gateway:       null,
       gatewayRef:    `DEV-${Date.now()}`,
       billingName:   "مستخدم تجريبي",
       billingEmail:  "dev@rabab.ai",
     }).returning();
 
     const invoiceNumber = `INV-DEV-${now.getFullYear()}-${String(payment.id).padStart(6, "0")}`;
-    await tx.update(paymentsTable).set({ invoiceNumber }).where(eq(paymentsTable.id, payment.id));
+    await tx.insert(invoicesTable).values({
+      invoiceNumber,
+      userId: req.userId!,
+      paymentId: payment.id,
+      amount: pkg.price,
+      vatAmount: "0",
+      totalAmount: pkg.price,
+      discountAmount: "0",
+      billingName: "مستخدم تجريبي",
+      billingEmail: "dev@rabab.ai",
+      status: "issued",
+      packageNameAr: pkg.nameAr,
+    });
 
     // Create subscription
     await tx.insert(subscriptionsTable).values({

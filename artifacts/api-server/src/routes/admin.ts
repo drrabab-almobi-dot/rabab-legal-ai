@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, usersTable, subscriptionsTable, paymentsTable, consultationsTable, consultationMessagesTable, couponsTable, packagesTable, platformSettingsTable, subscriptionRemindersTable } from "@workspace/db";
 import { requireAdmin } from "../middlewares/auth";
 import { GetAdminUserParams, UpdateAdminUserParams, UpdateAdminUserBody, UpdateAdminCouponParams, UpdateAdminCouponBody, DeleteAdminCouponParams, CreateAdminCouponBody } from "@workspace/api-zod";
-import { eq, count, sum, and, gte, asc, inArray, isNotNull, sql, desc } from "drizzle-orm";
+import { eq, count, sum, and, gte, asc, inArray, isNotNull, sql, desc, type SQL } from "drizzle-orm";
 import { sendEmail } from "../lib/email";
 import { sendWhatsApp } from "../lib/whatsapp";
 import { logger } from "../lib/logger";
@@ -49,9 +49,16 @@ router.get("/admin/stats", requireAdmin, async (_req, res): Promise<void> => {
 
 router.get("/admin/users", requireAdmin, async (_req, res): Promise<void> => {
   const users = await db
-    .select({ id: usersTable.id, name: usersTable.name, email: usersTable.email, phone: usersTable.phone })
-    .from(usersTable)
-    .where(inArray(usersTable.id, targetUserIds));
+    .select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      phone: usersTable.phone,
+      role: usersTable.role,
+      freeConsultationsUsed: usersTable.freeConsultationsUsed,
+      createdAt: usersTable.createdAt,
+    })
+    .from(usersTable);
 
   res.json(users.map((u) => ({
     id: u.id, name: u.name, email: u.email, phone: u.phone, role: u.role,
@@ -60,12 +67,12 @@ router.get("/admin/users", requireAdmin, async (_req, res): Promise<void> => {
 });
 
 router.get("/admin/users/:id", requireAdmin, async (req, res): Promise<void> => {
-  const params = DeleteAdminCouponParams.safeParse(req.params);
+  const params = GetAdminUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [u] = await db.update(usersTable).set(updates).where(eq(usersTable.id, params.data.id)).returning();
+  const [u] = await db.select().from(usersTable).where(eq(usersTable.id, params.data.id));
   if (!u) {
     res.status(404).json({ error: "المستخدم غير موجود" });
     return;
@@ -74,17 +81,19 @@ router.get("/admin/users/:id", requireAdmin, async (req, res): Promise<void> => 
 });
 
 router.patch("/admin/users/:id", requireAdmin, async (req, res): Promise<void> => {
-  const params = DeleteAdminCouponParams.safeParse(req.params);
+  const params = UpdateAdminUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const parsed = UpdateAdminCouponBody.safeParse(req.body);
+  const parsed = UpdateAdminUserBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const updates: Record<string, unknown> = {};
+  const updates: Omit<Partial<typeof usersTable.$inferInsert>, "tokenVersion"> & {
+    tokenVersion?: number | SQL;
+  } = {};
   if (parsed.data.name !== undefined) updates.name = parsed.data.name;
   if (parsed.data.role !== undefined) updates.role = parsed.data.role;
   if (parsed.data.isActive !== undefined) updates.isActive = parsed.data.isActive;
@@ -124,16 +133,19 @@ router.get("/admin/coupons", requireAdmin, async (_req, res): Promise<void> => {
 });
 
 router.post("/admin/coupons", requireAdmin, async (req, res): Promise<void> => {
-  const parsed = UpdateAdminCouponBody.safeParse(req.body);
+  const parsed = CreateAdminCouponBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [c] = await db.update(couponsTable).set(updates).where(eq(couponsTable.id, params.data.id)).returning();
-  if (!c) {
-    res.status(404).json({ error: "الكوبون غير موجود" });
-    return;
-  }
+  const [c] = await db.insert(couponsTable).values({
+    code: parsed.data.code.toUpperCase(),
+    descriptionAr: parsed.data.descriptionAr,
+    discountType: parsed.data.discountType,
+    discountValue: String(parsed.data.discountValue),
+    maxUses: parsed.data.maxUses,
+    expiresAt: parsed.data.expiresAt,
+  }).returning();
   res.json({
     id: c.id, code: c.code, descriptionAr: c.descriptionAr,
     discountType: c.discountType, discountValue: parseFloat(c.discountValue as string),
@@ -142,8 +154,8 @@ router.post("/admin/coupons", requireAdmin, async (req, res): Promise<void> => {
   });
 });
 
-router.delete("/admin/coupons/:id", requireAdmin, async (req, res): Promise<void> => {
-  const params = DeleteAdminCouponParams.safeParse(req.params);
+router.patch("/admin/coupons/:id", requireAdmin, async (req, res): Promise<void> => {
+  const params = UpdateAdminCouponParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
@@ -153,7 +165,7 @@ router.delete("/admin/coupons/:id", requireAdmin, async (req, res): Promise<void
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const updates: Record<string, unknown> = {};
+  const updates: Partial<typeof couponsTable.$inferInsert> = {};
   if (parsed.data.descriptionAr !== undefined) updates.descriptionAr = parsed.data.descriptionAr;
   if (parsed.data.discountValue !== undefined) updates.discountValue = String(parsed.data.discountValue);
   if (parsed.data.maxUses !== undefined) updates.maxUses = parsed.data.maxUses;

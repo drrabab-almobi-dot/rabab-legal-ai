@@ -96,7 +96,7 @@ router.post("/contract/extract", requireAuth, upload.single("file"), async (req,
     if (pageCount && pageCount > TRIAL_PAGE_LIMIT) {
       const { getQuotaStatus } = await import("../lib/quota.js");
       const quotaStatus = await getQuotaStatus((req as any).user.userId);
-      const isTrial = !quotaStatus.subscription || quotaStatus.subscription.type === 'free';
+      const isTrial = quotaStatus.isTrial;
       if (isTrial) {
         res.status(403).json({
           error: `يمكن للتجربة المجانية تحليل حتى ${TRIAL_PAGE_LIMIT} صفحات (الملف يحتوي على ${pageCount} صفحة). اشترك للوصول الكامل.`,
@@ -647,9 +647,10 @@ router.post("/contract/review", requireAuth, upload.single("file"), async (req, 
     reviewSessionId = result.sessionId;
   }
   try {
-    const rawText = req.file
+    const extractedText = req.file
       ? await extractText(req.file.buffer, req.file.mimetype, req.file.originalname)
       : bodyText!;
+    const rawText = typeof extractedText === "string" ? extractedText : extractedText.text;
     const snippet = rawText.slice(0, 14000);
     const OpenAI = (await import("openai")).default;
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -847,9 +848,10 @@ router.post("/contract/enforce-check", requireAuth, upload.single("file"), async
   const typeLabel  = CONTRACT_TYPE_NAMES_AR[contractType] ?? "عقد";
 
   try {
-    const rawText = req.file
+    const extractedText = req.file
       ? await extractText(req.file.buffer, req.file.mimetype, req.file.originalname)
       : bodyText!;
+    const rawText = typeof extractedText === "string" ? extractedText : extractedText.text;
     const snippet = rawText.slice(0, 14000);
     const OpenAI = (await import("openai")).default;
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -917,9 +919,10 @@ router.post("/contract/final-check", requireAuth, upload.single("file"), async (
   const bodyText = req.body?.contractText as string | undefined;
   if (!req.file && !bodyText) { res.status(400).json({ error: "لم يُرفق ملف أو نص عقد" }); return; }
   try {
-    const rawText = req.file
+    const extractedText = req.file
       ? await extractText(req.file.buffer, req.file.mimetype, req.file.originalname)
       : bodyText!;
+    const rawText = typeof extractedText === "string" ? extractedText : extractedText.text;
     const snippet = rawText.slice(0, 14000);
     const OpenAI = (await import("openai")).default;
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -973,7 +976,7 @@ ${snippet}`,
 router.post("/contract/extract-data", requireAuth, upload.single("file"), async (req, res): Promise<void> => {
   if (!req.file) { res.status(400).json({ error: "لم يُرفق ملف" }); return; }
   try {
-    const rawText = await extractText(req.file.buffer, req.file.mimetype, req.file.originalname);
+    const { text: rawText } = await extractText(req.file.buffer, req.file.mimetype, req.file.originalname);
     const snippet = rawText.slice(0, 12000);
     const OpenAI = (await import("openai")).default;
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -1068,7 +1071,7 @@ router.post("/contract/refine", requireAuth, async (req, res): Promise<void> => 
 
 // ─── PATCH /api/contract/sessions/:id — save edited draft text ───────────────
 router.patch("/contract/sessions/:id", requireAuth, async (req, res): Promise<void> => {
-  const sessionId = parseInt(req.params.id, 10);
+  const sessionId = parseInt(req.params.id as string, 10);
   if (isNaN(sessionId)) { res.status(400).json({ error: "معرّف الجلسة غير صالح" }); return; }
 
   const { draftText, usedLiveSearch } = req.body as { draftText?: string; usedLiveSearch?: boolean };

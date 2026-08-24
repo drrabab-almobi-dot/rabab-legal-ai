@@ -74,7 +74,7 @@ router.post("/admin/initiatives", requireAdmin, async (req, res): Promise<void> 
 
 // ── Admin: update ─────────────────────────────────────────────────────────────
 router.patch("/admin/initiatives/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const { title, description, icon, url, utmCampaign, displayOrder, isActive } = req.body;
@@ -97,7 +97,7 @@ router.patch("/admin/initiatives/:id", requireAdmin, async (req, res): Promise<v
 
 // ── Admin: delete ─────────────────────────────────────────────────────────────
 router.delete("/admin/initiatives/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
   await db.execute(sql`DELETE FROM community_initiatives WHERE id = ${id}`);
   res.json({ ok: true });

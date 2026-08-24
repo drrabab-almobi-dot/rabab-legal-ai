@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
-    "build": "pnpm run typecheck:libs && pnpm run typecheck:report && pnpm run lint:report && node ./build.mjs",
+    "build": "pnpm run typecheck:libs && pnpm run typecheck && pnpm run lint && node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "lint": "eslint src/routes/",
     "lint:report": "pnpm run lint || true",

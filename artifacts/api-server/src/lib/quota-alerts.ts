@@ -158,7 +158,7 @@ export async function sendExpiryAlerts(): Promise<void> {
       subject: `⏰ اشتراكك ينتهي خلال ${daysRound} يوم — رباب القانونية`,
       html: emailHtml(
         `اشتراكك ينتهي خلال ${daysRound} يوم`,
-        `مرحباً ${user.name ?? ""},<br>اشتراكك في باقة <strong>${pkg.name}</strong> سينتهي بتاريخ <strong>${sub.endDate.toLocaleDateString("ar-SA")}</strong>. جدِّده الآن لضمان الاستمرارية.`,
+        `مرحباً ${user.name ?? ""},<br>اشتراكك في باقة <strong>${pkg.nameAr}</strong> سينتهي بتاريخ <strong>${sub.endDate.toLocaleDateString("ar-SA")}</strong>. جدِّده الآن لضمان الاستمرارية.`,
         { href: "https://rabablegal.com/pricing", label: "تجديد الاشتراك" }
       ),
     });

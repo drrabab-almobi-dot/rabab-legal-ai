@@ -78,18 +78,19 @@ async function api(
 }
 
 /**
- * Seed a minimal test user using only the columns that exist in the live DB
- * (avoids failures when the schema is ahead of applied migrations), then
- * issue a JWT directly — no HTTP round-trip required.
+ * Seed a minimal active test user, then issue a JWT directly — no HTTP
+ * round-trip required. token_version is set explicitly because legacy
+ * databases can retain an older column default even after the app schema
+ * correctly defaults new accounts to version 1.
  */
 async function seedUserAndIssueToken(): Promise<{ token: string; userId: number }> {
   const email = `mw-${uuidv4()}@test.local`;
 
-  // Raw INSERT using only columns guaranteed to exist in the live DB.
   // phone_verified = true so the auth middleware's isActive check passes cleanly.
+  // token_version mirrors tokens without the claim (which are treated as version 1).
   const rows = await db.execute(
-    sql`INSERT INTO users (name, email, password_hash, phone, role, is_active, phone_verified)
-        VALUES ('MW Test', ${email}, 'x', '0500000000', 'user', true, true)
+    sql`INSERT INTO users (name, email, password_hash, phone, role, is_active, phone_verified, token_version)
+        VALUES ('MW Test', ${email}, 'x', '0500000000', 'user', true, true, 1)
         RETURNING id`,
   );
   const userId = (rows.rows[0] as any).id as number;
@@ -250,4 +251,6 @@ await new Promise<void>((resolve) => server.close(() => resolve()));
 
 const total = passed + failed;
 console.log(`\n${total} tests: ${passed} passed, ${failed} failed\n`);
-if (failed > 0) process.exit(1);
+// The app's PostgreSQL-backed session store intentionally keeps its pool open.
+// End this standalone test process explicitly so a clean test run cannot hang.
+process.exit(failed > 0 ? 1 : 0);

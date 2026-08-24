@@ -20,6 +20,7 @@ import multer from "multer"
 
 import AdmZip from "adm-zip"
 ;
+import OpenAI from "openai";
 
 import {
  db, knowledgeDocumentsTable, knowledgeChunksTable, draftContractsTable, notificationsTable, userNotificationsTable 
@@ -909,7 +910,7 @@ router.post(
 /** Poll ZIP job status */
 router.get("/admin/knowledge/zip-status/:jobId", requireAdmin, (req, res): void => {
 
-  const job = bulkJobs.get(req.params.jobId)
+  const job = bulkJobs.get(req.params.jobId as string)
 ;
 
   if (!job) {
@@ -943,7 +944,7 @@ router.get("/admin/knowledge/zip-status/:jobId", requireAdmin, (req, res): void 
 /** Download original file */
 router.get("/admin/knowledge/documents/:id/download", requireAdmin, async (req, res): Promise<void> => {
 
-  const id = parseInt(req.params.id, 10)
+  const id = parseInt(req.params.id as string, 10)
 ;
 
   if (isNaN(id)) {
@@ -1015,7 +1016,7 @@ router.get("/admin/knowledge/documents/:id/download", requireAdmin, async (req, 
 /** Delete a document and all its chunks */
 router.delete("/admin/knowledge/documents/:id", requireAdmin, async (req, res): Promise<void> => {
 
-  const id = parseInt(req.params.id, 10)
+  const id = parseInt(req.params.id as string, 10)
 ;
 
   if (isNaN(id)) {
@@ -1047,7 +1048,7 @@ router.delete("/admin/knowledge/documents/:id", requireAdmin, async (req, res): 
 /** Re-index an existing document — prefers raw binary so new TOC/page filters apply */
 router.post("/admin/knowledge/reindex/:id", requireAdmin, async (req, res): Promise<void> => {
 
-  const id = parseInt(req.params.id, 10)
+  const id = parseInt(req.params.id as string, 10)
 ;
 
   if (isNaN(id)) {
@@ -3014,7 +3015,7 @@ router.get("/knowledge/circulars/:id", requireAuth, async (req, res): Promise<vo
     }
   }
 
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) { res.status(400).json({ error: "معرّف غير صالح" }); return; }
 
   const [doc] = await db
@@ -3447,14 +3448,14 @@ router.post("/knowledge/legal-research", requireAuth, async (req, res): Promise<
           similarity: Math.round(c.similarity * 100),
           verified: true,
           snippet: c.content.slice(0, 180).trim(),
-          sourceType: "kb" as const,
+          sourceType: "kb" as "kb" | "web",
         })).concat(
           tavilyResults.slice(0, 3).map(r => ({
             name: r.title,
             similarity: Math.round((r.score ?? 0.5) * 100),
             verified: true,
             snippet: r.content.slice(0, 180).trim(),
-            sourceType: "web" as const,
+            sourceType: "web" as "kb" | "web",
             url: r.url,
           }))
         ),
@@ -3981,7 +3982,7 @@ router.get("/admin/knowledge/health", requireAdmin, async (_req, res): Promise<v
 // emitted by the POST handler and forwarded here as SSE frames so the UI can
 // show "🌐 جارٍ البحث في الإنترنت…" while Tavily is running.
 router.get("/knowledge/research-status/:requestId", requireAuth, (req, res): void => {
-  const { requestId } = req.params;
+  const requestId = req.params.requestId as string;
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
