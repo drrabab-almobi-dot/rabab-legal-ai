@@ -128,7 +128,10 @@ function Calendar({
           return (
             <div
               data-slot="calendar"
-              ref={rootRef}
+              // react-day-picker resolves React's types through a different
+              // workspace peer than this artifact. Both refs target the same
+              // DOM element at runtime, so bridge the type boundary here.
+              ref={rootRef as React.Ref<HTMLDivElement>}
               className={cn(className)}
               {...props}
             />

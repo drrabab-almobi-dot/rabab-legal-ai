@@ -2422,7 +2422,7 @@ function LegalResearcher() {
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const esRef = useRef<EventSource | null>(null);
   const { data: sub } = useGetMySubscription();
-  const canExport = sub != null && sub.type !== 'free';
+  const canExport = sub != null && sub.package?.type !== 'free';
 
   const handleExportMemoWord = async () => {
     if (!report?.memo) return;
@@ -2510,7 +2510,7 @@ function LegalResearcher() {
 
   /** Generate a text-based (selectable/searchable) PDF with all report sections and trigger direct download */
   const doExportPdf = async (mode: 'memo' | 'full' = 'memo') => {
-    if (!report?.memo) return;
+    if (!report?.memo) throw new Error('لا توجد مذكرة جاهزة للتصدير.');
     const today = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
     const dateStr = new Date().toISOString().slice(0, 10);
     const isUnverified = report.hasCitations === false;
@@ -3784,7 +3784,10 @@ export default function KnowledgeSearch() {
             {!tabSearched && (
               <div className="text-center py-14 text-muted-foreground">
                 <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  {React.cloneElement(tab.icon as React.ReactElement, { className: 'w-8 h-8 text-muted-foreground' })}
+                  {React.cloneElement(
+                    tab.icon as React.ReactElement<{ className?: string }>,
+                    { className: 'w-8 h-8 text-muted-foreground' },
+                  )}
                 </div>
                 <p className="text-sm font-medium mb-1">{tab.labelAr}</p>
                 <p className="text-xs">{t('اكتب موضوعاً للبدء', 'Type a topic to begin')}</p>

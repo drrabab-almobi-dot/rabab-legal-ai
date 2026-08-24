@@ -8,7 +8,7 @@ import { AdminSidebar } from '@/components/layout';
 import { cn } from '@/lib/utils';
 import {
   CheckCircle2, XCircle, AlertTriangle, RefreshCw,
-  Loader2, Toggle, ToggleLeft, ToggleRight, Info, Shield,
+  Loader2, ToggleLeft, ToggleRight, Info, Shield,
   FileText, Upload, Wifi,
 } from 'lucide-react';
 

@@ -3,14 +3,18 @@ import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useGetPackage, useGetMySubscription } from '@workspace/api-client-react';
+import {
+  getGetMySubscriptionQueryKey,
+  getGetPackageQueryKey,
+  useGetPackage,
+  useGetMySubscription,
+} from '@workspace/api-client-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar, Footer } from '@/components/layout';
 import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { CreditCard, Tag, ShieldCheck, Loader2, Info, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetMySubscriptionQueryKey } from '@workspace/api-client-react';
 
 declare global { interface Window { Moyasar: any } }
 
@@ -38,10 +42,12 @@ export default function PaymentFlow() {
   const packageId = packageIdParam ? parseInt(packageIdParam, 10) : null;
 
   const { data: pkg, isLoading: pkgLoading } = useGetPackage(packageId as number, {
-    query: { enabled: !!packageId }
+    query: { queryKey: getGetPackageQueryKey(packageId as number), enabled: !!packageId }
   });
 
-  const { data: currentSub } = useGetMySubscription({ query: { retry: false } });
+  const { data: currentSub } = useGetMySubscription({
+    query: { queryKey: getGetMySubscriptionQueryKey(), retry: false },
+  });
 
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);

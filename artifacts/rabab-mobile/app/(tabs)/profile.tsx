@@ -7,7 +7,15 @@ import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useGetMySubscription, useListMyPayments, useListMyInvoices, customFetch } from '@workspace/api-client-react';
+import {
+  customFetch,
+  getGetMySubscriptionQueryKey,
+  getListMyInvoicesQueryKey,
+  getListMyPaymentsQueryKey,
+  useGetMySubscription,
+  useListMyInvoices,
+  useListMyPayments,
+} from '@workspace/api-client-react';
 import type { Payment, Invoice } from '@workspace/api-client-react';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { SubscriptionSheet } from '@/components/SubscriptionSheet';
@@ -562,15 +570,15 @@ export default function ProfileScreen() {
 
 
   const { data: subscription, refetch: refetchSub } = useGetMySubscription({
-    query: { enabled: !!user, staleTime: 60_000 },
+    query: { queryKey: getGetMySubscriptionQueryKey(), enabled: !!user, staleTime: 60_000 },
   });
 
   const { data: payments, isLoading: paymentsLoading, refetch: refetchPayments } = useListMyPayments({
-    query: { enabled: !!user, staleTime: 30_000 },
+    query: { queryKey: getListMyPaymentsQueryKey(), enabled: !!user, staleTime: 30_000 },
   });
 
   const { data: invoices } = useListMyInvoices({
-    query: { enabled: !!user, staleTime: 60_000 },
+    query: { queryKey: getListMyInvoicesQueryKey(), enabled: !!user, staleTime: 60_000 },
   });
 
   // Show confirmation when a subscription is activated (e.g. after returning from payment)

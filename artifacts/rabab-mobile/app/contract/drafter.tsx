@@ -1610,7 +1610,7 @@ export default function ContractDrafterScreen() {
     } finally {
       setIsSending(false);
     }
-  }, [inputText, isSending, apiHistory, user]);
+  }, [inputText, isSending, apiHistory, user, attachedFileName]);
 
   const handleUpdateDraft = useCallback(async (id: number, newText: string) => {
     // Update local state immediately

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams } from 'wouter';
-import { useGetInvoice } from '@workspace/api-client-react';
+import { getGetInvoiceQueryKey, useGetInvoice } from '@workspace/api-client-react';
 import { Navbar, Footer } from '@/components/layout';
 import { Button, Card, CardContent, Skeleton } from '@/components/ui';
 import { Scale, Printer, Download, ArrowRight } from 'lucide-react';
@@ -12,7 +12,7 @@ export default function InvoiceDetail() {
   const id = params.id === 'latest' ? 1 : parseInt(params.id || '1', 10); // Fallback for 'latest' mock
   
   const { data: invoice, isLoading, isError } = useGetInvoice(id, {
-    query: { enabled: !!id }
+    query: { queryKey: getGetInvoiceQueryKey(id), enabled: !!id }
   });
 
   const handlePrint = () => {
@@ -151,7 +151,7 @@ export default function InvoiceDetail() {
                   <span className="text-muted-foreground">المبلغ الخاضع للضريبة</span>
                   <span>{inv.amount} ر.س</span>
                 </div>
-                {inv.discountAmount > 0 && (
+                {(inv.discountAmount ?? 0) > 0 && (
                   <div className="flex justify-between px-4 text-green-600">
                     <span>الخصم</span>
                     <span>- {inv.discountAmount} ر.س</span>

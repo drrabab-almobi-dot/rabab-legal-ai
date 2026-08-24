@@ -200,6 +200,9 @@ const modalStyles = StyleSheet.create({
   },
   cancelBtnText: { fontSize: 15 },
 });
+
+const attachStyles = createAttachmentStyles();
+const citationStyles = createCitationStyles();
 function CitationCard({ source, colors }: { source: CitationSource; colors: ReturnType<typeof useColors> }) {
   const pageLabel = source.pageStart != null
     ? source.pageEnd != null && source.pageEnd !== source.pageStart
@@ -538,7 +541,7 @@ function EditParamsModal({
       setParams({ ...currentParams });
       setErrors({});
     }
-  }, [visible]);
+  }, [visible, currentParams]);
 
   const taskConfig = taskType ? TASK_TYPES.find(t => t.id === taskType) : null;
 
@@ -1501,7 +1504,8 @@ export function ChatScreen({ consultationId, onBack, onNewConversation }: ChatSc
     </View>
   );
 }
-const attachStyles = StyleSheet.create({
+function createAttachmentStyles() {
+  return StyleSheet.create({
   card: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -1517,9 +1521,11 @@ const attachStyles = StyleSheet.create({
   body: { flex: 1 },
   name: { fontSize: 13, lineHeight: 18, textAlign: 'right' },
   ext: { fontSize: 10, marginTop: 2, textAlign: 'right' },
-});
+  });
+}
 
-const citationStyles = StyleSheet.create({
+function createCitationStyles() {
+  return StyleSheet.create({
   card: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -1543,4 +1549,5 @@ const citationStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: { fontSize: 10, fontWeight: '700' },
-});
+  });
+}

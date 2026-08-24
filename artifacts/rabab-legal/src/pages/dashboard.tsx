@@ -1,6 +1,11 @@
 import React from 'react';
 import { Link } from 'wouter';
-import { useGetMySubscription, useListMyConsultations, useListMyInvoices } from '@workspace/api-client-react';
+import {
+  getGetMySubscriptionQueryKey,
+  useGetMySubscription,
+  useListMyConsultations,
+  useListMyInvoices,
+} from '@workspace/api-client-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Navbar, Footer } from '@/components/layout';
 import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton } from '@/components/ui';
@@ -12,7 +17,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   
   const { data: subscription, isLoading: subLoading } = useGetMySubscription({
-    query: { retry: false }
+    query: { queryKey: getGetMySubscriptionQueryKey(), retry: false }
   });
   
   const { data: consultations, isLoading: consLoading } = useListMyConsultations();

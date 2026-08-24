@@ -55,6 +55,8 @@ const SECTIONS = [
   },
 ] as const;
 
+const s = createStyles();
+
 export default function LegalAssistantScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -81,7 +83,7 @@ export default function LegalAssistantScreen() {
     if (typeof restoredId === 'number') {
       router.replace(`/chat/${restoredId}` as any);
     }
-  }, [restoredId]);
+  }, [restoredId, router]);
 
   const handlePress = (route: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -191,7 +193,8 @@ export default function LegalAssistantScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createStyles() {
+  return StyleSheet.create({
   root: { flex: 1 },
   centered: { alignItems: 'center', justifyContent: 'center' },
 
@@ -314,4 +317,5 @@ const s = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'right',
   },
-});
+  });
+}

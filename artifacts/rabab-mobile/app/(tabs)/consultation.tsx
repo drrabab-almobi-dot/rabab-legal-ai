@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useListMyConsultations, type Consultation } from '@workspace/api-client-react';
+import { getListMyConsultationsQueryKey, useListMyConsultations, type Consultation } from '@workspace/api-client-react';
 import { useAuth, apiFetch } from '@/contexts/AuthContext';
 
 const styles = StyleSheet.create({
@@ -213,7 +213,7 @@ export default function ConsultationScreen() {
   const { user } = useAuth();
 
   const { data: consultations, isLoading, refetch } = useListMyConsultations({
-    query: { enabled: !!user, staleTime: 30_000 },
+    query: { queryKey: getListMyConsultationsQueryKey(), enabled: !!user, staleTime: 30_000 },
   });
 
   // ── Proactive KB search indicator ─────────────────────────────────────────

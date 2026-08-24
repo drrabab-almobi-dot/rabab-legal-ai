@@ -6,7 +6,7 @@ import {
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useSearchKnowledge, type KnowledgeChunk } from '@workspace/api-client-react';
+import { getSearchKnowledgeQueryKey, useSearchKnowledge, type KnowledgeChunk } from '@workspace/api-client-react';
 import { useAuth } from '@/contexts/AuthContext';
 import * as Haptics from 'expo-haptics';
 import * as Print from 'expo-print';
@@ -359,13 +359,15 @@ export default function SearchScreen() {
   const STALE_TIME = 60_000;
   const lastFetchedAt = useRef<number | null>(null);
 
-  const { data, isLoading, isFetching, error, refetch } = useSearchKnowledge(
-    {
+  const searchParams = {
       q: debouncedQuery,
       ...(category !== 'all' ? { category } : {}),
-    } as any,
+    } as any;
+  const { data, isLoading, isFetching, error, refetch } = useSearchKnowledge(
+    searchParams,
     {
       query: {
+        queryKey: getSearchKnowledgeQueryKey(searchParams),
         enabled: !!user && debouncedQuery.length >= 2,
         retry: false,
         staleTime: STALE_TIME,

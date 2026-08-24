@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
-import { useListPackages, useInitiatePayment, type Package } from '@workspace/api-client-react';
+import { getListPackagesQueryKey, useListPackages, useInitiatePayment, type Package } from '@workspace/api-client-react';
 import { useAuth, type AuthUser } from '@/contexts/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -394,7 +394,7 @@ export function SubscriptionSheet({ visible, onClose }: SubscriptionSheetProps) 
   const [initiatingId, setInitiatingId] = useState<number | null>(null);
 
   const { data: packages, isLoading: pkgLoading } = useListPackages({
-    query: { enabled: visible, staleTime: 5 * 60_000 },
+    query: { queryKey: getListPackagesQueryKey(), enabled: visible, staleTime: 5 * 60_000 },
   });
 
   const { mutateAsync: initiatePayment } = useInitiatePayment();

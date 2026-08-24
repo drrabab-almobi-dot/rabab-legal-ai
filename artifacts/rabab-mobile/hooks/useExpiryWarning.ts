@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, type AppStateStatus } from 'react-native';
 import * as SecureStore from '@/utils/storage';
-import { useGetMySubscription } from '@workspace/api-client-react';
+import { getGetMySubscriptionQueryKey, useGetMySubscription } from '@workspace/api-client-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const LAST_SHOWN_KEY = '@rabab_expiry_warning_last_shown';
@@ -18,7 +18,7 @@ export function useExpiryWarning() {
   const [showSheet, setShowSheet] = useState(false);
 
   const { data: subscription } = useGetMySubscription({
-    query: { enabled: !!user, staleTime: 60_000 },
+    query: { queryKey: getGetMySubscriptionQueryKey(), enabled: !!user, staleTime: 60_000 },
   });
 
   const checkAndWarn = useCallback(async () => {

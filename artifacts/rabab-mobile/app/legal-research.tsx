@@ -5,7 +5,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
-import KnowledgeSearchScreen from '@/screens/KnowledgeSearchScreen';
+import { KnowledgeSearchScreen } from '@/src/screens/KnowledgeSearchScreen';
 
 export default function LegalResearchScreen() {
   return (

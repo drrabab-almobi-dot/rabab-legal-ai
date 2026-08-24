@@ -128,9 +128,8 @@ export default function AdminEmailSettings() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background" dir="rtl">
-      <AdminSidebar />
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+    <AdminSidebar>
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto" dir="rtl">
         {/* Page header */}
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
@@ -298,6 +297,6 @@ export default function AdminEmailSettings() {
           </div>
         )}
       </main>
-    </div>
+    </AdminSidebar>
   );
 }

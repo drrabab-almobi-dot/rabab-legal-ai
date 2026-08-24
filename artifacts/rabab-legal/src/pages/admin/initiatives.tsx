@@ -163,7 +163,7 @@ export default function AdminInitiativesPage() {
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-foreground mb-1">الوصف</label>
               <textarea
-                value={form.description}
+                value={form.description ?? ''}
                 onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                 className="w-full h-20 rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary resize-none"
                 placeholder="وصف مختصر للمبادرة..."
@@ -182,7 +182,7 @@ export default function AdminInitiativesPage() {
             <div>
               <label className="block text-xs font-medium text-foreground mb-1">utm_campaign</label>
               <input
-                value={form.utmCampaign}
+                value={form.utmCampaign ?? ''}
                 onChange={e => setForm(p => ({ ...p, utmCampaign: e.target.value }))}
                 className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:border-primary"
                 placeholder="initiative_name"

@@ -158,7 +158,7 @@ export async function exportMemoWord(opts: {
     .filter(Boolean);
 
   let paraCounter = 0;
-  const bodyChildren: Paragraph[] = [];
+  const bodyChildren: Array<Paragraph | Table> = [];
 
   // تحذير إذا لم تكن هناك استشهادات
   if (hasCitations === false) {
@@ -329,7 +329,7 @@ export async function exportContractWord(opts: {
   tocChildren.push(gap(200));
 
   // ── بناء جسم العقد ───────────────────────────────────────────────────────
-  const bodyChildren: Paragraph[] = [
+  const bodyChildren: Array<Paragraph | Table> = [
     rtlLine('بسم الله الرحمن الرحيم', { align: AlignmentType.CENTER, size: SIZE_BRAND, bold: true, spacing: 120 }),
     rtlLine(title + (type ? ` — ${type}` : ''), {
       align: AlignmentType.CENTER, size: SIZE_TITLE, bold: true, color: COLOR_BRAND, spacing: 60,

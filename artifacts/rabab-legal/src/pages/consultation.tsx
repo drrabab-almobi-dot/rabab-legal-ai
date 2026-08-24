@@ -1680,8 +1680,8 @@ function ChatScreen({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: sub } = useGetMySubscription();
-  const canExport = sub != null && sub.type !== 'free';
-  const isTrial   = sub?.type === 'free';
+  const isTrial = sub?.package?.type === 'free';
+  const canExport = sub != null && !isTrial;
   const isDraftService = taskType === 'pleadings' || taskType === 'contract_draft';
   const { confirm: confirmQuota } = useQuotaConfirm();
   const [isMaximized, setIsMaximized] = React.useState(false);
@@ -2358,7 +2358,7 @@ export default function Consultation() {
   const [isStarting, setIsStarting] = useState(false);
 
   const { data: subscription, isLoading: subLoading } = useGetMySubscription({
-    query: { retry: false, gcTime: 0 },
+    query: { queryKey: getGetMySubscriptionQueryKey(), retry: false, gcTime: 0 },
   });
 
   const createCons = useCreateConsultation();

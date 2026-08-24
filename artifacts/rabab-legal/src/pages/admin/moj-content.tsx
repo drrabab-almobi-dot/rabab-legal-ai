@@ -64,10 +64,11 @@ export default function MojContent() {
   // جلب الوثائق من قاعدة المعرفة
   const { data: docs = [], isLoading: docsLoading } = useQuery<KbDoc[]>({
     queryKey: ['admin-kb-docs'],
-    queryFn: async () => {
-      const r = await customFetch('/api/admin/knowledge/documents?limit=200');
-      const d = await r.json();
-      return d.documents ?? d.items ?? d ?? [];
+    queryFn: async (): Promise<KbDoc[]> => {
+      const d = await customFetch<{ documents?: KbDoc[]; items?: KbDoc[] }>(
+        '/api/admin/knowledge/documents?limit=200',
+      );
+      return d.documents ?? d.items ?? [];
     },
   });
 
@@ -75,8 +76,7 @@ export default function MojContent() {
   const { data: crawlStatus } = useQuery<CrawlStatus>({
     queryKey: ['moj-crawl-status'],
     queryFn: async () => {
-      const r = await customFetch('/api/admin/knowledge/crawl-moj/status');
-      return r.json();
+      return customFetch<CrawlStatus>('/api/admin/knowledge/crawl-moj/status');
     },
     refetchInterval: 5000,
   });
@@ -84,8 +84,7 @@ export default function MojContent() {
   // تشغيل الزحف
   const crawlMutation = useMutation({
     mutationFn: async () => {
-      const r = await customFetch('/api/admin/knowledge/crawl-moj', { method: 'POST' });
-      return r.json();
+      return customFetch('/api/admin/knowledge/crawl-moj', { method: 'POST' });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['moj-crawl-status'] });

@@ -71,6 +71,7 @@ export function UsageCounter() {
       const interval = setInterval(fetchQuota, 60_000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [isAuthenticated]);
 
   // إغلاق اللوحة عند النقر خارجها
