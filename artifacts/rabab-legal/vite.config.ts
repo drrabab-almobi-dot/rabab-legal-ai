@@ -5,7 +5,8 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-const rawPort = process.env.PORT;
+const isBuildCommand = process.argv.includes('build');
+const rawPort = process.env.PORT ?? (isBuildCommand ? '3000' : undefined);
 
 if (!rawPort) {
   throw new Error(
