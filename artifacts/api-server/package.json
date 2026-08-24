@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
-    "build": "pnpm run lint && node ./build.mjs",
+    "build": "pnpm run typecheck || true && pnpm run lint && node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "lint": "eslint src/routes/",
     "typecheck": "tsc -p tsconfig.json --noEmit",
