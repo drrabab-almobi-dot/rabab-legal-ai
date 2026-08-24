@@ -4,10 +4,12 @@ import { db, usersTable, tokenBlocklistTable } from "@workspace/db";
 import { eq, lt } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
-declare module "express" {
-  interface Request {
-    userId?: number;
-    userRole?: string;
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: number;
+      userRole?: string;
+    }
   }
 }
 
