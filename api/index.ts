@@ -1,21 +1,22 @@
 import { createRequire } from "node:module";
-import type { RequestHandler } from "express";
 
 type GlobalWithRequire = typeof globalThis & {
-  require?: NodeRequire;
+  require?: (id: string) => unknown;
 };
 
-let appPromise: Promise<RequestHandler> | undefined;
+type AppHandler = (req: unknown, res: unknown, next?: unknown) => unknown;
 
-function loadApp(): Promise<RequestHandler> {
+let appPromise: Promise<AppHandler> | undefined;
+
+function loadApp(): Promise<AppHandler> {
   const globalWithRequire = globalThis as GlobalWithRequire;
   globalWithRequire.require ??= createRequire(import.meta.url);
 
-  appPromise ??= import("../artifacts/api-server/src/app.ts").then(({ default: app }) => app);
+  appPromise ??= import("../artifacts/api-server/src/app").then(({ default: app }) => app as AppHandler);
   return appPromise;
 }
 
-export default async function handler(...args: Parameters<RequestHandler>) {
+export default async function handler(req: unknown, res: unknown, next?: unknown) {
   const app = await loadApp();
-  return app(...args);
+  return app(req, res, next);
 }
