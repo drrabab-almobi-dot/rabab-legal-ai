@@ -9,6 +9,11 @@ import { logger } from "./lib/logger";
 const PgStore = connectPgSimple(session);
 
 const app: Express = express();
+let appReady = false;
+
+export function markAppReady(): void {
+  appReady = true;
+}
 
 // ── Trust Replit's HTTPS reverse-proxy so session cookies and IP detection ──
 // work correctly. Without this, Express sees every request as HTTP even though
@@ -74,6 +79,20 @@ app.use(
     },
   }),
 );
+
+// Render must be able to see that the process is alive while database
+// migrations/checks are still running. All real API traffic remains gated
+// until those checks complete, so requests cannot use a half-initialized app.
+app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
+  if (req.path === "/healthz" || appReady) {
+    next();
+    return;
+  }
+  res.status(503).json({
+    error: "الخادم قيد التجهيز. يرجى المحاولة بعد لحظات.",
+    code: "SERVICE_STARTING",
+  });
+});
 
 app.use("/api", router);
 
