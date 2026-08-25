@@ -1,0 +1,16 @@
+RABAB LEGAL AI — Full Project Snapshot
+
+This is a lossless, read-only snapshot of all permitted non-secret project files.
+Secrets, credentials, session material, and database export data are intentionally not included.
+The ZIP parts contain raw file bytes and can be restored without changing their contents.
+
+Source files: 795
+Source bytes: 333935064
+ZIP parts: 8
+Chunk size: 4194304 bytes
+
+Extract all ZIP parts in order into the same directory. MANIFEST.txt in each part maps raw entries to their original paths and offsets.
+TRANSFER_MANIFEST.tsv contains the expected SHA-256 for every original file.
+For an entry named chunks/...part-NNNN, concatenate its entries by originalPath and offset to restore that large original file.
+
+MCP clients can transfer the same files directly with list_project_files, read_project_file, create_project_archive, and read_project_binary_chunk.

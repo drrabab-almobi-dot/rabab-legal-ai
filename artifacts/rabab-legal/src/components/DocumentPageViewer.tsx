@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronUp, ChevronDown, ZoomIn, ZoomOut, Download, Loader2, X, BookOpen, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/hooks/use-language";
 
 // Lazy-load pdfjs-dist to avoid blocking the main bundle
 let pdfjsLib: any = null;
@@ -57,11 +58,13 @@ const DEFAULT_SCALE = 1.0;
 export function DocumentPageViewer({
   pdfUrl,
   initialPage = 1,
-  title = "المستند",
+  title,
   onClose,
   totalPages: totalPagesProp,
   inline = false,
 }: DocumentPageViewerProps) {
+  const { isAr, t } = useLang();
+  const viewerTitle = title ?? t("المستند", "Document");
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [numPages, setNumPages] = useState(totalPagesProp ?? 0);
   const [currentPage, setCurrentPage] = useState(initialPage);
@@ -70,7 +73,7 @@ export function DocumentPageViewer({
   const [renderingPages, setRenderingPages] = useState<Set<number>>(new Set());
   const [jumpInput, setJumpInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<{ detail: string } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -85,7 +88,7 @@ export function DocumentPageViewer({
     (async () => {
       try {
         setLoading(true);
-        setError("");
+        setError(null);
         const lib = await loadPdfjsLib();
 
         const loadingTask = lib.getDocument({
@@ -104,7 +107,7 @@ export function DocumentPageViewer({
         setLoading(false);
       } catch (e: any) {
         if (!cancelled) {
-          setError("فشل تحميل المستند: " + (e.message || "خطأ غير معروف"));
+          setError({ detail: typeof e?.message === "string" ? e.message : "" });
           setLoading(false);
         }
       }
@@ -231,7 +234,7 @@ export function DocumentPageViewer({
   const downloadPdf = () => {
     const a = document.createElement("a");
     a.href = pdfUrl;
-    a.download = `${title}.pdf`;
+    a.download = `${viewerTitle}.pdf`;
     a.target = "_blank";
     a.click();
   };
@@ -241,7 +244,7 @@ export function DocumentPageViewer({
     if (!page) return;
     const a = document.createElement("a");
     a.href = page.dataUrl;
-    a.download = `${title}-صفحة-${currentPage}.jpg`;
+    a.download = `${viewerTitle}-${t("صفحة", "page")}-${currentPage}.jpg`;
     a.target = "_blank";   // #379: keep viewer open — don't navigate away
     a.rel = "noopener noreferrer";
     document.body.appendChild(a);
@@ -260,17 +263,29 @@ export function DocumentPageViewer({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={inline ? "flex flex-col h-full bg-black/90" : "fixed inset-0 z-50 bg-black/90 flex flex-col"} dir="rtl">
+    <div
+      className={inline ? "flex flex-col h-full bg-black/90" : "fixed inset-0 z-50 bg-black/90 flex flex-col"}
+      dir={isAr ? "rtl" : "ltr"}
+      lang={isAr ? "ar" : "en"}
+      role={inline ? "region" : "dialog"}
+      aria-modal={inline ? undefined : true}
+      aria-label={t("عارض المستند", "Document viewer")}
+    >
 
       {/* ── Top bar ── */}
-      <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0">
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white transition-colors" title="إغلاق (Esc)">
-          <X className="w-5 h-5" />
+      <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 border-b-2 border-primary/70 shrink-0">
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
+          title={t("إغلاق (Esc)", "Close (Esc)")}
+          aria-label={t("إغلاق عارض المستند", "Close document viewer")}
+        >
+          <X className="w-5 h-5" aria-hidden="true" />
         </button>
 
-        <div className="flex items-center gap-1 mr-1">
-          <BookOpen className="w-4 h-4 text-primary/80" />
-          <span className="text-sm font-semibold text-white truncate max-w-[200px] sm:max-w-sm">{title}</span>
+        <div className={cn("flex items-center gap-1", isAr ? "mr-1" : "ml-1")}>
+          <BookOpen className="w-4 h-4 text-primary/80" aria-hidden="true" />
+          <span dir="auto" className="text-sm font-semibold text-white truncate max-w-[200px] sm:max-w-sm">{viewerTitle}</span>
         </div>
 
         <div className="flex-1" />
@@ -282,27 +297,45 @@ export function DocumentPageViewer({
               value={jumpInput}
               onChange={e => setJumpInput(e.target.value)}
               placeholder={`${currentPage}`}
-              className="w-12 h-7 text-center text-sm bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+              inputMode="numeric"
+              aria-label={t("انتقل إلى رقم الصفحة", "Jump to page number")}
+              title={t("أدخل رقم الصفحة واضغط Enter", "Enter a page number and press Enter")}
+              className="w-12 h-7 text-center text-sm bg-gray-800 border border-blue-400/70 rounded-lg text-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
-            <span className="text-xs text-gray-400">/ {numPages}</span>
+            <span className="text-xs text-gray-400" aria-label={t(`من ${numPages} صفحة`, `of ${numPages} pages`)}>/ {numPages}</span>
           </form>
         )}
 
         {/* Zoom controls */}
-        <div className="flex items-center gap-1 mr-2">
-          <button onClick={() => setScale(s => Math.max(MIN_SCALE, s - 0.25))} className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white transition-colors" title="تصغير (-)">
-            <ZoomOut className="w-4 h-4" />
+        <div className={cn("flex items-center gap-1", isAr ? "mr-2" : "ml-2")}>
+          <button
+            onClick={() => setScale(s => Math.max(MIN_SCALE, s - 0.25))}
+            className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
+            title={t("تصغير (-)", "Zoom out (-)")}
+            aria-label={t("تصغير", "Zoom out")}
+          >
+            <ZoomOut className="w-4 h-4" aria-hidden="true" />
           </button>
-          <span className="text-xs text-gray-400 w-10 text-center">{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(s => Math.min(MAX_SCALE, s + 0.25))} className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white transition-colors" title="تكبير (+)">
-            <ZoomIn className="w-4 h-4" />
+          <span className="text-xs text-gray-400 w-10 text-center" aria-label={t(`مستوى التكبير ${Math.round(scale * 100)}٪`, `Zoom level ${Math.round(scale * 100)}%`)}>{Math.round(scale * 100)}%</span>
+          <button
+            onClick={() => setScale(s => Math.min(MAX_SCALE, s + 0.25))}
+            className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
+            title={t("تكبير (+)", "Zoom in (+)")}
+            aria-label={t("تكبير", "Zoom in")}
+          >
+            <ZoomIn className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* Download */}
-        <button onClick={downloadPdf} className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white text-xs transition-colors" title="تحميل المستند كاملاً">
-          <Download className="w-3.5 h-3.5" />
-          <span>تحميل</span>
+        <button
+          onClick={downloadPdf}
+          className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white text-xs transition-colors"
+          title={t("تحميل المستند كاملاً", "Download the full document")}
+          aria-label={t("تحميل المستند كاملاً", "Download the full document")}
+        >
+          <Download className="w-3.5 h-3.5" aria-hidden="true" />
+          <span>{t("تحميل", "Download")}</span>
         </button>
       </div>
 
@@ -319,15 +352,36 @@ export function DocumentPageViewer({
           style={{ scrollSnapType: "y mandatory" }}
         >
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
-              <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              <p className="text-sm">جارٍ تحميل المستند...</p>
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-gray-400">
+              <div className="rounded-2xl border-2 border-primary/40 bg-gray-900/60 px-8 py-6 text-center">
+                <Loader2 className="mx-auto w-10 h-10 animate-spin text-primary" aria-hidden="true" />
+              <p className="text-sm" role="status">{t("جارٍ تحميل المستند...", "Loading document...")}</p>
+              </div>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-red-400 p-6 text-center">
-              <AlertTriangle className="w-10 h-10" />
-              <p className="text-sm">{error}</p>
-              <button onClick={onClose} className="px-4 py-2 bg-gray-700 rounded-xl text-sm text-white hover:bg-gray-600">إغلاق</button>
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-red-400 text-center">
+              <div className="rounded-2xl border-2 border-red-400/50 bg-gray-900/70 px-8 py-6">
+              <AlertTriangle className="mx-auto w-10 h-10" aria-hidden="true" />
+              <p className="text-sm" role="alert">
+                {t("فشل تحميل المستند:", "Failed to load document:")}{" "}
+                <span dir="auto">{error.detail || t("خطأ غير معروف", "Unknown error")}</span>
+              </p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-700 rounded-xl text-sm text-white hover:bg-gray-600"
+                title={t("إغلاق", "Close")}
+                aria-label={t("إغلاق عارض المستند", "Close document viewer")}
+              >
+                {t("إغلاق", "Close")}
+              </button>
+              </div>
+            </div>
+          ) : numPages === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-gray-400 text-center" role="status">
+              <div className="rounded-2xl border-2 border-blue-400/45 bg-gray-900/60 px-8 py-6">
+              <BookOpen className="mx-auto w-10 h-10" aria-hidden="true" />
+              <p className="text-sm">{t("لا توجد صفحات في هذا المستند.", "This document has no pages.")}</p>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3 py-4 px-2">
@@ -343,19 +397,31 @@ export function DocumentPageViewer({
                     style={{ scrollSnapAlign: "start" }}
                     className={cn(
                       "relative w-full max-w-3xl rounded-lg overflow-hidden transition-all",
-                      isCurrent ? "ring-2 ring-primary shadow-xl shadow-primary/20" : "ring-1 ring-gray-600"
+                      isCurrent ? "ring-2 ring-primary shadow-xl shadow-primary/20" : "ring-2 ring-blue-400/55 hover:ring-blue-300/80"
                     )}
                     onClick={() => setCurrentPage(pageNum)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setCurrentPage(pageNum);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t(`عرض الصفحة ${pageNum}`, `View page ${pageNum}`)}
+                    title={t(`عرض الصفحة ${pageNum}`, `View page ${pageNum}`)}
+                    aria-current={isCurrent ? "page" : undefined}
                   >
                     {/* Page number badge */}
-                    <div className="absolute top-2 right-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded-lg text-xs text-white font-mono">
+                    <div className={cn("absolute top-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded-lg text-xs text-white font-mono", isAr ? "right-2" : "left-2")}>
                       {pageNum}
                     </div>
 
                     {rendered ? (
                       <img
                         src={rendered.dataUrl}
-                        alt={`صفحة ${pageNum}`}
+                        alt={t(`صفحة ${pageNum}`, `Page ${pageNum}`)}
+                        dir="auto"
                         className="w-full h-auto block"
                         style={{ maxWidth: rendered.width }}
                       />
@@ -365,9 +431,9 @@ export function DocumentPageViewer({
                         style={{ aspectRatio: "0.707", minHeight: "400px" }}
                       >
                         {isRendering ? (
-                          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                          <Loader2 className="w-8 h-8 animate-spin text-gray-400" aria-label={t(`جارٍ عرض الصفحة ${pageNum}`, `Rendering page ${pageNum}`)} />
                         ) : (
-                          <div className="text-gray-300 text-sm">صفحة {pageNum}</div>
+                          <div className="text-gray-300 text-sm">{t(`صفحة ${pageNum}`, `Page ${pageNum}`)}</div>
                         )}
                       </div>
                     )}
@@ -380,14 +446,15 @@ export function DocumentPageViewer({
 
         {/* ── Side navigation ── */}
         {!loading && !error && numPages > 1 && (
-          <div className="w-12 flex flex-col items-center justify-center gap-3 bg-gray-900 border-r border-gray-700 shrink-0">
+          <div className={cn("w-12 flex flex-col items-center justify-center gap-3 bg-gray-900 border-primary/60 shrink-0", isAr ? "border-r-2" : "border-l-2")}>
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage <= 1}
               className="p-2 rounded-xl hover:bg-gray-700 text-gray-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="الصفحة السابقة (↑)"
+              title={t("الصفحة السابقة (↑)", "Previous page (↑)")}
+              aria-label={t("الصفحة السابقة", "Previous page")}
             >
-              <ChevronUp className="w-5 h-5" />
+              <ChevronUp className="w-5 h-5" aria-hidden="true" />
             </button>
 
             <div className="flex flex-col items-center gap-0.5">
@@ -400,9 +467,10 @@ export function DocumentPageViewer({
               onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
               disabled={currentPage >= numPages}
               className="p-2 rounded-xl hover:bg-gray-700 text-gray-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="الصفحة التالية (↓)"
+              title={t("الصفحة التالية (↓)", "Next page (↓)")}
+              aria-label={t("الصفحة التالية", "Next page")}
             >
-              <ChevronDown className="w-5 h-5" />
+              <ChevronDown className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -410,12 +478,17 @@ export function DocumentPageViewer({
 
       {/* ── Bottom bar (download current page) ── */}
       {!loading && !error && (
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-t border-gray-700 text-xs text-gray-400 shrink-0">
-          <span>استخدم ↑↓ للتنقل | + − للتكبير | Esc للإغلاق</span>
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-t-2 border-primary/60 text-xs text-gray-400 shrink-0">
+          <span>{t("استخدم ↑↓ للتنقل | + − للتكبير | Esc للإغلاق", "Use ↑↓ to navigate | + − to zoom | Esc to close")}</span>
           {renderedPages.has(currentPage) && (
-            <button onClick={downloadCurrentPage} className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors">
-              <Download className="w-3 h-3" />
-              تحميل الصفحة الحالية
+            <button
+              onClick={downloadCurrentPage}
+              className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+              title={t("تحميل الصفحة الحالية", "Download current page")}
+              aria-label={t(`تحميل الصفحة ${currentPage}`, `Download page ${currentPage}`)}
+            >
+              <Download className="w-3 h-3" aria-hidden="true" />
+              {t("تحميل الصفحة الحالية", "Download current page")}
             </button>
           )}
         </div>

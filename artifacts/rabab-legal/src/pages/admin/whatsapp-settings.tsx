@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { Navbar, Footer } from '@/components/layout';
 import { ToggleLeft, ToggleRight, MessageSquare, Loader2, RefreshCw, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/hooks/use-language';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -23,6 +24,7 @@ interface LogEntry {
 interface LogResponse { rows: LogEntry[]; total: number; page: number; pages: number }
 
 export default function AdminWhatsAppSettings() {
+  const { lang, t } = useLang();
   const [config, setConfig] = useState<WaConfig | null>(null);
   const [log, setLog] = useState<LogResponse | null>(null);
   const [page, setPage] = useState(1);
@@ -64,7 +66,7 @@ export default function AdminWhatsAppSettings() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
       <main className="flex-1 container mx-auto max-w-5xl px-4 py-10">
         <div className="flex items-center gap-3 mb-8">
@@ -72,8 +74,8 @@ export default function AdminWhatsAppSettings() {
             <MessageSquare className="w-5 h-5 text-green-500" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">إعدادات واتساب</h1>
-            <p className="text-sm text-muted-foreground">تحكم في إرسال رسائل واتساب وتتبع سجلها</p>
+            <h1 className="text-2xl font-bold">{t('إعدادات واتساب', 'WhatsApp settings')}</h1>
+            <p className="text-sm text-muted-foreground">{t('تحكم في إرسال رسائل واتساب وتتبع سجلها', 'Control WhatsApp messages and track their log')}</p>
           </div>
         </div>
 
@@ -81,11 +83,11 @@ export default function AdminWhatsAppSettings() {
         <div className="bg-card border border-border rounded-2xl p-6 mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-bold text-foreground mb-1">حالة قناة واتساب</h2>
+              <h2 className="font-bold text-foreground mb-1">{t('حالة قناة واتساب', 'WhatsApp channel status')}</h2>
               <p className="text-sm text-muted-foreground">
                 {config?.enabled
-                  ? 'الإرسال مُفعَّل — الرسائل تُرسَل فعلياً عبر Twilio'
-                  : 'الإرسال مُعطَّل — الرسائل تُحفظ في السجل فقط دون إرسال'}
+                  ? t('الإرسال مُفعَّل — الرسائل تُرسَل فعلياً عبر Twilio', 'Sending is enabled — messages are sent through Twilio')
+                  : t('الإرسال مُعطَّل — الرسائل تُحفظ في السجل فقط دون إرسال', 'Sending is disabled — messages are only saved in the log')}
               </p>
             </div>
             <button
@@ -101,9 +103,9 @@ export default function AdminWhatsAppSettings() {
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : config?.enabled ? (
-                <><ToggleRight className="w-5 h-5" />تعطيل الإرسال</>
+                 <><ToggleRight className="w-5 h-5" />{t('تعطيل الإرسال', 'Disable sending')}</>
               ) : (
-                <><ToggleLeft className="w-5 h-5" />تفعيل الإرسال</>
+                 <><ToggleLeft className="w-5 h-5" />{t('تفعيل الإرسال', 'Enable sending')}</>
               )}
             </button>
           </div>
@@ -120,24 +122,24 @@ export default function AdminWhatsAppSettings() {
         {/* Log */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="font-bold text-sm">سجل الرسائل</h2>
+             <h2 className="font-bold text-sm">{t('سجل الرسائل', 'Message log')}</h2>
             <button onClick={() => fetchLog(page)} disabled={loadingLog} className="p-1.5 rounded hover:bg-muted transition-colors">
               <RefreshCw className={cn('w-3.5 h-3.5 text-muted-foreground', loadingLog && 'animate-spin')} />
             </button>
           </div>
 
           {!log?.rows.length ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">لا توجد رسائل مسجّلة بعد</div>
+             <div className="p-8 text-center text-muted-foreground text-sm">{t('لا توجد رسائل مسجّلة بعد', 'No messages logged yet')}</div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border bg-muted/20">
-                      <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">التاريخ</th>
-                      <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">الرقم</th>
-                      <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">الرسالة</th>
-                      <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">الحالة</th>
+                       <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">{t('التاريخ', 'Date')}</th>
+                       <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">{t('الرقم', 'Number')}</th>
+                       <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">{t('الرسالة', 'Message')}</th>
+                       <th className="text-right px-3 py-2.5 text-muted-foreground font-semibold">{t('الحالة', 'Status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -146,15 +148,15 @@ export default function AdminWhatsAppSettings() {
                         <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">
                           {new Date(row.createdAt).toLocaleString('ar-SA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </td>
-                        <td className="px-3 py-2.5 font-mono">{row.toNumber ?? '—'}</td>
+                         <td className="px-3 py-2.5 font-mono" dir="ltr">{row.toNumber ?? '—'}</td>
                         <td className="px-3 py-2.5 max-w-[280px] truncate text-muted-foreground">{row.messagePreview}</td>
                         <td className="px-3 py-2.5">
                           {row.sent ? (
-                            <span className="flex items-center gap-1 text-green-400"><CheckCircle2 className="w-3 h-3" />أُرسلت</span>
+                             <span className="flex items-center gap-1 text-green-400"><CheckCircle2 className="w-3 h-3" />{t('أُرسلت', 'Sent')}</span>
                           ) : row.adminDisabled ? (
-                            <span className="flex items-center gap-1 text-amber-400"><AlertCircle className="w-3 h-3" />معطَّل</span>
+                             <span className="flex items-center gap-1 text-amber-400"><AlertCircle className="w-3 h-3" />{t('معطَّل', 'Disabled')}</span>
                           ) : (
-                            <span className="flex items-center gap-1 text-red-400"><XCircle className="w-3 h-3" />{row.failReason ?? 'فشل'}</span>
+                             <span className="flex items-center gap-1 text-red-400"><XCircle className="w-3 h-3" />{row.failReason ?? t('فشل', 'Failed')}</span>
                           )}
                         </td>
                       </tr>
@@ -164,7 +166,7 @@ export default function AdminWhatsAppSettings() {
               </div>
               {log.pages > 1 && (
                 <div className="flex items-center justify-between px-3 py-2.5 border-t border-border">
-                  <span className="text-xs text-muted-foreground">صفحة {log.page} من {log.pages}</span>
+                   <span className="text-xs text-muted-foreground">{t('صفحة', 'Page')} {log.page} {t('من', 'of')} {log.pages}</span>
                   <div className="flex gap-1">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="p-1 rounded hover:bg-muted disabled:opacity-40">
                       <ChevronRight className="w-3.5 h-3.5" />

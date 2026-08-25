@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/hooks/use-auth';
-import { LangProvider } from '@/hooks/use-language';
+import { LangProvider, useLang } from '@/hooks/use-language';
 import { ThemeProvider } from '@/hooks/use-theme';
 import { ProtectedRoute, GuestOnlyRoute } from '@/components/protected-route';
 
@@ -65,22 +65,27 @@ import { QuotaConfirmProvider } from '@/components/QuotaConfirmModal';
 const queryClient = new QueryClient();
 
 // Placeholder components for static pages
-const SimplePage = ({ title }: { title: string }) => (
-  <div className="min-h-screen flex flex-col bg-muted/20">
+const SimplePage = () => {
+  const { lang, t } = useLang();
+  const title = t('إخلاء المسؤولية القانوني', 'Legal Disclaimer');
+  return (
+  <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen flex flex-col bg-muted/20">
     <div className="p-4 bg-primary text-white"><h1 className="text-xl font-bold">{title}</h1></div>
     <div className="container mx-auto p-12 max-w-3xl prose prose-slate rtl:prose-invert">
-      <p>محتوى صفحة {title} باللغة العربية...</p>
+      <p>{t('محتوى صفحة إخلاء المسؤولية القانوني باللغة العربية...', 'The Legal Disclaimer page content is available in Arabic...')}</p>
     </div>
   </div>
-);
+  );
+};
 
 function NotFound() {
+  const { lang, t } = useLang();
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/20 text-center px-4">
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen flex items-center justify-center bg-muted/20 text-center px-4">
       <div>
         <h1 className="text-6xl font-bold text-primary mb-4">404</h1>
-        <p className="text-xl text-muted-foreground mb-8">عذراً، الصفحة التي تبحث عنها غير موجودة.</p>
-        <button onClick={() => window.location.href = '/'} className="bg-primary text-white px-6 py-3 rounded-md font-bold">العودة للرئيسية</button>
+        <p className="text-xl text-muted-foreground mb-8">{t('عذراً، الصفحة التي تبحث عنها غير موجودة.', 'Sorry, the page you are looking for does not exist.')}</p>
+        <button onClick={() => window.location.href = '/'} className="bg-primary text-white px-6 py-3 rounded-md font-bold">{t('العودة للرئيسية', 'Back to home')}</button>
       </div>
     </div>
   );
@@ -91,6 +96,7 @@ function BackButton() {
   const navigationStack = useRef<string[]>([location]);
   const currentLocation = useRef(location);
   const isReturning = useRef(false);
+  const { t, lang } = useLang();
 
   useEffect(() => {
     if (location === currentLocation.current) return;
@@ -121,12 +127,12 @@ function BackButton() {
     <button
       type="button"
       onClick={handleBack}
-      aria-label="العودة للصفحة السابقة"
-      title="العودة للصفحة السابقة"
-      className="fixed top-[4.5rem] right-4 md:right-6 z-40 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label={t('العودة للصفحة السابقة', 'Go back')}
+      title={t('العودة للصفحة السابقة', 'Go back')}
+      className={`fixed top-[4.5rem] ${lang === 'ar' ? 'right-4 md:right-6' : 'left-4 md:left-6'} z-40 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
     >
       <ArrowRight className="h-4 w-4" aria-hidden="true" />
-      <span>رجوع</span>
+      <span>{t('رجوع', 'Back')}</span>
     </button>
   );
 }
@@ -142,7 +148,7 @@ function Router() {
       <Route path="/appointment" component={Appointment} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
-      <Route path="/disclaimer"><SimplePage title="إخلاء المسؤولية القانوني" /></Route>
+      <Route path="/disclaimer"><SimplePage /></Route>
 
       <Route path="/login">
         <GuestOnlyRoute><Login /></GuestOnlyRoute>
@@ -290,19 +296,22 @@ function Router() {
 
 
 function WhatsAppButton() {
+  const { lang, t } = useLang();
   return (
     <a
       href="https://wa.me/966504647649"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="تواصل عبر واتساب"
-      style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, background: 'hsl(47 100% 48%)' }}
-      className="flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+      aria-label={t('تواصل عبر واتساب', 'Contact us on WhatsApp')}
+      title={t('تواصل عبر واتساب', 'Contact us on WhatsApp')}
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 9999, background: 'hsl(220 60% 7%)', border: '1px solid hsl(47 100% 48%)' }}
+      className="flex flex-row items-center gap-2 px-3 py-2.5 rounded-2xl shadow-lg shadow-secondary/15 hover:shadow-xl transition-all duration-300 hover:scale-105"
     >
-      <svg viewBox="0 0 32 32" className="w-7 h-7 shrink-0" style={{ fill: 'hsl(220 60% 7%)' }}>
+      <svg viewBox="0 0 32 32" className="w-7 h-7 shrink-0" style={{ fill: 'hsl(47 100% 48%)' }}>
         <path d="M16 .5C7.44.5.5 7.44.5 16c0 2.82.74 5.47 2.02 7.77L.5 31.5l7.95-2.02A15.44 15.44 0 0016 31.5C24.56 31.5 31.5 24.56 31.5 16S24.56.5 16 .5zm0 28.12a12.55 12.55 0 01-6.38-1.74l-.46-.27-4.72 1.2 1.22-4.6-.3-.47A12.6 12.6 0 1116 28.62zM23.18 19.5c-.36-.18-2.14-1.06-2.47-1.18-.33-.12-.57-.18-.81.18s-.93 1.18-1.14 1.42-.42.27-.78.09a9.87 9.87 0 01-2.9-1.79 10.9 10.9 0 01-2.01-2.5c-.21-.36-.02-.56.16-.74.16-.16.36-.42.54-.63s.24-.36.36-.6.06-.45-.03-.63c-.09-.18-.81-1.95-1.11-2.67-.29-.7-.59-.6-.81-.61h-.69c-.24 0-.63.09-.96.45s-1.26 1.23-1.26 3 1.29 3.48 1.47 3.72 2.54 3.88 6.16 5.44a20.75 20.75 0 002.06.76c.87.27 1.66.24 2.28.15.7-.1 2.14-.87 2.44-1.71s.3-1.56.21-1.71c-.09-.15-.33-.24-.69-.42z"/>
       </svg>
-      <span className="text-xs font-bold whitespace-nowrap" style={{ color: 'hsl(220 60% 7%)' }}>تواصل عبر واتساب</span>
+      <span className="text-xs font-bold whitespace-nowrap text-white">{t('تواصل عبر واتساب', 'Contact us on WhatsApp')}</span>
     </a>
   );
 }
@@ -315,19 +324,30 @@ function App() {
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <AuthProvider>
             <QuotaConfirmProvider>
-              <TooltipProvider>
-                <Router />
-                <BackButton />
-                <Toaster />
-                <DevPanel />
-                <UsageCounter />
-              </TooltipProvider>
+              <AppContent />
             </QuotaConfirmProvider>
           </AuthProvider>
         </WouterRouter>
       </LangProvider>
       </ThemeProvider>
     </QueryClientProvider>
+  );
+}
+
+function AppContent() {
+  const { lang } = useLang();
+
+  return (
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <TooltipProvider>
+        <Router />
+        <BackButton />
+        <WhatsAppButton />
+        <Toaster />
+        <DevPanel />
+        <UsageCounter />
+      </TooltipProvider>
+    </div>
   );
 }
 

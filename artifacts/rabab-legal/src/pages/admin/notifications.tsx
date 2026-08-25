@@ -7,6 +7,7 @@ import {
   BarChart2, TrendingUp, CalendarDays, Phone,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLang } from '@/hooks/use-language';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -23,10 +24,10 @@ interface Notification {
 }
 
 const TYPE_CONFIG = {
-  update:       { label: 'تحديث',       icon: <RefreshCw   className="w-4 h-4" />, color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  alert:        { label: 'تنبيه',        icon: <AlertTriangle className="w-4 h-4" />, color: 'bg-red-50 text-red-700 border-red-200' },
-  info:         { label: 'معلومة',       icon: <Info        className="w-4 h-4" />, color: 'bg-gray-50 text-gray-700 border-gray-200' },
-  legal_change: { label: 'تعديل قانوني', icon: <Bell        className="w-4 h-4" />, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  update:       { ar: 'تحديث', en: 'Update', icon: <RefreshCw className="w-4 h-4" />, color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  alert:        { ar: 'تنبيه', en: 'Alert', icon: <AlertTriangle className="w-4 h-4" />, color: 'bg-red-50 text-red-700 border-red-200' },
+  info:         { ar: 'معلومة', en: 'Information', icon: <Info className="w-4 h-4" />, color: 'bg-gray-50 text-gray-700 border-gray-200' },
+  legal_change: { ar: 'تعديل قانوني', en: 'Legal change', icon: <Bell className="w-4 h-4" />, color: 'bg-amber-50 text-amber-700 border-amber-200' },
 };
 
 // ─── Reminder type labels ─────────────────────────────────────────────────────
@@ -36,8 +37,13 @@ const REMINDER_TYPE_LABELS: Record<string, string> = {
   'after_expiry': 'بعد انتهاء الاشتراك',
 };
 
-function reminderTypeLabel(t: string): string {
-  return REMINDER_TYPE_LABELS[t] ?? t;
+function reminderTypeLabel(type: string, translate: (ar: string, en: string) => string): string {
+  const en: Record<string, string> = {
+    '3_days_before_expiry': '3 days before expiry',
+    '7_days_before_expiry': '7 days before expiry',
+    'after_expiry': 'After subscription expiry',
+  };
+  return REMINDER_TYPE_LABELS[type] ? translate(REMINDER_TYPE_LABELS[type], en[type]) : type;
 }
 
 // ─── Reminder Stats panel ─────────────────────────────────────────────────────
@@ -62,6 +68,7 @@ interface ReminderStats {
 }
 
 function ReminderStatsPanel() {
+  const { lang, t } = useLang();
   const [stats, setStats] = useState<ReminderStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,8 +101,8 @@ function ReminderStatsPanel() {
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
         <AlertTriangle className="w-8 h-8 text-destructive/50" />
-        <p>{error ?? 'لا توجد بيانات'}</p>
-        <button onClick={load} className="text-sm text-primary underline">إعادة المحاولة</button>
+        <p>{error ?? t('لا توجد بيانات', 'No data')}</p>
+        <button onClick={load} className="text-sm text-primary underline">{t('إعادة المحاولة', 'Try again')}</button>
       </div>
     );
   }
@@ -108,7 +115,7 @@ function ReminderStatsPanel() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1 text-muted-foreground text-xs">
               <CalendarDays className="w-4 h-4" />
-              تذكيرات هذا الشهر
+               {t('تذكيرات هذا الشهر', 'Reminders this month')}
             </div>
             <p className="text-3xl font-bold text-primary">{stats.sentThisMonth}</p>
           </CardContent>
@@ -117,7 +124,7 @@ function ReminderStatsPanel() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1 text-muted-foreground text-xs">
               <Bell className="w-4 h-4" />
-              إجمالي التذكيرات
+               {t('إجمالي التذكيرات', 'Total reminders')}
             </div>
             <p className="text-3xl font-bold text-primary">{stats.totalSent}</p>
           </CardContent>
@@ -126,7 +133,7 @@ function ReminderStatsPanel() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1 text-muted-foreground text-xs">
               <Users className="w-4 h-4" />
-              مُذكَّرون بعد الانتهاء
+               {t('مُذكَّرون بعد الانتهاء', 'Reminded after expiry')}
             </div>
             <p className="text-3xl font-bold text-primary">{stats.afterExpirySent}</p>
           </CardContent>
@@ -135,10 +142,10 @@ function ReminderStatsPanel() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1 text-muted-foreground text-xs">
               <TrendingUp className="w-4 h-4" />
-              نسبة التجديد بعد التذكير
+               {t('نسبة التجديد بعد التذكير', 'Renewal rate after reminder')}
             </div>
             <p className="text-3xl font-bold text-green-600">{stats.conversionRate}%</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{stats.converted} من {stats.afterExpirySent}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{stats.converted} {t('من', 'of')} {stats.afterExpirySent}</p>
           </CardContent>
         </Card>
       </div>
@@ -148,12 +155,12 @@ function ReminderStatsPanel() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-primary" />
-            توزيع التذكيرات حسب النوع
+             {t('توزيع التذكيرات حسب النوع', 'Reminders by type')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {stats.byType.length === 0 ? (
-            <p className="text-sm text-muted-foreground">لا توجد بيانات بعد</p>
+             <p className="text-sm text-muted-foreground">{t('لا توجد بيانات بعد', 'No data yet')}</p>
           ) : (
             <div className="space-y-3">
               {stats.byType.map(row => {
@@ -161,7 +168,7 @@ function ReminderStatsPanel() {
                 return (
                   <div key={row.reminderType}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{reminderTypeLabel(row.reminderType)}</span>
+                      <span className="font-medium">{reminderTypeLabel(row.reminderType, t)}</span>
                       <span className="text-muted-foreground">{row.cnt} ({pct}%)</span>
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -183,28 +190,28 @@ function ReminderStatsPanel() {
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="w-4 h-4 text-primary" />
-            آخر 20 تذكير مُرسَل
+             {t('آخر 20 تذكير مُرسَل', 'Last 20 sent reminders')}
           </CardTitle>
           <button
             onClick={load}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> تحديث
+             <RefreshCw className="w-3.5 h-3.5" /> {t('تحديث', 'Refresh')}
           </button>
         </CardHeader>
         <CardContent className="p-0">
           {stats.recent.length === 0 ? (
-            <p className="text-sm text-muted-foreground px-5 py-4">لا توجد تذكيرات بعد</p>
+             <p className="text-sm text-muted-foreground px-5 py-4">{t('لا توجد تذكيرات بعد', 'No reminders yet')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30 text-muted-foreground text-xs">
-                    <th className="px-4 py-2.5 text-right font-medium">المستخدم</th>
-                    <th className="px-4 py-2.5 text-right font-medium">نوع التذكير</th>
-                    <th className="px-4 py-2.5 text-right font-medium">القناة</th>
-                    <th className="px-4 py-2.5 text-right font-medium">حالة الاشتراك</th>
-                    <th className="px-4 py-2.5 text-right font-medium">تاريخ الإرسال</th>
+                    <th className="px-4 py-2.5 text-start font-medium">{t('المستخدم', 'User')}</th>
+                    <th className="px-4 py-2.5 text-start font-medium">{t('نوع التذكير', 'Reminder type')}</th>
+                    <th className="px-4 py-2.5 text-start font-medium">{t('القناة', 'Channel')}</th>
+                    <th className="px-4 py-2.5 text-start font-medium">{t('حالة الاشتراك', 'Subscription status')}</th>
+                    <th className="px-4 py-2.5 text-start font-medium">{t('تاريخ الإرسال', 'Sent at')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,16 +222,16 @@ function ReminderStatsPanel() {
                         <p className="text-xs text-muted-foreground">{r.userEmail}</p>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {reminderTypeLabel(r.reminderType)}
+                        {reminderTypeLabel(r.reminderType, t)}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs">
-                            <Mail className="w-3 h-3" /> بريد
+                            <Mail className="w-3 h-3" /> {t('بريد', 'Email')}
                           </span>
                           {r.hasPhone && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs">
-                              <Phone className="w-3 h-3" /> واتساب
+                              <Phone className="w-3 h-3" /> WhatsApp
                             </span>
                           )}
                         </div>
@@ -232,16 +239,16 @@ function ReminderStatsPanel() {
                       <td className="px-4 py-3">
                         {r.subStatus === 'active' ? (
                           <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                            <CheckCircle2 className="w-3 h-3" /> فعّال
+                            <CheckCircle2 className="w-3 h-3" /> {t('فعّال', 'Active')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                            <AlertTriangle className="w-3 h-3" /> منتهٍ
+                            <AlertTriangle className="w-3 h-3" /> {t('منتهٍ', 'Expired')}
                           </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(r.sentAt).toLocaleString('ar-SA')}
+                         {new Date(r.sentAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}
                       </td>
                     </tr>
                   ))}
@@ -258,6 +265,7 @@ function ReminderStatsPanel() {
 // ─── Broadcast panel ─────────────────────────────────────────────────────────
 function BroadcastPanel() {
   const { toast } = useToast();
+  const { t } = useLang();
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
 
@@ -278,16 +286,16 @@ function BroadcastPanel() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.subject.trim() || !form.message.trim()) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'العنوان والرسالة مطلوبان' });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: t('العنوان والرسالة مطلوبان', 'Subject and message are required') });
       return;
     }
     if (form.channels.length === 0) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'اختر قناة واحدة على الأقل' });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: t('اختر قناة واحدة على الأقل', 'Select at least one channel') });
       return;
     }
 
-    const segmentLabel = form.segment === 'all' ? 'جميع المستخدمين' : form.segment === 'active' ? 'المشتركين الفعّالين' : 'المشتركين المنتهين';
-    if (!confirm(`سيتم إرسال الرسالة إلى ${segmentLabel}. هل تريدين المتابعة؟`)) return;
+    const segmentLabel = form.segment === 'all' ? t('جميع المستخدمين', 'all users') : form.segment === 'active' ? t('المشتركين الفعّالين', 'active subscribers') : t('المشتركين المنتهين', 'expired subscribers');
+    if (!confirm(t(`سيتم إرسال الرسالة إلى ${segmentLabel}. هل تريدين المتابعة؟`, `The message will be sent to ${segmentLabel}. Continue?`))) return;
 
     setSending(true);
     setResult(null);
@@ -301,18 +309,18 @@ function BroadcastPanel() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'فشل الإرسال');
       setResult(data);
-      toast({ title: '✅ اكتمل البث', description: `أُرسلت لـ ${data.sent} من ${data.total}` });
+      toast({ title: `✅ ${t('اكتمل البث', 'Broadcast complete')}`, description: `${t('Sent to', 'Sent to')} ${data.sent} ${t('من', 'of')} ${data.total}` });
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'خطأ', description: err.message });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: err.message });
     } finally {
       setSending(false);
     }
   };
 
   const SEGMENT_OPTS = [
-    { value: 'all',     label: 'جميع المستخدمين',      icon: <Users className="w-4 h-4" /> },
-    { value: 'active',  label: 'المشتركون الفعّالون',   icon: <CheckCircle2 className="w-4 h-4" /> },
-    { value: 'expired', label: 'الاشتراكات المنتهية',   icon: <Clock className="w-4 h-4" /> },
+    { value: 'all', ar: 'جميع المستخدمين', en: 'All users', icon: <Users className="w-4 h-4" /> },
+    { value: 'active', ar: 'المشتركون الفعّالون', en: 'Active subscribers', icon: <CheckCircle2 className="w-4 h-4" /> },
+    { value: 'expired', ar: 'الاشتراكات المنتهية', en: 'Expired subscriptions', icon: <Clock className="w-4 h-4" /> },
   ];
 
   return (
@@ -320,15 +328,15 @@ function BroadcastPanel() {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Megaphone className="w-5 h-5 text-amber-600" />
-          إرسال إشعار جماعي
+           {t('إرسال إشعار جماعي', 'Send a broadcast notification')}
         </CardTitle>
-        <p className="text-sm text-muted-foreground">إرسال بريد إلكتروني أو واتساب لشريحة من المستخدمين</p>
+         <p className="text-sm text-muted-foreground">{t('إرسال بريد إلكتروني أو واتساب لشريحة من المستخدمين', 'Send email or WhatsApp to a user segment')}</p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSend} className="space-y-4">
           {/* Segment */}
           <div>
-            <label className="text-sm font-bold block mb-2">الشريحة المستهدفة</label>
+             <label className="text-sm font-bold block mb-2">{t('الشريحة المستهدفة', 'Target segment')}</label>
             <div className="flex gap-2 flex-wrap">
               {SEGMENT_OPTS.map(opt => (
                 <button
@@ -341,7 +349,7 @@ function BroadcastPanel() {
                       : 'bg-background border-border hover:bg-muted'
                   }`}
                 >
-                  {opt.icon} {opt.label}
+                  {opt.icon} {t(opt.ar, opt.en)}
                 </button>
               ))}
             </div>
@@ -349,11 +357,11 @@ function BroadcastPanel() {
 
           {/* Channels */}
           <div>
-            <label className="text-sm font-bold block mb-2">قنوات الإرسال</label>
+             <label className="text-sm font-bold block mb-2">{t('قنوات الإرسال', 'Delivery channels')}</label>
             <div className="flex gap-3">
               {[
-                { id: 'email',     label: 'بريد إلكتروني', icon: <Mail className="w-4 h-4" /> },
-                { id: 'whatsapp',  label: 'واتساب',         icon: <MessageSquare className="w-4 h-4" /> },
+                { id: 'email', ar: 'بريد إلكتروني', en: 'Email', icon: <Mail className="w-4 h-4" /> },
+                { id: 'whatsapp', ar: 'واتساب', en: 'WhatsApp', icon: <MessageSquare className="w-4 h-4" /> },
               ].map(ch => (
                 <label key={ch.id} className="flex items-center gap-2 cursor-pointer select-none">
                   <input
@@ -362,37 +370,37 @@ function BroadcastPanel() {
                     onChange={() => toggleChannel(ch.id)}
                     className="w-4 h-4 accent-primary"
                   />
-                  <span className="flex items-center gap-1 text-sm font-medium">{ch.icon} {ch.label}</span>
+                  <span className="flex items-center gap-1 text-sm font-medium">{ch.icon} {t(ch.ar, ch.en)}</span>
                 </label>
               ))}
             </div>
             {form.channels.includes('whatsapp') && (
               <p className="text-xs text-muted-foreground mt-1">
-                ⚠️ يتطلب واتساب إعداد متغيرات TWILIO_ACCOUNT_SID و TWILIO_AUTH_TOKEN و TWILIO_WHATSAPP_FROM في الخادم
+                ⚠️ {t('يتطلب واتساب إعداد متغيرات TWILIO_ACCOUNT_SID و TWILIO_AUTH_TOKEN و TWILIO_WHATSAPP_FROM في الخادم', 'WhatsApp requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_FROM server variables')}
               </p>
             )}
           </div>
 
           {/* Subject */}
           <div>
-            <label className="text-sm font-bold block mb-1">عنوان البريد الإلكتروني *</label>
+             <label className="text-sm font-bold block mb-1">{t('عنوان البريد الإلكتروني *', 'Email subject *')}</label>
             <input
               value={form.subject}
               onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
               className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              placeholder="مثال: إعلان مهم من منصة رباب"
+              placeholder={t('مثال: إعلان مهم من منصة رباب', 'Example: Important announcement from Rabab')}
             />
           </div>
 
           {/* Message */}
           <div>
-            <label className="text-sm font-bold block mb-1">نص الرسالة * <span className="text-muted-foreground font-normal">(يُستخدم للبريد والواتساب)</span></label>
+             <label className="text-sm font-bold block mb-1">{t('نص الرسالة *', 'Message *')} <span className="text-muted-foreground font-normal">{t('(يُستخدم للبريد والواتساب)', '(used for email and WhatsApp)')}</span></label>
             <textarea
               value={form.message}
               onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
               rows={5}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              placeholder="اكتبي نص الرسالة هنا..."
+              placeholder={t('اكتبي نص الرسالة هنا...', 'Write the message here...')}
             />
           </div>
 
@@ -402,8 +410,8 @@ function BroadcastPanel() {
               result.failed === 0 ? 'bg-green-50 border-green-200 text-green-800' : 'bg-amber-50 border-amber-200 text-amber-800'
             }`}>
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              أُرسل إلى <strong>{result.sent}</strong> من أصل <strong>{result.total}</strong>
-              {result.failed > 0 && <span className="text-red-600"> · فشل {result.failed}</span>}
+              {t('أُرسل إلى', 'Sent to')} <strong>{result.sent}</strong> {t('من أصل', 'of')} <strong>{result.total}</strong>
+              {result.failed > 0 && <span className="text-red-600"> · {t('فشل', 'Failed')} {result.failed}</span>}
             </div>
           )}
 
@@ -414,7 +422,7 @@ function BroadcastPanel() {
               className="flex items-center gap-2 px-5 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold hover:bg-amber-700 disabled:opacity-50 shadow-sm"
             >
               {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {sending ? 'جارٍ الإرسال…' : 'إرسال الآن'}
+               {sending ? t('جارٍ الإرسال…', 'Sending…') : t('إرسال الآن', 'Send now')}
             </button>
           </div>
         </form>
@@ -426,6 +434,7 @@ function BroadcastPanel() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AdminNotifications() {
   const { toast } = useToast();
+  const { lang, t } = useLang();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -451,7 +460,7 @@ export default function AdminNotifications() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.titleAr || !form.bodyAr) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'العنوان بالعربي والنص مطلوبان' });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: t('العنوان بالعربي والنص مطلوبان', 'Arabic title and body are required') });
       return;
     }
     setSubmitting(true);
@@ -461,43 +470,44 @@ export default function AdminNotifications() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error('فشل الإنشاء');
-      toast({ title: '✅ تم', description: form.publish ? 'تم إنشاء الإشعار ونشره للمستخدمين' : 'تم إنشاء الإشعار كمسودة' });
+      if (!res.ok) throw new Error(t('فشل الإنشاء', 'Creation failed'));
+      toast({ title: `✅ ${t('تم', 'Done')}`, description: form.publish ? t('تم إنشاء الإشعار ونشره للمستخدمين', 'The notification was created and published') : t('تم إنشاء الإشعار كمسودة', 'The notification was created as a draft') });
       setForm({ titleAr: '', titleEn: '', bodyAr: '', bodyEn: '', type: 'info', publish: false });
       setShowForm(false);
       fetchNotifs();
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'خطأ', description: err.message });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: err.message });
     } finally { setSubmitting(false); }
   };
 
   const handlePublish = async (id: number) => {
     await fetch(`${API_BASE}/api/admin/notifications/${id}/publish`, { method: 'POST', credentials: 'include' });
-    toast({ title: '✅ تم النشر', description: 'تم إرسال الإشعار لجميع المستخدمين' });
+    toast({ title: `✅ ${t('تم النشر', 'Published')}`, description: t('تم إرسال الإشعار لجميع المستخدمين', 'The notification was sent to all users') });
     fetchNotifs();
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('هل تريدين حذف هذا الإشعار؟')) return;
+    if (!confirm(t('هل تريدين حذف هذا الإشعار؟', 'Do you want to delete this notification?'))) return;
     await fetch(`${API_BASE}/api/admin/notifications/${id}`, { method: 'DELETE', credentials: 'include' });
     fetchNotifs();
   };
 
   return (
     <AdminSidebar>
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-primary">الإشعارات</h1>
-          <p className="text-muted-foreground mt-1 text-sm">إشعارات قانونية للمستخدمين والبث الجماعي عبر البريد والواتساب</p>
+           <h1 className="text-2xl font-bold text-primary">{t('الإشعارات', 'Notifications')}</h1>
+           <p className="text-muted-foreground mt-1 text-sm">{t('إشعارات قانونية للمستخدمين والبث الجماعي عبر البريد والواتساب', 'Legal notifications and email/WhatsApp broadcasts')}</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-muted/50 rounded-xl p-1 w-fit flex-wrap">
         {[
-          { id: 'system',    label: 'الإشعارات القانونية',  icon: <Bell className="w-4 h-4" /> },
-          { id: 'broadcast', label: 'إشعار جماعي',          icon: <Megaphone className="w-4 h-4" /> },
-          { id: 'stats',     label: 'إحصائيات التذكيرات',   icon: <BarChart2 className="w-4 h-4" /> },
+          { id: 'system', ar: 'الإشعارات القانونية', en: 'Legal notifications', icon: <Bell className="w-4 h-4" /> },
+          { id: 'broadcast', ar: 'إشعار جماعي', en: 'Broadcast', icon: <Megaphone className="w-4 h-4" /> },
+          { id: 'stats', ar: 'إحصائيات التذكيرات', en: 'Reminder statistics', icon: <BarChart2 className="w-4 h-4" /> },
         ].map(tab => (
           <button
             key={tab.id}
@@ -508,7 +518,7 @@ export default function AdminNotifications() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {tab.icon} {tab.label}
+            {tab.icon} {t(tab.ar, tab.en)}
           </button>
         ))}
       </div>
@@ -527,25 +537,25 @@ export default function AdminNotifications() {
               onClick={() => setShowForm(!showForm)}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:bg-primary/90 shadow"
             >
-              <Plus className="w-4 h-4" /> إشعار جديد
+               <Plus className="w-4 h-4" /> {t('إشعار جديد', 'New notification')}
             </button>
           </div>
 
           {/* Create Form */}
           {showForm && (
             <Card className="mb-6 border-primary/30">
-              <CardHeader><CardTitle className="text-lg">إشعار جديد</CardTitle></CardHeader>
+               <CardHeader><CardTitle className="text-lg">{t('إشعار جديد', 'New notification')}</CardTitle></CardHeader>
               <CardContent>
                 <form onSubmit={handleCreate} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-bold">العنوان بالعربي *</label>
+                       <label className="text-sm font-bold">{t('العنوان بالعربي *', 'Arabic title *')}</label>
                       <input value={form.titleAr} onChange={e => setForm(f => ({ ...f, titleAr: e.target.value }))}
                         className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                        placeholder="مثال: تعديل نظام العمل السعودي" />
+                        placeholder={t('مثال: تعديل نظام العمل السعودي', 'Example: Saudi Labor Law amendment')} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-bold">العنوان بالإنجليزي</label>
+                       <label className="text-sm font-bold">{t('العنوان بالإنجليزي', 'English title')}</label>
                       <input value={form.titleEn} onChange={e => setForm(f => ({ ...f, titleEn: e.target.value }))}
                         className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 text-left"
                         dir="ltr" placeholder="e.g. Saudi Labor Law Amendment" />
@@ -553,14 +563,14 @@ export default function AdminNotifications() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-bold">النص بالعربي *</label>
+                       <label className="text-sm font-bold">{t('النص بالعربي *', 'Arabic body *')}</label>
                       <textarea value={form.bodyAr} onChange={e => setForm(f => ({ ...f, bodyAr: e.target.value }))}
                         rows={3}
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                        placeholder="وصف التعديل القانوني وتأثيره..." />
+                        placeholder={t('وصف التعديل القانوني وتأثيره...', 'Describe the legal amendment and its impact...')} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-bold">النص بالإنجليزي</label>
+                       <label className="text-sm font-bold">{t('النص بالإنجليزي', 'English body')}</label>
                       <textarea value={form.bodyEn} onChange={e => setForm(f => ({ ...f, bodyEn: e.target.value }))}
                         rows={3} dir="ltr"
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 text-left"
@@ -569,31 +579,31 @@ export default function AdminNotifications() {
                   </div>
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="space-y-1">
-                      <label className="text-sm font-bold">النوع</label>
+                       <label className="text-sm font-bold">{t('النوع', 'Type')}</label>
                       <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as any }))}
                         className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none">
-                        <option value="legal_change">تعديل قانوني 🔔</option>
-                        <option value="alert">تنبيه ⚠️</option>
-                        <option value="update">تحديث ℹ️</option>
-                        <option value="info">معلومة</option>
+                        <option value="legal_change">{t('تعديل قانوني 🔔', 'Legal change 🔔')}</option>
+                        <option value="alert">{t('تنبيه ⚠️', 'Alert ⚠️')}</option>
+                        <option value="update">{t('تحديث ℹ️', 'Update ℹ️')}</option>
+                        <option value="info">{t('معلومة', 'Information')}</option>
                       </select>
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer mt-5">
                       <input type="checkbox" checked={form.publish}
                         onChange={e => setForm(f => ({ ...f, publish: e.target.checked }))}
                         className="w-4 h-4 accent-primary" />
-                      <span className="text-sm font-medium">نشر فوري لجميع المستخدمين</span>
+                      <span className="text-sm font-medium">{t('نشر فوري لجميع المستخدمين', 'Publish immediately to all users')}</span>
                     </label>
                   </div>
                   <div className="flex gap-3">
                     <button type="submit" disabled={submitting}
                       className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50">
                       {submitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                      إنشاء الإشعار
+                       {t('إنشاء الإشعار', 'Create notification')}
                     </button>
                     <button type="button" onClick={() => setShowForm(false)}
                       className="px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted">
-                      إلغاء
+                       {t('إلغاء', 'Cancel')}
                     </button>
                   </div>
                 </form>
@@ -607,7 +617,7 @@ export default function AdminNotifications() {
           ) : notifs.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <Bell className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p>لا توجد إشعارات بعد. أنشئي أول إشعار قانوني.</p>
+               <p>{t('لا توجد إشعارات بعد. أنشئي أول إشعار قانوني.', 'No notifications yet. Create the first legal notification.')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -620,31 +630,31 @@ export default function AdminNotifications() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${cfg.color}`}>
-                              {cfg.icon} {cfg.label}
+                               {cfg.icon} {t(cfg.ar, cfg.en)}
                             </span>
                             {n.isPublished ? (
                               <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                                <CheckCircle2 className="w-3 h-3" /> منشور
+                                 <CheckCircle2 className="w-3 h-3" /> {t('منشور', 'Published')}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                <Clock className="w-3 h-3" /> مسودة
+                                 <Clock className="w-3 h-3" /> {t('مسودة', 'Draft')}
                               </span>
                             )}
                           </div>
-                          <h3 className="font-bold text-primary text-base">{n.titleAr}</h3>
-                          {n.titleEn && <p className="text-sm text-muted-foreground" dir="ltr">{n.titleEn}</p>}
-                          <p className="text-sm text-foreground mt-2 leading-relaxed">{n.bodyAr}</p>
+                           <h3 className="font-bold text-primary text-base">{lang === 'ar' ? n.titleAr : (n.titleEn || n.titleAr)}</h3>
+                           {lang === 'ar' && n.titleEn && <p className="text-sm text-muted-foreground" dir="ltr">{n.titleEn}</p>}
+                           <p className="text-sm text-foreground mt-2 leading-relaxed">{lang === 'ar' ? n.bodyAr : (n.bodyEn || n.bodyAr)}</p>
                           <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(n.createdAt).toLocaleString('ar-SA')}
-                            {n.publishedAt && ` · نُشر: ${new Date(n.publishedAt).toLocaleString('ar-SA')}`}
+                             {new Date(n.createdAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}
+                             {n.publishedAt && ` · ${t('نُشر:', 'Published:')} ${new Date(n.publishedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}`}
                           </p>
                         </div>
                         <div className="flex gap-2 shrink-0">
                           {!n.isPublished && (
                             <button onClick={() => handlePublish(n.id)}
                               className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90">
-                              <Send className="w-3 h-3" /> نشر
+                               <Send className="w-3 h-3" /> {t('نشر', 'Publish')}
                             </button>
                           )}
                           <button onClick={() => handleDelete(n.id)}
@@ -661,6 +671,7 @@ export default function AdminNotifications() {
           )}
         </>
       )}
+      </div>
     </AdminSidebar>
   );
 }

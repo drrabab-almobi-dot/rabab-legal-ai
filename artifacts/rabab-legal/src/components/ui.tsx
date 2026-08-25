@@ -11,7 +11,7 @@ export const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttrib
     const variants = {
       default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
       secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-      outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+      outline: 'border-2 border-secondary/65 bg-background shadow-sm shadow-secondary/10 hover:border-secondary hover:bg-accent hover:text-accent-foreground',
       ghost: 'hover:bg-accent hover:text-accent-foreground',
       destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
     };
@@ -43,7 +43,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
       <input
         type={type}
         className={cn(
-          'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-10 w-full rounded-md border-2 border-secondary/65 bg-background px-3 py-2 text-sm shadow-sm shadow-secondary/10 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
         ref={ref}
@@ -67,7 +67,7 @@ Label.displayName = 'Label';
 
 export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden', className)} {...props} />
+    <div ref={ref} className={cn('rounded-xl border-2 border-secondary/70 bg-card text-card-foreground shadow-sm shadow-secondary/15 overflow-hidden', className)} {...props} />
   )
 );
 Card.displayName = 'Card';
@@ -81,7 +81,7 @@ CardHeader.displayName = 'CardHeader';
 
 export const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn('font-semibold leading-none tracking-tight', className)} {...props} />
+    <h3 ref={ref} className={cn('font-semibold leading-none tracking-tight text-secondary', className)} {...props} />
   )
 );
 CardTitle.displayName = 'CardTitle';
@@ -128,7 +128,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
     return (
       <textarea
         className={cn(
-          'flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          'flex min-h-[80px] w-full rounded-md border-2 border-secondary/65 bg-background px-3 py-2 text-sm shadow-sm shadow-secondary/10 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
         ref={ref}
@@ -143,4 +143,37 @@ export const Skeleton = ({ className, ...props }: React.HTMLAttributes<HTMLDivEl
   return (
     <div className={cn("animate-pulse rounded-md bg-muted", className)} {...props} />
   )
+}
+
+export function FramedState({
+  icon,
+  title,
+  description,
+  tone = 'neutral',
+  className,
+}: {
+  icon?: React.ReactNode;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  tone?: 'neutral' | 'loading' | 'error';
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex min-h-32 flex-col items-center justify-center gap-2 rounded-2xl border-2 p-6 text-center',
+        tone === 'error'
+          ? 'border-destructive/40 bg-destructive/5 text-destructive'
+          : tone === 'loading'
+            ? 'border-secondary/45 bg-secondary/5 text-muted-foreground'
+            : 'border-primary/30 bg-card text-muted-foreground',
+        className,
+      )}
+      role={tone === 'error' ? 'alert' : tone === 'loading' ? 'status' : undefined}
+    >
+      {icon}
+      <p className="text-sm font-medium">{title}</p>
+      {description && <p className="max-w-prose text-xs leading-relaxed">{description}</p>}
+    </div>
+  );
 }

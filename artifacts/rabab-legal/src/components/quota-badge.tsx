@@ -6,11 +6,12 @@ import React from 'react';
 import { useQuota, type ServiceType } from '@/hooks/useQuota';
 import { Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/hooks/use-language';
 
-const SERVICE_LABELS: Record<ServiceType, string> = {
-  consultation:     'استشارة',
-  contract_draft:   'عقد',
-  contract_review:  'مراجعة',
+const SERVICE_LABELS: Record<ServiceType, [string, string]> = {
+  consultation:     ['استشارة', 'consultation'],
+  contract_draft:   ['عقد', 'contract'],
+  contract_review:  ['مراجعة', 'review'],
 };
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
 
 export function QuotaBadge({ serviceType, className, compact = false }: Props) {
   const { quota, loading } = useQuota();
+  const { lang, t } = useLang();
 
   if (loading) return null;
 
@@ -31,7 +33,7 @@ export function QuotaBadge({ serviceType, className, compact = false }: Props) {
 
     if (compact) {
       return (
-        <span className={cn(
+        <span dir={lang === 'ar' ? 'rtl' : 'ltr'} className={cn(
           'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border',
           exhausted
             ? 'bg-red-50 text-red-700 border-red-200'
@@ -41,13 +43,13 @@ export function QuotaBadge({ serviceType, className, compact = false }: Props) {
           className
         )}>
           <Sparkles className="w-3 h-3" />
-          {exhausted ? 'نفدت التجربة' : `${remaining} مجاناً`}
+          {exhausted ? t('نفدت التجربة', 'Trial used') : t(`${remaining} مجاناً`, `${remaining} free`)}
         </span>
       );
     }
 
     return (
-      <div className={cn(
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={cn(
         'flex items-center gap-3 rounded-xl px-4 py-3 border',
         exhausted
           ? 'bg-red-50 border-red-200'
@@ -62,12 +64,12 @@ export function QuotaBadge({ serviceType, className, compact = false }: Props) {
         <div className="min-w-0">
           <p className={cn('text-sm font-bold', exhausted ? 'text-red-700' : 'text-secondary')}>
             {exhausted
-              ? 'انتهت خدماتك المجانية الثلاث'
-              : `${remaining} من ${3} خدمات مجانية متبقية`}
+              ? t('انتهت خدماتك المجانية الثلاث', 'Your three free services have ended')
+              : t(`${remaining} من ${3} خدمات مجانية متبقية`, `${remaining} of 3 free services remaining`)}
           </p>
           {!exhausted && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              {remaining === 1 ? 'خدمة مجانية أخيرة — اشترك قبل استنفادها' : 'جودة مطابقة تماماً للاشتراك المدفوع'}
+              {remaining === 1 ? t('خدمة مجانية أخيرة — اشترك قبل استنفادها', 'One final free service — subscribe before it is used') : t('جودة مطابقة تماماً للاشتراك المدفوع', 'Quality identical to a paid subscription')}
             </p>
           )}
         </div>
@@ -91,23 +93,23 @@ export function QuotaBadge({ serviceType, className, compact = false }: Props) {
     const limit = quota.allowed_limits[serviceType];
     if (remaining === null || limit === null) return null;
     const exhausted = remaining <= 0;
-    const label = SERVICE_LABELS[serviceType];
+    const label = t(...SERVICE_LABELS[serviceType]);
 
     if (compact) {
       return (
-        <span className={cn(
+        <span dir={lang === 'ar' ? 'rtl' : 'ltr'} className={cn(
           'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border',
           exhausted ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200',
           className
         )}>
           {exhausted ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-          {exhausted ? `نفدت حصة ${label}` : `${remaining}/${limit} ${label}`}
+          {exhausted ? t(`نفدت حصة ${label}`, `Your ${label} quota is used`) : `${remaining}/${limit} ${label}`}
         </span>
       );
     }
 
     return (
-      <div className={cn(
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={cn(
         'flex items-center gap-3 rounded-xl px-4 py-3 border',
         exhausted ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200',
         className
@@ -117,8 +119,8 @@ export function QuotaBadge({ serviceType, className, compact = false }: Props) {
           : <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />}
         <p className={cn('text-sm font-bold', exhausted ? 'text-red-700' : 'text-green-700')}>
           {exhausted
-            ? `نفدت حصة ${label} لهذا الشهر`
-            : `${remaining} ${label} متبقية من ${limit}`}
+            ? t(`نفدت حصة ${label} لهذا الشهر`, `Your ${label} quota for this month is used`)
+            : t(`${remaining} ${label} متبقية من ${limit}`, `${remaining} ${label} remaining of ${limit}`)}
         </p>
       </div>
     );

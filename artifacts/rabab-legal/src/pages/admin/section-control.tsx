@@ -10,6 +10,7 @@ import {
   ShieldAlert, Loader2, Save, Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/hooks/use-language';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -88,6 +89,7 @@ const SECTION_DEFS = [
 ];
 
 export default function SectionControl() {
+  const { lang, t } = useLang();
   const [settings, setSettings] = useState<SectionVisibility | null>(null);
   const [quality, setQuality] = useState<Record<string, CategoryQuality>>({});
   const [loading, setLoading] = useState(true);
@@ -161,21 +163,21 @@ export default function SectionControl() {
   if (loading) {
     return (
       <AdminSidebar>
-        <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        <div className="flex h-48 items-center justify-center rounded-2xl border-2 border-secondary/45 bg-secondary/5"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       </AdminSidebar>
     );
   }
 
   return (
     <AdminSidebar>
-      <div className="max-w-4xl mx-auto space-y-6" dir="rtl">
+       <div className="max-w-4xl mx-auto space-y-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
 
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Settings className="w-5 h-5 text-primary" />
-              <h1 className="text-2xl font-bold text-primary">تحكم الأقسام</h1>
+               <h1 className="text-2xl font-bold text-primary">{t('تحكم الأقسام', 'Section control')}</h1>
             </div>
             <p className="text-muted-foreground text-sm max-w-xl">
               أظهر أو أخفِ أقسام المنصة دون حذف البيانات. كل قسم مغلق يُمنع فيه النموذج من الاستشهاد بمصادره تلقائياً.
@@ -188,7 +190,7 @@ export default function SectionControl() {
             className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition disabled:opacity-50 shrink-0"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle2 className="w-4 h-4 text-green-300" /> : <Save className="w-4 h-4" />}
-            {saved ? 'تم الحفظ' : 'حفظ التغييرات'}
+             {saved ? t('تم الحفظ', 'Saved') : t('حفظ التغييرات', 'Save changes')}
           </button>
         </div>
 

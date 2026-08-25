@@ -26,11 +26,15 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     try { localStorage.setItem('lang', l); } catch {}
     document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = l;
+    document.body.dir = l === 'ar' ? 'rtl' : 'ltr';
+    document.body.lang = l;
   };
 
   useEffect(() => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
+    document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.body.lang = lang;
   }, [lang]);
 
   const t = (ar: string, en: string) => lang === 'ar' ? ar : en;

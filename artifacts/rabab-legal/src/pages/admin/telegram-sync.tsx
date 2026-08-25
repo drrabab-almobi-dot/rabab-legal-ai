@@ -2,15 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { AdminSidebar } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { useLang } from '@/hooks/use-language';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 // ── Category definitions ──────────────────────────────────────────────────────
 const CATEGORIES = [
-  { value: 'judicial',   label: 'أحكام قضائية', emoji: '⚖️', color: 'purple' },
-  { value: 'circular',   label: 'تعاميم',         emoji: '📋', color: 'blue'   },
-  { value: 'regulation', label: 'مدونات وأنظمة', emoji: '📚', color: 'green'  },
-  { value: 'general',    label: 'عام',             emoji: '📄', color: 'gray'   },
+  { value: 'judicial', ar: 'أحكام قضائية', en: 'Judicial decisions', emoji: '⚖️', color: 'purple' },
+  { value: 'circular', ar: 'تعاميم', en: 'Circulars', emoji: '📋', color: 'blue' },
+  { value: 'regulation', ar: 'مدونات وأنظمة', en: 'Codices and laws', emoji: '📚', color: 'green' },
+  { value: 'general', ar: 'عام', en: 'General', emoji: '📄', color: 'gray' },
 ] as const;
 
 type Category = typeof CATEGORIES[number]['value'];
@@ -99,6 +100,7 @@ function catBadgeClass(value: string) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function TelegramSync() {
+  const { lang, t } = useLang();
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [phone, setPhone] = useState('');
@@ -184,7 +186,7 @@ export default function TelegramSync() {
       body: JSON.stringify(body),
     });
     const data = await r.json();
-    if (!r.ok) throw new Error(data.error ?? 'خطأ غير معروف');
+    if (!r.ok) throw new Error(data.error ?? t('خطأ غير معروف', 'Unknown error'));
     return data;
   };
 
@@ -194,7 +196,7 @@ export default function TelegramSync() {
     setActionLoading(true); setMsg(null);
     try {
       await post('/admin/telegram-sync/auth/start', { phone });
-      setMsg({ type: 'success', text: 'تم إرسال رمز التحقق إلى هاتفك' });
+      setMsg({ type: 'success', text: t('تم إرسال رمز التحقق إلى هاتفك', 'Verification code sent to your phone') });
       await fetchStatus();
     } catch (e: any) { setMsg({ type: 'error', text: e.message }); }
     finally { setActionLoading(false); }
@@ -206,9 +208,9 @@ export default function TelegramSync() {
     try {
       const data = await post('/admin/telegram-sync/auth/verify', { code, password: password || undefined });
       if (data.status === 'waiting_2fa') {
-        setMsg({ type: 'error', text: 'يجب إدخال كلمة مرور التحقق الثنائي (2FA)' });
+        setMsg({ type: 'error', text: t('يجب إدخال كلمة مرور التحقق الثنائي (2FA)', 'Enter your two-factor authentication (2FA) password') });
       } else {
-        setMsg({ type: 'success', text: '✅ تم تسجيل الدخول بنجاح!' });
+        setMsg({ type: 'success', text: `✅ ${t('تم تسجيل الدخول بنجاح!', 'Signed in successfully!')}` });
         setCode(''); setPassword('');
       }
       await fetchStatus();
@@ -223,8 +225,8 @@ export default function TelegramSync() {
     setActionLoading(true); setMsg(null);
     try {
       await post('/admin/telegram-sync/start', { channels: validChannels, mode: syncMode });
-      const modeLabel = syncMode === 'incremental' ? 'تدريجية (الجديد فقط)' : 'كاملة (كل الملفات)';
-      setMsg({ type: 'success', text: `🚀 بدأت المزامنة الـ${modeLabel} لـ ${validChannels.length} قناة` });
+      const modeLabel = syncMode === 'incremental' ? t('تدريجية (الجديد فقط)', 'incremental (new only)') : t('كاملة (كل الملفات)', 'full (all files)');
+      setMsg({ type: 'success', text: `🚀 ${t('بدأت المزامنة', 'Started')} ${modeLabel} ${t('لـ', 'for')} ${validChannels.length} ${t('قناة', 'channels')}` });
       await fetchStatus();
     } catch (e: any) { setMsg({ type: 'error', text: e.message }); }
     finally { setActionLoading(false); }
@@ -234,7 +236,7 @@ export default function TelegramSync() {
     setActionLoading(true);
     try {
       await post('/admin/telegram-sync/stop', {});
-      setMsg({ type: 'success', text: 'تم إيقاف المزامنة' });
+      setMsg({ type: 'success', text: t('تم إيقاف المزامنة', 'Sync stopped') });
       await fetchStatus();
     } catch { /* ignore */ }
     finally { setActionLoading(false); }
@@ -245,7 +247,7 @@ export default function TelegramSync() {
     try {
       if (!autoEnabled) {
         await post('/admin/telegram-sync/schedule', { enabled: false });
-        setMsg({ type: 'success', text: '✅ تم إيقاف المزامنة التلقائية' });
+        setMsg({ type: 'success', text: `✅ ${t('تم إيقاف المزامنة التلقائية', 'Automatic sync disabled')}` });
       } else {
         const validChannels = channels.filter(c => c.link.trim());
         await post('/admin/telegram-sync/schedule', {
@@ -253,7 +255,7 @@ export default function TelegramSync() {
           intervalHours: autoInterval,
           channels: validChannels,
         });
-        setMsg({ type: 'success', text: `✅ ستُزامن تلقائياً كل ${autoInterval} ساعة` });
+        setMsg({ type: 'success', text: `✅ ${t('ستُزامن تلقائياً كل', 'Will sync automatically every')} ${autoInterval} ${t('ساعة', 'hours')}` });
       }
       await fetchStatus();
     } catch (e: any) { setMsg({ type: 'error', text: e.message }); }
@@ -270,10 +272,11 @@ export default function TelegramSync() {
 
   const quickAdd = () => {
     const trimmed = quickLink.trim();
-    if (!trimmed || channels.find(c => c.link === trimmed)) { setMsg({ type: 'error', text: 'الرابط موجود بالفعل أو فارغ' }); return; }
+    if (!trimmed || channels.find(c => c.link === trimmed)) { setMsg({ type: 'error', text: t('الرابط موجود بالفعل أو فارغ', 'The link already exists or is empty') }); return; }
     setChannels(prev => [...prev, { link: trimmed, category: quickCat, label: quickLabel.trim() || undefined }]);
     setQuickLink(''); setQuickLabel('');
-    setMsg({ type: 'success', text: `✅ أُضيفت القناة بتصنيف "${getCatMeta(quickCat).label}"` });
+    const category = getCatMeta(quickCat);
+    setMsg({ type: 'success', text: `✅ ${t('أُضيفت القناة بتصنيف', 'Channel added with category')} "${t(category.ar, category.en)}"` });
   };
 
   const removeChannel = (link: string) => {
@@ -291,13 +294,13 @@ export default function TelegramSync() {
     try {
       const blob = new Blob([pasteText], { type: 'text/plain' });
       const form = new FormData();
-      form.append('file', blob, (pasteTitle.trim() || 'محتوى ملصق') + '.txt');
+      form.append('file', blob, (pasteTitle.trim() || t('محتوى ملصق', 'Pasted content')) + '.txt');
       const r = await fetch(`${BASE}/api/admin/knowledge/upload`, {
         method: 'POST', credentials: 'include', body: form,
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.error ?? 'خطأ غير معروف');
-      setMsg({ type: 'success', text: `✅ تم فهرسة "${pasteTitle.trim() || 'المحتوى الملصق'}" بنجاح` });
+      if (!r.ok) throw new Error(data.error ?? t('خطأ غير معروف', 'Unknown error'));
+      setMsg({ type: 'success', text: `✅ ${t('تم فهرسة', 'Indexed')} "${pasteTitle.trim() || t('المحتوى الملصق', 'pasted content')}" ${t('بنجاح', 'successfully')}` });
       setPasteText(''); setPasteTitle('');
     } catch (e: any) { setMsg({ type: 'error', text: e.message }); }
     finally { setPasteLoading(false); }
@@ -309,14 +312,14 @@ export default function TelegramSync() {
     setUrlLoading(true); setMsg(null);
     try {
       await post('/admin/knowledge/url', { url, title: newUrlTitle.trim() || undefined });
-      setMsg({ type: 'success', text: `✅ تم إضافة وفهرسة: ${newUrlTitle.trim() || url}` });
+      setMsg({ type: 'success', text: `✅ ${t('تمت الإضافة والفهرسة:', 'Added and indexed:')} ${newUrlTitle.trim() || url}` });
       setNewUrl(''); setNewUrlTitle('');
     } catch (e: any) { setMsg({ type: 'error', text: e.message }); }
     finally { setUrlLoading(false); }
   };
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' });
+    new Date(iso).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US', { dateStyle: 'short', timeStyle: 'short' });
 
   const job = status?.syncJob;
   const authStatus = status?.authStatus ?? 'idle';
@@ -337,14 +340,15 @@ export default function TelegramSync() {
 
   return (
     <AdminSidebar>
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-primary">مزامنة قنوات تيليجرام</h1>
+         <h1 className="text-2xl font-bold text-primary">{t('مزامنة قنوات تيليجرام', 'Telegram channel sync')}</h1>
         <p className="text-muted-foreground mt-1">
-          ربط مباشر بالقنوات عبر MTProto — يدعم تصنيف كل قناة (أحكام / تعاميم / مدونات) مع فهرسة كاملة وتدريجية وجدولة تلقائية
+           {t('ربط مباشر بالقنوات عبر MTProto — يدعم تصنيف كل قناة (أحكام / تعاميم / مدونات) مع فهرسة كاملة وتدريجية وجدولة تلقائية', 'Direct MTProto channel integration with per-channel categorization, full/incremental indexing, and automatic scheduling')}
         </p>
       </div>
 
-      {loading && <p className="text-center text-muted-foreground py-8">جارٍ التحميل...</p>}
+       {loading && <div className="flex items-center justify-center rounded-2xl border-2 border-secondary/45 bg-secondary/5 py-8 text-center text-muted-foreground">{t('جارٍ التحميل...', 'Loading...')}</div>}
 
       {!loading && status && (
         <div className="space-y-6">
@@ -353,9 +357,9 @@ export default function TelegramSync() {
           {!status.credentialsConfigured && (
             <Card className="border-red-200 bg-red-50">
               <CardContent className="p-5">
-                <p className="font-bold text-red-800 mb-2">⚠️ بيانات الاعتماد غير مضبوطة</p>
+                 <p className="font-bold text-red-800 mb-2">⚠️ {t('بيانات الاعتماد غير مضبوطة', 'Credentials are not configured')}</p>
                 <p className="text-sm text-red-700">
-                  أضيفي TELEGRAM_API_ID و TELEGRAM_API_HASH في Secrets من my.telegram.org
+                   {t('أضيفي TELEGRAM_API_ID و TELEGRAM_API_HASH في Secrets من my.telegram.org', 'Add TELEGRAM_API_ID and TELEGRAM_API_HASH in Secrets from my.telegram.org')}
                 </p>
               </CardContent>
             </Card>
@@ -366,13 +370,13 @@ export default function TelegramSync() {
             <Card className="border-blue-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">
-                  {waitingCode || waiting2fa ? '🔐 أدخلي رمز التحقق' : '📱 تسجيل الدخول لتيليجرام'}
+                   {waitingCode || waiting2fa ? `🔐 ${t('أدخلي رمز التحقق', 'Enter verification code')}` : `📱 ${t('تسجيل الدخول لتيليجرام', 'Sign in to Telegram')}`}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!waitingCode && !waiting2fa && (
                   <>
-                    <p className="text-sm text-muted-foreground">سيصلك رمز تحقق على تطبيق تيليجرام أو برسالة SMS</p>
+                     <p className="text-sm text-muted-foreground">{t('سيصلك رمز تحقق على تطبيق تيليجرام أو برسالة SMS', 'You will receive a verification code in Telegram or by SMS')}</p>
                     <div className="flex gap-3">
                       <input
                         type="tel" value={phone}
@@ -386,7 +390,7 @@ export default function TelegramSync() {
                         onClick={sendCode} disabled={actionLoading || !phone}
                         className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
                       >
-                        {actionLoading ? '...' : 'إرسال الرمز'}
+                         {actionLoading ? '...' : t('إرسال الرمز', 'Send code')}
                       </button>
                     </div>
                   </>
@@ -394,7 +398,7 @@ export default function TelegramSync() {
                 {(waitingCode || waiting2fa) && (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      {waitingCode ? `أُرسل رمز تحقق إلى ${phone || 'هاتفك'}` : 'حسابك محمي بالتحقق الثنائي — أدخلي كلمة المرور'}
+      {waitingCode ? `${t('أُرسل رمز تحقق إلى', 'A verification code was sent to')} ${phone || t('هاتفك', 'your phone')}` : t('حسابك محمي بالتحقق الثنائي — أدخلي كلمة المرور', 'Your account is protected by two-factor authentication — enter your password')}
                     </p>
                     <div className="space-y-3">
                       {waitingCode && (
@@ -409,7 +413,7 @@ export default function TelegramSync() {
                         <input
                           type="password" value={password}
                           onChange={e => setPassword(e.target.value)}
-                          placeholder="كلمة مرور 2FA"
+                          placeholder={t('كلمة مرور 2FA', '2FA password')}
                           className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
                         />
                       )}
@@ -418,13 +422,13 @@ export default function TelegramSync() {
                           onClick={verifyCode} disabled={actionLoading || (!code && !password)}
                           className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
                         >
-                          {actionLoading ? '...' : 'تحقق وادخلي'}
+                          {actionLoading ? '...' : t('تحقق وادخلي', 'Verify and sign in')}
                         </button>
                         <button
                           onClick={() => { setCode(''); setPassword(''); fetchStatus(); }}
                           className="px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted"
                         >
-                          إلغاء
+                           {t('إلغاء', 'Cancel')}
                         </button>
                       </div>
                     </div>
@@ -438,11 +442,11 @@ export default function TelegramSync() {
           {isAuthenticated && (
             <Card className="border-yellow-300 bg-yellow-50/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">⚡ إضافة قناة جديدة بتصنيف محدد</CardTitle>
+                <CardTitle className="text-base">⚡ {t('إضافة قناة جديدة بتصنيف محدد', 'Add a new channel with a category')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-yellow-800">
-                  أدخلي رابط قناة تيليجرام واختاري نوع محتواها — سيُطبَّق التصنيف تلقائياً على كل وثيقة تُجلب منها
+                  {t('أدخلي رابط قناة تيليجرام واختاري نوع محتواها — سيُطبَّق التصنيف تلقائياً على كل وثيقة تُجلب منها', 'Enter a Telegram channel link and select its content type — the category will be applied automatically to every retrieved document')}
                 </p>
 
                 {/* Category quick-select buttons */}
@@ -457,7 +461,7 @@ export default function TelegramSync() {
                           : 'bg-card border-border hover:border-primary/50'
                       }`}
                     >
-                      {cat.emoji} {cat.label}
+                      {cat.emoji} {t(cat.ar, cat.en)}
                     </button>
                   ))}
                 </div>
@@ -466,13 +470,13 @@ export default function TelegramSync() {
                   <input
                     type="text" value={quickLabel}
                     onChange={e => setQuickLabel(e.target.value)}
-                    placeholder="الاسم (اختياري)"
+                    placeholder={t('الاسم (اختياري)', 'Name (optional)')}
                     className="w-32 border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-yellow-300 bg-background"
                   />
                   <input
                     type="text" value={quickLink}
                     onChange={e => setQuickLink(e.target.value)}
-                    placeholder="https://t.me/channel أو رابط الدعوة"
+                    placeholder={t('https://t.me/channel أو رابط الدعوة', 'https://t.me/channel or invite link')}
                     dir="ltr"
                     className="flex-1 border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-yellow-300 bg-background"
                     onKeyDown={e => e.key === 'Enter' && quickAdd()}
@@ -481,7 +485,7 @@ export default function TelegramSync() {
                     onClick={quickAdd} disabled={!quickLink.trim()}
                     className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 disabled:opacity-50 shrink-0"
                   >
-                    + أضيفي
+                    + {t('أضيفي', 'Add')}
                   </button>
                 </div>
               </CardContent>
@@ -493,20 +497,20 @@ export default function TelegramSync() {
             <Card className="border-green-200 bg-green-50/40">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
-                  <span>✅ متصل — {channels.length} قناة مصنّفة</span>
+                  <span>✅ {t('متصل —', 'Connected —')} {channels.length} {t('قناة مصنّفة', 'categorized channels')}</span>
                   {job?.running ? (
                     <button
                       onClick={stopSync} disabled={actionLoading}
                       className="px-5 py-2 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 disabled:opacity-50"
                     >
-                      ⏹ إيقاف
+                      ⏹ {t('إيقاف', 'Stop')}
                     </button>
                   ) : (
                     <button
                       onClick={startSync} disabled={actionLoading || channels.length === 0}
                       className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50"
                     >
-                      {actionLoading ? '...' : '🚀 ابدأي المزامنة'}
+                      {actionLoading ? '...' : `🚀 ${t('ابدأي المزامنة', 'Start sync')}`}
                     </button>
                   )}
                 </CardTitle>
@@ -515,7 +519,7 @@ export default function TelegramSync() {
 
                 {/* ── Sync mode toggle ── */}
                 <div className="bg-card border border-border rounded-xl p-3 space-y-2">
-                  <p className="text-xs font-semibold text-green-900">نوع المزامنة</p>
+                  <p className="text-xs font-semibold text-green-900">{t('نوع المزامنة', 'Sync type')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setSyncMode('incremental')}
@@ -525,8 +529,8 @@ export default function TelegramSync() {
                           : 'bg-card text-foreground border-border hover:border-green-500'
                       }`}
                     >
-                      <span className="block text-base">🆕 تدريجية</span>
-                      <span className="block text-xs opacity-75 mt-0.5">الجديد فقط منذ آخر مزامنة</span>
+                      <span className="block text-base">🆕 {t('تدريجية', 'Incremental')}</span>
+                      <span className="block text-xs opacity-75 mt-0.5">{t('الجديد فقط منذ آخر مزامنة', 'New content only since the last sync')}</span>
                     </button>
                     <button
                       onClick={() => setSyncMode('full')}
@@ -536,8 +540,8 @@ export default function TelegramSync() {
                           : 'bg-card text-foreground border-border hover:border-blue-500'
                       }`}
                     >
-                      <span className="block text-base">🔄 كاملة</span>
-                      <span className="block text-xs opacity-75 mt-0.5">إعادة فهرسة كل الملفات</span>
+                      <span className="block text-base">🔄 {t('كاملة', 'Full')}</span>
+                      <span className="block text-xs opacity-75 mt-0.5">{t('إعادة فهرسة كل الملفات', 'Reindex all files')}</span>
                     </button>
                   </div>
                 </div>
@@ -549,7 +553,7 @@ export default function TelegramSync() {
                     if (count === 0) return null;
                     return (
                       <span key={cat.value} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-semibold ${catBadgeClass(cat.value)}`}>
-                        {cat.emoji} {cat.label} ({count})
+                        {cat.emoji} {t(cat.ar, cat.en)} ({count})
                       </span>
                     );
                   })}
@@ -560,7 +564,7 @@ export default function TelegramSync() {
                   {grouped.map(group => (
                     <div key={group.value}>
                       <p className={`text-xs font-bold mb-1.5 flex items-center gap-1 ${catBadgeClass(group.value)} px-2 py-1 rounded-md w-fit border`}>
-                        {group.emoji} {group.label} ({group.entries.length})
+                        {group.emoji} {t(group.ar, group.en)} ({group.entries.length})
                       </p>
                       <div className="space-y-1.5">
                         {group.entries.map((entry) => {
@@ -582,7 +586,7 @@ export default function TelegramSync() {
                                     className="text-[10px] border border-border rounded px-1 py-0.5 bg-background shrink-0"
                                   >
                                     {CATEGORIES.map(cat => (
-                                      <option key={cat.value} value={cat.value}>{cat.emoji} {cat.label}</option>
+                                      <option key={cat.value} value={cat.value}>{cat.emoji} {t(cat.ar, cat.en)}</option>
                                     ))}
                                   </select>
                                 )}
@@ -595,10 +599,10 @@ export default function TelegramSync() {
                               </div>
                               {cs ? (
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  آخر مزامنة: {formatDate(cs.lastSyncAt)} · {cs.filesIndexed} ملف · رسالة #{cs.lastMessageId}
+                                   {t('آخر مزامنة:', 'Last sync:')} {formatDate(cs.lastSyncAt)} · {cs.filesIndexed} {t('ملف', 'files')} · {t('رسالة', 'message')} #{cs.lastMessageId}
                                 </p>
                               ) : (
-                                <p className="text-[10px] text-amber-500 mt-0.5">لم تُزامَن بعد</p>
+                                 <p className="text-[10px] text-amber-500 mt-0.5">{t('لم تُزامَن بعد', 'Not synced yet')}</p>
                               )}
                             </div>
                           );
@@ -611,7 +615,7 @@ export default function TelegramSync() {
                 {/* ── Add channel (advanced) ── */}
                 <details className="border border-border rounded-lg">
                   <summary className="px-3 py-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground">
-                    + إضافة قناة يدوياً (متقدم)
+                    + {t('إضافة قناة يدوياً (متقدم)', 'Add a channel manually (advanced)')}
                   </summary>
                   <div className="p-3 space-y-2 border-t border-border">
                     <div className="flex gap-2 flex-wrap">
@@ -625,14 +629,14 @@ export default function TelegramSync() {
                               : 'bg-card border-border'
                           }`}
                         >
-                          {cat.emoji} {cat.label}
+                          {cat.emoji} {t(cat.ar, cat.en)}
                         </button>
                       ))}
                     </div>
                     <input
                       type="text" value={newChannelLabel}
                       onChange={e => setNewChannelLabel(e.target.value)}
-                      placeholder="اسم القناة (اختياري)"
+                      placeholder={t('اسم القناة (اختياري)', 'Channel name (optional)')}
                       className="w-full border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
                     />
                     <div className="flex gap-2">
@@ -648,7 +652,7 @@ export default function TelegramSync() {
                         onClick={addChannel} disabled={!newChannel.trim()}
                         className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 disabled:opacity-50"
                       >
-                        + أضيفي
+                        + {t('أضيفي', 'Add')}
                       </button>
                     </div>
                   </div>
@@ -662,10 +666,10 @@ export default function TelegramSync() {
             <Card className={`border-2 transition-colors ${autoEnabled ? 'border-purple-300 bg-purple-50/40' : 'border-gray-200'}`}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
-                  <span>⏰ المزامنة التلقائية الدورية</span>
+                  <span>⏰ {t('المزامنة التلقائية الدورية', 'Scheduled automatic sync')}</span>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <span className="text-sm font-normal text-muted-foreground">
-                      {autoEnabled ? 'مفعّلة' : 'معطّلة'}
+                      {autoEnabled ? t('مفعّلة', 'Enabled') : t('معطّلة', 'Disabled')}
                     </span>
                     <div
                       onClick={() => setAutoEnabled(v => !v)}
@@ -678,12 +682,12 @@ export default function TelegramSync() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  تُشغّل مزامنة تدريجية تلقائية في الخلفية — تجلب فقط الوثائق الجديدة مع احترام تصنيف كل قناة
+                  {t('تُشغّل مزامنة تدريجية تلقائية في الخلفية — تجلب فقط الوثائق الجديدة مع احترام تصنيف كل قناة', 'Runs an automatic incremental sync in the background, retrieving only new documents while preserving each channel category')}
                 </p>
                 {autoEnabled && (
                   <div className="space-y-3">
                     <div>
-                      <p className="text-xs font-medium mb-2">الفترة الزمنية بين كل مزامنة</p>
+                      <p className="text-xs font-medium mb-2">{t('الفترة الزمنية بين كل مزامنة', 'Time between syncs')}</p>
                       <div className="grid grid-cols-4 gap-2">
                         {[6, 12, 24, 48].map(h => (
                           <button
@@ -695,14 +699,14 @@ export default function TelegramSync() {
                                 : 'bg-card text-foreground border-border hover:border-purple-500'
                             }`}
                           >
-                            {h}س
+                            {h}{t('س', 'h')}
                           </button>
                         ))}
                       </div>
                     </div>
                     {status?.autoSync?.lastAutoSyncAt && (
                       <p className="text-xs text-purple-700 bg-purple-100 rounded-lg px-3 py-2">
-                        🕐 آخر تشغيل تلقائي: {formatDate(status.autoSync.lastAutoSyncAt)}
+                        🕐 {t('آخر تشغيل تلقائي:', 'Last automatic run:')} {formatDate(status.autoSync.lastAutoSyncAt)}
                       </p>
                     )}
                   </div>
@@ -711,7 +715,7 @@ export default function TelegramSync() {
                   onClick={saveAutoSync} disabled={autoLoading}
                   className="w-full py-2 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
                 >
-                  {autoLoading ? '⏳ جارٍ الحفظ...' : autoEnabled ? `💾 حفظ (كل ${autoInterval} ساعة)` : '💾 حفظ (إيقاف الجدولة)'}
+                  {autoLoading ? `⏳ ${t('جارٍ الحفظ...', 'Saving...')}` : autoEnabled ? `💾 ${t('حفظ', 'Save')} (${t('every', 'every')} ${autoInterval} ${t('ساعة', 'hours')})` : `💾 ${t('حفظ (إيقاف الجدولة)', 'Save (disable schedule)')}`}
                 </button>
               </CardContent>
             </Card>
@@ -723,15 +727,15 @@ export default function TelegramSync() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center justify-between">
                   <span>
-                    {job.running ? '⏳ جارٍ الفهرسة...' : '🎉 اكتملت المزامنة'}
+                    {job.running ? `⏳ ${t('جارٍ الفهرسة...', 'Indexing...')}` : `🎉 ${t('اكتملت المزامنة', 'Sync completed')}`}
                     <span className={`mr-2 text-xs font-normal px-2 py-0.5 rounded-full ${
                       job.mode === 'incremental' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                     }`}>
-                      {job.mode === 'incremental' ? '🆕 تدريجية' : '🔄 كاملة'}
+                      {job.mode === 'incremental' ? `🆕 ${t('تدريجية', 'Incremental')}` : `🔄 ${t('كاملة', 'Full')}`}
                     </span>
                   </span>
                   <span className="text-sm font-normal text-blue-600">
-                    {job.indexed + job.failed + job.skipped} / {job.total} رسالة
+                    {job.indexed + job.failed + job.skipped} / {job.total} {t('رسالة', 'messages')}
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -745,19 +749,19 @@ export default function TelegramSync() {
                 <div className="grid grid-cols-4 gap-3 text-center">
                   <div className="bg-card rounded-lg p-2 border border-blue-500/30">
                     <p className="text-xl font-bold text-blue-600">{job.total}</p>
-                    <p className="text-xs text-muted-foreground">رسالة فُحصت</p>
+                    <p className="text-xs text-muted-foreground">{t('رسالة فُحصت', 'Messages checked')}</p>
                   </div>
                   <div className="bg-card rounded-lg p-2 border border-green-500/30">
                     <p className="text-xl font-bold text-green-600">{job.indexed}</p>
-                    <p className="text-xs text-muted-foreground">ملف مفهرَس</p>
+                    <p className="text-xs text-muted-foreground">{t('ملف مفهرَس', 'Files indexed')}</p>
                   </div>
                   <div className="bg-card rounded-lg p-2 border border-yellow-500/30">
                     <p className="text-xl font-bold text-yellow-600">{job.skipped}</p>
-                    <p className="text-xs text-muted-foreground">تخطّى</p>
+                    <p className="text-xs text-muted-foreground">{t('تخطّى', 'Skipped')}</p>
                   </div>
                   <div className="bg-card rounded-lg p-2 border border-red-500/30">
                     <p className="text-xl font-bold text-red-500">{job.failed}</p>
-                    <p className="text-xs text-muted-foreground">فشل</p>
+                    <p className="text-xs text-muted-foreground">{t('فشل', 'Failed')}</p>
                   </div>
                 </div>
                 {job.log.length > 0 && (
@@ -777,7 +781,7 @@ export default function TelegramSync() {
                 )}
                 {job.finishedAt && (
                   <p className="text-xs text-muted-foreground text-center">
-                    انتهت في {formatDate(job.finishedAt)}
+                    {t('انتهت في', 'Finished at')} {formatDate(job.finishedAt)}
                   </p>
                 )}
               </CardContent>
@@ -787,24 +791,24 @@ export default function TelegramSync() {
           {/* ── Paste text section ── */}
           <Card className="border-amber-200 bg-amber-50/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">📋 لصق محتوى من موقع حكومي</CardTitle>
+              <CardTitle className="text-base">📋 {t('لصق محتوى من موقع حكومي', 'Paste content from a government website')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-amber-800">
-                افتحي صفحة <strong>الأحكام القضائية</strong> أو <strong>تعاميم وزارة العدل</strong> من متصفحك ← اضغطي
-                {' '}<kbd className="px-1 py-0.5 bg-muted border border-border rounded text-xs">Ctrl+A</kbd> ثم
-                {' '}<kbd className="px-1 py-0.5 bg-muted border border-border rounded text-xs">Ctrl+C</kbd> ← الصقي النص أدناه
+                {t('افتحي صفحة الأحكام القضائية أو تعاميم وزارة العدل من متصفحك، ثم اضغطي', 'Open a judicial decisions or Ministry of Justice circulars page in your browser, then press')}
+                {' '}<kbd className="px-1 py-0.5 bg-muted border border-border rounded text-xs">Ctrl+A</kbd> {t('ثم', 'then')}
+                {' '}<kbd className="px-1 py-0.5 bg-muted border border-border rounded text-xs">Ctrl+C</kbd> {t('والصقي النص أدناه', 'and paste the text below')}
               </p>
               <input
                 type="text" value={pasteTitle}
                 onChange={e => setPasteTitle(e.target.value)}
-                placeholder="اسم المصدر — مثال: تعميم وزارة العدل رقم 123"
+                placeholder={t('اسم المصدر — مثال: تعميم وزارة العدل رقم 123', 'Source name — e.g. Ministry of Justice circular no. 123')}
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-background"
               />
               <textarea
                 value={pasteText}
                 onChange={e => setPasteText(e.target.value)}
-                placeholder="الصقي النص المنسوخ من الصفحة هنا..."
+                placeholder={t('الصقي النص المنسوخ من الصفحة هنا...', 'Paste the copied page text here...')}
                 rows={5}
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-background resize-y"
                 dir="auto"
@@ -814,7 +818,7 @@ export default function TelegramSync() {
                 disabled={pasteLoading || !pasteText.trim()}
                 className="w-full py-2 bg-amber-500 text-white rounded-lg text-sm font-bold hover:bg-amber-600 disabled:opacity-50"
               >
-                {pasteLoading ? '⏳ جارٍ الفهرسة...' : '📥 فهرسة النص الملصق'}
+                {pasteLoading ? `⏳ ${t('جارٍ الفهرسة...', 'Indexing...')}` : `📥 ${t('فهرسة النص الملصق', 'Index pasted text')}`}
               </button>
             </CardContent>
           </Card>
@@ -822,17 +826,17 @@ export default function TelegramSync() {
           {/* ── PDF Upload shortcut ── */}
           <Card className="border-orange-200 bg-orange-50/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">📄 رفع ملفات PDF / Word مباشرة</CardTitle>
+              <CardTitle className="text-base">📄 {t('رفع ملفات PDF / Word مباشرة', 'Upload PDF / Word files directly')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-orange-700 mb-3">
-                للمواقع الحكومية التي لا تقبل الفهرسة التلقائية — حملي الصفحة كـ PDF من متصفحك ثم ارفعيها هنا
+                {t('للمواقع الحكومية التي لا تقبل الفهرسة التلقائية — حملي الصفحة كـ PDF من متصفحك ثم ارفعيها هنا', 'For government sites that do not allow automatic indexing, download the page as a PDF from your browser and upload it here')}
               </p>
               <button
                 onClick={() => setLocation('/admin/knowledge-base')}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
               >
-                📂 فتح قاعدة المعرفة لرفع الملفات
+                📂 {t('فتح قاعدة المعرفة لرفع الملفات', 'Open knowledge base to upload files')}
               </button>
             </CardContent>
           </Card>
@@ -840,15 +844,15 @@ export default function TelegramSync() {
           {/* ── Website URLs section ── */}
           <Card className="border-purple-200 bg-purple-50/40">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">🌐 إضافة مواقع للفهرسة</CardTitle>
+              <CardTitle className="text-base">🌐 {t('إضافة مواقع للفهرسة', 'Add websites for indexing')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-xs text-purple-700">أضيفي رابط أي موقع وسيُفهرَس فوراً في قاعدة المعرفة</p>
+              <p className="text-xs text-purple-700">{t('أضيفي رابط أي موقع وسيُفهرَس فوراً في قاعدة المعرفة', 'Add any website URL and it will be indexed immediately in the knowledge base')}</p>
               <div className="space-y-2">
                 <input
                   type="text" value={newUrlTitle}
                   onChange={e => setNewUrlTitle(e.target.value)}
-                  placeholder="الاسم (اختياري) — مثال: وزارة العدل - الأنظمة"
+                  placeholder={t('الاسم (اختياري) — مثال: وزارة العدل - الأنظمة', 'Name (optional) — e.g. Ministry of Justice - laws')}
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-background"
                 />
                 <div className="flex gap-2">
@@ -864,7 +868,7 @@ export default function TelegramSync() {
                     onClick={addUrl} disabled={urlLoading || !newUrl.trim()}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 shrink-0"
                   >
-                    {urlLoading ? '⏳' : '+ فهرسة'}
+                    {urlLoading ? '⏳' : `+ ${t('فهرسة', 'Index')}`}
                   </button>
                 </div>
               </div>
@@ -876,12 +880,13 @@ export default function TelegramSync() {
             <div className={`p-3 rounded-lg text-sm flex items-center gap-2 ${msg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
               <span>{msg.type === 'success' ? '✅' : '❌'}</span>
               <span className="flex-1">{msg.text}</span>
-              <button onClick={() => setMsg(null)} className="underline shrink-0 text-xs">إغلاق</button>
+              <button onClick={() => setMsg(null)} className="underline shrink-0 text-xs">{t('إغلاق', 'Close')}</button>
             </div>
           )}
 
         </div>
       )}
+      </div>
     </AdminSidebar>
   );
 }

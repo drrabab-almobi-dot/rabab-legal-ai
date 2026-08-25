@@ -10,22 +10,23 @@ import { useToast } from '@/hooks/use-toast';
 import React, { useState } from 'react';
 import { Scale, Loader2, ShieldCheck, Phone, Eye, EyeOff, User, Building2 } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
+import { useLang } from '@/hooks/use-language';
 
-const registerSchema = z.object({
-  name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
-  email: z.string().email("البريد الإلكتروني غير صالح"),
-  phone: z.string().min(9, "رقم الجوال قصير جداً").regex(/^[0-9+]+$/, "أرقام فقط"),
-  password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "كلمات المرور غير متطابقة",
-  path: ["confirmPassword"],
-});
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = { name: string; email: string; phone: string; password: string; confirmPassword: string };
 
 export default function Register() {
-  setPageSEO({ title: 'إنشاء حساب | RABAB LEGAL AI', description: 'أنشئ حسابك في RABAB LEGAL AI وابدأ في الحصول على استشارات قانونية أونلاين في الأنظمة السعودية.', canonical: 'https://rabablegal.com/register' });
+  const { lang, t } = useLang();
+  const registerSchema = z.object({
+    name: z.string().min(2, t("الاسم يجب أن يكون حرفين على الأقل", "Name must be at least 2 characters")),
+    email: z.string().email(t("البريد الإلكتروني غير صالح", "Invalid email address")),
+    phone: z.string().min(9, t("رقم الجوال قصير جداً", "Phone number is too short")).regex(/^[0-9+]+$/, t("أرقام فقط", "Numbers only")),
+    password: z.string().min(8, t("كلمة المرور يجب أن تكون 8 أحرف على الأقل", "Password must be at least 8 characters")),
+    confirmPassword: z.string()
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t("كلمات المرور غير متطابقة", "Passwords do not match"),
+    path: ["confirmPassword"],
+  });
+  setPageSEO({ title: t('إنشاء حساب', 'Create Account'), description: t('أنشئ حسابك في RABAB LEGAL AI وابدأ في الحصول على استشارات قانونية أونلاين في الأنظمة السعودية.', 'Create an account with RABAB LEGAL AI and begin receiving online legal consultations for Saudi laws.'), canonical: 'https://rabablegal.com/register' });
   const [, setLocation] = useLocation();
   const { login: contextLogin } = useAuth();
   const { toast } = useToast();
@@ -68,10 +69,10 @@ export default function Register() {
         setVerifyToken(res.verifyToken);
         setMaskedPhone(res.maskedPhone);
         setStep('otp');
-        toast({ title: "تم إرسال رمز التحقق", description: `أُرسل رمز SMS إلى ${res.maskedPhone}` });
+        toast({ title: t("تم إرسال رمز التحقق", "Verification code sent"), description: t(`أُرسل رمز SMS إلى ${res.maskedPhone}`, `An SMS code was sent to ${res.maskedPhone}`) });
       }
     } catch (err: any) {
-      toast({ variant: "destructive", title: "فشل إنشاء الحساب", description: err?.error || err?.message || "حدث خطأ غير متوقع" });
+      toast({ variant: "destructive", title: t("فشل إنشاء الحساب", "Account creation failed"), description: err?.error || err?.message || t("حدث خطأ غير متوقع", "An unexpected error occurred.") });
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +81,7 @@ export default function Register() {
   // ── Step 2: confirm OTP ───────────────────────────────────────────────────
   const onConfirmOtp = async () => {
     if (otpCode.length !== 6) {
-      toast({ variant: "destructive", title: "الرمز غير صحيح", description: "أدخلي رمزاً مكوناً من 6 أرقام" });
+      toast({ variant: "destructive", title: t("الرمز غير صحيح", "Incorrect code"), description: t("أدخلي رمزاً مكوناً من 6 أرقام", "Enter a 6-digit code.") });
       return;
     }
     setIsSubmitting(true);
@@ -90,10 +91,10 @@ export default function Register() {
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ verifyToken, code: otpCode }) }
       );
       contextLogin(res.user);
-      toast({ title: "تم التحقق بنجاح", description: "مرحباً بك في رباب محاميتك الرقمية" });
+      toast({ title: t("تم التحقق بنجاح", "Verified successfully"), description: t("مرحباً بك في رباب محاميتك الرقمية", "Welcome to Rabab, your digital lawyer.") });
       setLocation('/dashboard');
     } catch (err: any) {
-      toast({ variant: "destructive", title: "رمز غير صحيح", description: err?.error || "الرمز غير صحيح أو منتهي الصلاحية" });
+      toast({ variant: "destructive", title: t("رمز غير صحيح", "Incorrect code"), description: err?.error || t("الرمز غير صحيح أو منتهي الصلاحية", "The code is incorrect or expired.") });
     } finally {
       setIsSubmitting(false);
     }
@@ -111,20 +112,20 @@ export default function Register() {
       setVerifyToken(res.verifyToken);
       setMaskedPhone(res.maskedPhone);
       setOtpCode('');
-      toast({ title: "تم إعادة الإرسال", description: `رمز جديد أُرسل إلى ${res.maskedPhone}` });
+      toast({ title: t("تم إعادة الإرسال", "Code resent"), description: t(`رمز جديد أُرسل إلى ${res.maskedPhone}`, `A new code was sent to ${res.maskedPhone}`) });
     } catch (err: any) {
-      toast({ variant: "destructive", title: "فشل الإرسال", description: err?.error || "حدث خطأ، حاولي مجدداً" });
+      toast({ variant: "destructive", title: t("فشل الإرسال", "Sending failed"), description: err?.error || t("حدث خطأ، حاولي مجدداً", "An error occurred. Please try again.") });
     } finally {
       setIsResending(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-muted/30" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-4 py-12">
-        <Card className="w-full max-w-lg border-border/50 shadow-lg">
+        <Card className="w-full max-w-lg border-2 border-primary/55 shadow-lg shadow-primary/10">
 
           {/* ── Step 1: Registration form ─────────────────────────────────── */}
           {step === 'form' && (
@@ -133,29 +134,29 @@ export default function Register() {
                 <div className="w-16 h-16 bg-secondary/10 border-2 border-secondary rounded-2xl flex items-center justify-center text-secondary mx-auto mb-6">
                   <Scale className="w-8 h-8" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-primary mb-2">إنشاء حساب جديد</CardTitle>
-                <p className="text-muted-foreground text-base leading-relaxed">انضم إلى رباب محاميتك الرقمية في الأنظمة السعودية والخليجية<br />RABAB LEGAL AI وابدأ استشاراتك</p>
+                <CardTitle className="text-2xl font-bold text-primary mb-2">{t('إنشاء حساب جديد', 'Create a New Account')}</CardTitle>
+                <p className="text-muted-foreground text-base leading-relaxed">{t('انضم إلى رباب محاميتك الرقمية في الأنظمة السعودية والخليجية', 'Join Rabab, your digital lawyer for Saudi and GCC laws')}<br />RABAB LEGAL AI {t('وابدأ استشاراتك', 'and start your consultations')}</p>
               </CardHeader>
               <CardContent className="pb-10">
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
                    {/* ── نوع الحساب ── */}
                    <div className="space-y-2">
-                     <Label>نوع الحساب</Label>
+                      <Label>{t('نوع الحساب', 'Account Type')}</Label>
                      <div className="grid grid-cols-2 gap-2">
                        {([
-                         { id: 'individual', label: 'فرد', icon: <User className="w-4 h-4" /> },
-                         { id: 'entity',     label: 'منشأة / شركة', icon: <Building2 className="w-4 h-4" /> },
+                          { id: 'individual', label: 'فرد', labelEn: 'Individual', icon: <User className="w-4 h-4" /> },
+                          { id: 'entity',     label: 'منشأة / شركة', labelEn: 'Organization / Company', icon: <Building2 className="w-4 h-4" /> },
                        ] as const).map(opt => (
                          <button key={opt.id} type="button"
                            onClick={() => setAccountType(opt.id)}
                            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                              accountType === opt.id
                                ? 'bg-primary text-primary-foreground border-primary'
-                               : 'bg-card border-border hover:border-primary/40 text-foreground'
+                                : 'bg-card border-blue-400/55 hover:border-primary/65 hover:shadow-sm text-foreground'
                            }`}
                          >
-                           {opt.icon}{opt.label}
+                            {opt.icon}{lang === 'ar' ? opt.label : opt.labelEn}
                          </button>
                        ))}
                      </div>
@@ -163,21 +164,21 @@ export default function Register() {
 
                    {/* ── حقول المنشأة ── */}
                    {accountType === 'entity' && (
-                     <div className="space-y-3 p-4 bg-muted/40 rounded-xl border border-border/50">
-                       <p className="text-xs font-bold text-muted-foreground">بيانات المنشأة</p>
+                      <div className="space-y-3 p-4 bg-muted/40 rounded-xl border-2 border-blue-400/45 shadow-sm shadow-blue-400/5">
+                        <p className="text-xs font-bold text-muted-foreground">{t("بيانات المنشأة", "Organization details")}</p>
                        <div className="space-y-2">
-                         <Label htmlFor="entityName">اسم المنشأة <span className="text-destructive">*</span></Label>
+                          <Label htmlFor="entityName">{t("اسم المنشأة", "Organization name")} <span className="text-destructive">*</span></Label>
                          <Input id="entityName" value={entityName} onChange={e => setEntityName(e.target.value)}
-                           placeholder="اسم الشركة أو المنشأة" dir="rtl" />
+                            placeholder={t("اسم الشركة أو المنشأة", "Company or organization name")} dir={lang === 'ar' ? 'rtl' : 'ltr'} />
                        </div>
                        <div className="grid grid-cols-2 gap-3">
                          <div className="space-y-2">
-                           <Label htmlFor="entityCr">رقم السجل التجاري <span className="text-destructive">*</span></Label>
+                            <Label htmlFor="entityCr">{t("رقم السجل التجاري", "Commercial registration number")} <span className="text-destructive">*</span></Label>
                            <Input id="entityCr" value={entityCr} onChange={e => setEntityCr(e.target.value)}
                              placeholder="1234567890" dir="ltr" />
                          </div>
                          <div className="space-y-2">
-                           <Label htmlFor="entityTax">الرقم الضريبي <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
+                            <Label htmlFor="entityTax">{t("الرقم الضريبي", "Tax number")} <span className="text-muted-foreground text-xs">{t("(اختياري)", "(optional)")}</span></Label>
                            <Input id="entityTax" value={entityTax} onChange={e => setEntityTax(e.target.value)}
                              placeholder="300..." dir="ltr" />
                          </div>
@@ -186,10 +187,11 @@ export default function Register() {
                    )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">الاسم الكامل</Label>
+                     <Label htmlFor="name">{t("الاسم الكامل", "Full name")}</Label>
                     <Input
                       id="name"
-                      placeholder="الاسم الثلاثي"
+                       placeholder={t("الاسم الثلاثي", "Full name")}
+                       dir={lang === 'ar' ? 'rtl' : 'ltr'}
                       {...form.register('name')}
                       data-testid="input-register-name"
                     />
@@ -200,7 +202,7 @@ export default function Register() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-2">
-                      <Label htmlFor="email">البريد الإلكتروني</Label>
+                       <Label htmlFor="email">{t("البريد الإلكتروني", "Email address")}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -216,7 +218,7 @@ export default function Register() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">رقم الجوال</Label>
+                       <Label htmlFor="phone">{t("رقم الجوال", "Mobile number")}</Label>
                       <Input
                         id="phone"
                         type="tel"
@@ -233,12 +235,12 @@ export default function Register() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">كلمة المرور</Label>
+                     <Label htmlFor="password">{t("كلمة المرور", "Password")}</Label>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="8 أحرف على الأقل"
+                         placeholder={t("8 أحرف على الأقل", "At least 8 characters")}
                         {...form.register('password')}
                         data-testid="input-register-password"
                         dir="ltr"
@@ -259,12 +261,12 @@ export default function Register() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                     <Label htmlFor="confirmPassword">{t("تأكيد كلمة المرور", "Confirm password")}</Label>
                     <div className="relative">
                       <Input
                         id="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
-                        placeholder="أعد إدخال كلمة المرور"
+                         placeholder={t("أعد إدخال كلمة المرور", "Re-enter password")}
                         {...form.register('confirmPassword')}
                         data-testid="input-register-confirm-password"
                         dir="ltr"
@@ -286,7 +288,7 @@ export default function Register() {
 
                   <div className="pt-2">
                     <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-                      <span className="text-muted-foreground">بالنقر على "إنشاء الحساب"، أنت توافق على </span><Link href="/terms" className="text-muted-foreground underline hover:text-foreground">شروط الخدمة</Link><span className="text-muted-foreground"> و </span><Link href="/privacy" className="text-muted-foreground underline hover:text-foreground">سياسة الخصوصية</Link><span className="text-muted-foreground"> الخاصة بنا.</span>
+                      <span className="text-muted-foreground">{t('بالنقر على "إنشاء الحساب"، أنت توافق على', 'By creating an account, you agree to our')} </span><Link href="/terms" className="text-muted-foreground underline hover:text-foreground">{t('شروط الخدمة', 'Terms of Service')}</Link><span className="text-muted-foreground"> {t('و', 'and')} </span><Link href="/privacy" className="text-muted-foreground underline hover:text-foreground">{t('سياسة الخصوصية', 'Privacy Policy')}</Link><span className="text-muted-foreground">.</span>
                     </p>
                     <Button
                       type="submit"
@@ -294,14 +296,14 @@ export default function Register() {
                       disabled={isSubmitting}
                       data-testid="button-register-submit"
                     >
-                      {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "إنشاء الحساب"}
+                      {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : t('إنشاء الحساب', 'Create Account')}
                     </Button>
                   </div>
 
                   <div className="text-center mt-6 text-sm">
-                    <span className="text-muted-foreground">لديك حساب بالفعل؟ </span>
+                    <span className="text-muted-foreground">{t('لديك حساب بالفعل؟', 'Already have an account?')} </span>
                     <Link href="/login" className="text-primary font-bold hover:underline">
-                      سجل دخولك
+                      {t('سجل دخولك', 'Log in')}
                     </Link>
                   </div>
                 </form>
@@ -316,9 +318,9 @@ export default function Register() {
                 <div className="w-16 h-16 bg-secondary/10 border-2 border-secondary rounded-2xl flex items-center justify-center text-secondary mx-auto mb-6">
                   <ShieldCheck className="w-8 h-8" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-primary mb-2">تحقق من رقم جوالك</CardTitle>
+                 <CardTitle className="text-2xl font-bold text-primary mb-2">{t("تحقق من رقم جوالك", "Verify your phone number")}</CardTitle>
                 <p className="text-muted-foreground">
-                  أُرسل رمز تحقق مكوّن من 6 أرقام إلى
+                   {t("أُرسل رمز تحقق مكوّن من 6 أرقام إلى", "A 6-digit verification code was sent to")}
                 </p>
                 <p className="flex items-center justify-center gap-2 text-foreground font-semibold mt-1" dir="ltr">
                   <Phone className="w-4 h-4 text-secondary" />
@@ -329,7 +331,7 @@ export default function Register() {
               <CardContent className="pb-10">
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="otp-code">رمز التحقق</Label>
+                     <Label htmlFor="otp-code">{t("رمز التحقق", "Verification code")}</Label>
                     <Input
                       id="otp-code"
                       type="text"
@@ -352,18 +354,18 @@ export default function Register() {
                     disabled={isSubmitting || otpCode.length !== 6}
                     data-testid="button-otp-confirm"
                   >
-                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "تأكيد الرمز"}
+                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : t("تأكيد الرمز", "Confirm code")}
                   </Button>
 
                   <div className="text-center text-sm">
-                    <span className="text-muted-foreground">لم تستلم الرمز؟ </span>
+                     <span className="text-muted-foreground">{t("لم تستلم الرمز؟", "Didn't receive the code?")} </span>
                     <button
                       type="button"
                       onClick={onResend}
                       disabled={isResending}
                       className="text-primary font-bold hover:underline disabled:opacity-50"
                     >
-                      {isResending ? "جارٍ الإرسال..." : "أعد الإرسال"}
+                       {isResending ? t("جارٍ الإرسال...", "Sending...") : t("أعد الإرسال", "Resend")}
                     </button>
                   </div>
 
@@ -373,7 +375,7 @@ export default function Register() {
                       onClick={() => setStep('form')}
                       className="text-muted-foreground hover:text-foreground hover:underline text-xs"
                     >
-                      ← تعديل البيانات
+                       {t("← تعديل البيانات", "← Edit details")}
                     </button>
                   </div>
                 </div>

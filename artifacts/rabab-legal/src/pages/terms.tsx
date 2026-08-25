@@ -2,6 +2,8 @@ import React from 'react';
 import { setPageSEO } from '@/lib/seo';
 import { Navbar, Footer } from '@/components/layout';
 import { FileText } from 'lucide-react';
+import { useLang } from '@/hooks/use-language';
+import { translateArabicText } from '@/lib/translations';
 
 const sections = [
   {
@@ -51,9 +53,10 @@ const sections = [
 ];
 
 export default function Terms() {
-  setPageSEO({ title: 'الشروط والأحكام', canonical: 'https://rabablegal.com/terms' });
+  const { lang, t } = useLang();
+  setPageSEO({ title: t('الشروط والأحكام', 'Terms & Conditions'), canonical: 'https://rabablegal.com/terms' });
   return (
-    <div className="min-h-screen flex flex-col font-sans" dir="rtl">
+    <div className="min-h-screen flex flex-col font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <section className="bg-primary py-16">
@@ -61,8 +64,8 @@ export default function Terms() {
           <div className="w-14 h-14 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center mx-auto mb-4">
             <FileText className="w-7 h-7 text-secondary" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">شروط الاستخدام</h1>
-          <p className="text-white/70">آخر تحديث: يوليو 2026</p>
+          <h1 className="text-4xl font-bold text-white mb-2">{t('شروط الاستخدام', 'Terms of Use')}</h1>
+          <p className="text-white/70">{t('آخر تحديث: يوليو 2026', 'Last updated: July 2026')}</p>
         </div>
       </section>
 
@@ -70,15 +73,15 @@ export default function Terms() {
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-10">
             <p className="text-sm text-amber-200 leading-relaxed">
-              ⚠️ <strong>تنبيه مهم:</strong> قراءة هذه الشروط بعناية قبل استخدام المنصة إلزامية. استخدامك للمنصة يُعدّ قبولاً صريحاً لجميع البنود الواردة أدناه.
+               {t('⚠️ تنبيه مهم: قراءة هذه الشروط بعناية قبل استخدام المنصة إلزامية. استخدامك للمنصة يُعدّ قبولاً صريحاً لجميع البنود الواردة أدناه.', '⚠️ Important: You must read these terms carefully before using the platform. Your use of the platform is explicit acceptance of all terms below.')}
             </p>
           </div>
 
           <div className="space-y-8">
             {sections.map((s, i) => (
               <div key={i}>
-                <h2 className="text-xl font-bold text-foreground mb-3">{s.title}</h2>
-                <p className="text-muted-foreground leading-loose whitespace-pre-line">{s.content}</p>
+                <h2 className="text-xl font-bold text-foreground mb-3">{lang === 'ar' ? s.title : translateArabicText(s.title)}</h2>
+                <p className="text-muted-foreground leading-loose whitespace-pre-line">{lang === 'ar' ? s.content : translateArabicText(s.content)}</p>
                 {i < sections.length - 1 && <div className="border-b border-border/40 mt-8" />}
               </div>
             ))}
@@ -86,7 +89,7 @@ export default function Terms() {
 
           <div className="mt-12 bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">
-              للاستفسار عن هذه الشروط: <a href="mailto:info@rabablegal.com" className="text-secondary hover:underline font-medium">info@rabablegal.com</a>
+               {t('للاستفسار عن هذه الشروط:', 'For questions about these terms:')} <a href="mailto:info@rabablegal.com" className="text-secondary hover:underline font-medium">info@rabablegal.com</a>
             </p>
           </div>
         </div>

@@ -37,6 +37,13 @@ const COUNTRIES = [
   { code: 'OM', name: 'سلطنة عُمان', flag: '🇴🇲' },
 ];
 
+const SELECTABLE_FRAME_STYLES = [
+  'border-secondary/75 hover:border-secondary hover:bg-secondary/5',
+  'border-accent/75 hover:border-accent hover:bg-accent/5',
+  'border-blue-400/75 hover:border-blue-400 hover:bg-blue-400/5',
+  'border-emerald-400/75 hover:border-emerald-400 hover:bg-emerald-400/5',
+];
+
 const CONSULTATION_LANGUAGES = [
   { code: 'ar', label: 'العربية' },
   { code: 'en', label: 'English' },
@@ -740,13 +747,13 @@ function SetupScreen({
               لأن النصوص والاختصاص والإجراءات تختلف بين الدول، سنبني التحليل والمراجع على الدولة التي تختارها.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {COUNTRIES.map(c => (
+              {COUNTRIES.map((c, index) => (
                 <button
                   key={c.code}
                   type="button"
                   onClick={() => handleCountrySelect(c.code)}
                   disabled={isStarting}
-                  className="flex flex-col items-center gap-2 rounded-xl border-2 border-border bg-muted/30 hover:border-primary hover:bg-primary/5 transition-all py-4 px-3 group disabled:opacity-50"
+                  className={`flex flex-col items-center gap-2 rounded-xl border-2 bg-muted/30 transition-all py-4 px-3 group disabled:opacity-50 ${SELECTABLE_FRAME_STYLES[index % SELECTABLE_FRAME_STYLES.length]}`}
                 >
                   <span className="text-4xl leading-none">{c.flag}</span>
                   <span className="text-sm font-bold text-foreground group-hover:text-primary leading-tight text-center">{c.name}</span>
@@ -937,11 +944,11 @@ function SetupScreen({
 
           {/* Task Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {visibleTasks.map(task => (
+            {visibleTasks.map((task, index) => (
               <button
                 key={task.id}
                 onClick={() => handleTaskSelect(task)}
-                className="group text-right bg-card border border-border/60 rounded-xl p-4 hover:border-primary/50 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className={`group text-right bg-card border-2 rounded-xl p-4 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 ${SELECTABLE_FRAME_STYLES[index % SELECTABLE_FRAME_STYLES.length]}`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl shrink-0 mt-0.5">{task.icon}</span>

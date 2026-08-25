@@ -14,6 +14,8 @@ import {
   ChevronDown, ArrowLeft, Shield, CheckCircle2, Loader2, Mic, X, Landmark, Lightbulb,
 } from 'lucide-react';
 import { buildWhatsAppContactLink } from '@/lib/whatsapp-contact';
+import { useLang } from '@/hooks/use-language';
+import { translateArabicText } from '@/lib/translations';
 
 const SERVICE_LABELS: Record<string, string> = {
   consultation: 'الاستشارات القانونية',
@@ -25,23 +27,40 @@ const SERVICE_LABELS: Record<string, string> = {
   corporate_governance_compliance: 'حوكمة وامتثال الشركات',
   research: 'الباحثة الذكية',
 };
+const SERVICE_LABELS_EN: Record<string, string> = {
+  consultation: 'Legal Consultations',
+  judicial: 'Judicial Consultations',
+  commercial_arbitration: 'Commercial Arbitration & Mediation',
+  pleadings: 'Pleadings',
+  contracts: 'Contracts',
+  intellectual_property: 'Intellectual Property',
+  corporate_governance_compliance: 'Corporate Governance & Compliance',
+  research: 'Smart Researcher',
+};
+
+const SERVICE_FRAME_STYLES = [
+  { idle: 'border-secondary/70 hover:border-secondary hover:shadow-secondary/15', active: 'border-secondary bg-secondary/10', panel: 'border-secondary/60' },
+  { idle: 'border-accent/70 hover:border-accent hover:shadow-accent/15', active: 'border-accent bg-accent/10', panel: 'border-accent/60' },
+  { idle: 'border-blue-400/70 hover:border-blue-400 hover:shadow-blue-400/15', active: 'border-blue-400 bg-blue-400/10', panel: 'border-blue-400/60' },
+  { idle: 'border-emerald-400/70 hover:border-emerald-400 hover:shadow-emerald-400/15', active: 'border-emerald-400 bg-emerald-400/10', panel: 'border-emerald-400/60' },
+];
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const PLEADING_TYPES = [
-  { id: 'lawsuit',         label: 'لائحة الدعوى' },
-  { id: 'response',        label: 'المذكرة الجوابية أو مذكرة الرد' },
-  { id: 'appeal',          label: 'الاعتراض بالاستئناف' },
-  { id: 'review_petition', label: 'الاعتراض بالتماس إعادة النظر' },
-  { id: 'cassation',       label: 'النقض أمام المحكمة العليا' },
+  { id: 'lawsuit',         label: 'لائحة الدعوى', labelEn: 'Statement of Claim' },
+  { id: 'response',        label: 'المذكرة الجوابية أو مذكرة الرد', labelEn: 'Defence or Response Memorandum' },
+  { id: 'appeal',          label: 'الاعتراض بالاستئناف', labelEn: 'Appeal Objection' },
+  { id: 'review_petition', label: 'الاعتراض بالتماس إعادة النظر', labelEn: 'Petition for Reconsideration' },
+  { id: 'cassation',       label: 'النقض أمام المحكمة العليا', labelEn: 'Cassation before the Supreme Court' },
 ];
 
 const JUDICIAL_TRACKS = [
-  { id: 'general',     label: 'المحاكم العامة' },
-  { id: 'commercial',  label: 'المحاكم التجارية' },
-  { id: 'labor',       label: 'المحاكم العمالية' },
-  { id: 'admin',       label: 'ديوان المظالم' },
-  { id: 'committee',   label: 'اللجان شبه القضائية' },
+  { id: 'general',     label: 'المحاكم العامة', labelEn: 'General Courts' },
+  { id: 'commercial',  label: 'المحاكم التجارية', labelEn: 'Commercial Courts' },
+  { id: 'labor',       label: 'المحاكم العمالية', labelEn: 'Labour Courts' },
+  { id: 'admin',       label: 'ديوان المظالم', labelEn: 'Board of Grievances' },
+  { id: 'committee',   label: 'اللجان شبه القضائية', labelEn: 'Quasi-Judicial Committees' },
 ];
 
 interface ServiceBranch { label: string; href: string; external?: boolean }
@@ -187,9 +206,10 @@ const SERVICE_DISPLAY_ORDER = [
 ];
 
 export default function LegalAssistant() {
+  const { lang, t } = useLang();
   setPageSEO({
-    title: 'الخدمات القانونية — RABAB LEGAL AI',
-    description: 'خدمات قانونية مستقلة تشمل الاستشارة القضائية والتحكيم التجاري وتحرير المذكرات والعقود والبحث القانوني.',
+    title: t('الخدمات القانونية', 'Legal Services'),
+    description: t('خدمات قانونية مستقلة تشمل الاستشارة القضائية والتحكيم التجاري وتحرير المذكرات والعقود والبحث القانوني.', 'Independent legal services including judicial consultations, commercial arbitration, legal drafting, contracts, and legal research.'),
     canonical: 'https://rabablegal.com/legal-assistant',
   });
 
@@ -282,56 +302,56 @@ export default function LegalAssistant() {
     : null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
-      <section className="bg-primary py-12 px-4 text-white">
-        <div className="container mx-auto max-w-5xl text-center">
+      <section className="bg-primary py-12 px-3 sm:px-5 lg:px-7 text-white">
+        <div className="w-full text-center">
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 bg-white/10 rounded-full text-xs font-bold text-secondary">
             <Shield className="w-3.5 h-3.5" />
-            مدعوم بالذكاء الاصطناعي · وفق أنظمة المملكة
+            {t('مدعوم بالذكاء الاصطناعي · وفق أنظمة المملكة', 'AI-powered · aligned with Saudi laws')}
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">
-            {isPleadingsOnly ? 'تحرير الصحائف والمذكرات' : 'الخدمات القانونية'}
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            {isPleadingsOnly ? t('تحرير الصحائف والمذكرات', 'Pleadings & Memoranda') : t('الخدمات القانونية', 'Legal Services')}
           </h1>
-          <p className="text-white/65 text-sm leading-relaxed max-w-xl mx-auto">
+          <p className="text-white/65 text-base leading-relaxed max-w-3xl mx-auto">
             {isPleadingsOnly
-              ? 'اختر نوع المذكرة والمسار القضائي لبدء صياغة منظمة.'
-              : 'اختر الخدمة المناسبة لاحتياجك القانوني'}
+              ? t('اختر نوع المذكرة والمسار القضائي لبدء صياغة منظمة.', 'Choose a memorandum type and judicial path to begin organized drafting.')
+              : t('اختر الخدمة المناسبة لاحتياجك القانوني', 'Choose the service that fits your legal needs')}
           </p>
         </div>
       </section>
 
-      <section className="flex-1 py-10 px-4">
-        <div className="container mx-auto max-w-7xl">
+      <section className="flex-1 py-10 px-3 sm:px-5 lg:px-7">
+        <div className="w-full">
           {/* ── مودال تأكيد التوجيه ── */}
           {showConfirmModal && routingResult && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-              <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl" dir="rtl">
+               <div className="bg-card border-2 border-primary/50 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-primary/15" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-foreground">تأكيد التوجيه</h3>
+                  <h3 className="text-base font-bold text-foreground">{t('تأكيد التوجيه', 'Confirm Routing')}</h3>
                   <button onClick={() => { setShowConfirmModal(false); setRoutingResult(null); }} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="space-y-3 mb-5">
                   <div className="bg-muted/50 rounded-xl p-3">
-                    <p className="text-xs font-semibold text-muted-foreground mb-1">الموضوع كما فُهم:</p>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">{t('الموضوع كما فُهم:', 'Matter as understood:')}</p>
                     <p className="text-sm text-foreground leading-relaxed">{routingResult.understanding}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">الخدمة المقترحة:</span>
-                    <span className="text-sm font-bold text-primary">{SERVICE_LABELS[routingResult.service] ?? routingResult.service}{routingResult.branch ? ` — ${routingResult.branch}` : ''}</span>
+                    <span className="text-xs text-muted-foreground">{t('الخدمة المقترحة:', 'Suggested service:')}</span>
+                    <span className="text-sm font-bold text-primary">{lang === 'ar' ? SERVICE_LABELS[routingResult.service] ?? routingResult.service : SERVICE_LABELS_EN[routingResult.service] ?? translateArabicText(routingResult.service)}{routingResult.branch ? ` — ${translateArabicText(routingResult.branch)}` : ''}</span>
                   </div>
                 </div>
                 {routingResult.confidence === 'low' && routingResult.alternatives?.length > 0 && (
                   <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                    <p className="text-xs text-amber-700 font-semibold mb-2">يحتمل موضوعك أكثر من مسار. أيّهما أقرب؟</p>
+                    <p className="text-xs text-amber-700 font-semibold mb-2">{t('يحتمل موضوعك أكثر من مسار. أيّهما أقرب؟', 'Your matter may fit more than one path. Which is closer?')}</p>
                     <div className="flex flex-col gap-1.5">
                       {routingResult.alternatives.map((alt: any, i: number) => (
                         <button key={i} onClick={() => handleConfirm(alt.service, alt.branch)}
                           className="text-right px-3 py-2 rounded-lg text-xs font-medium bg-white border border-amber-200 hover:border-amber-400 transition-colors">
-                          {SERVICE_LABELS[alt.service] ?? alt.service}{alt.branch ? ` — ${alt.branch}` : ''}
+                          {lang === 'ar' ? SERVICE_LABELS[alt.service] ?? alt.service : SERVICE_LABELS_EN[alt.service] ?? translateArabicText(alt.service)}{alt.branch ? ` — ${translateArabicText(alt.branch)}` : ''}
                         </button>
                       ))}
                     </div>
@@ -340,11 +360,11 @@ export default function LegalAssistant() {
                 <div className="flex gap-2">
                   <button onClick={() => handleConfirm(routingResult.service, routingResult.branch)}
                     className="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    متابعة
+                    {t('متابعة', 'Continue')}
                   </button>
                   <button onClick={() => { setShowConfirmModal(false); setRoutingResult(null); }}
-                    className="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm border border-border hover:bg-muted transition-colors">
-                    اختيار خدمة أخرى
+                    className="flex-1 py-2.5 px-4 rounded-xl font-bold text-sm border border-primary/40 hover:border-primary hover:bg-primary/5 transition-colors">
+                    {t('اختيار خدمة أخرى', 'Choose Another Service')}
                   </button>
                 </div>
               </div>
@@ -354,31 +374,31 @@ export default function LegalAssistant() {
           {/* ── «اعرض موضوعك» — مدخل التوجيه الذكي ── */}
           {!isPleadingsOnly && (
             <div className="mb-8">
-              <div className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
-                <h2 className="text-base font-bold text-foreground mb-1">اعرض موضوعك</h2>
-                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                  اكتب موضوعك بلغتك — عقداً تريد مراجعته، أو نزاعاً قائماً، أو استفساراً نظامياً. نحدّد الخدمة المناسبة ونجهّز ملفك.
+              <div className="bg-card border-2 border-secondary/55 rounded-2xl p-5 shadow-sm shadow-secondary/10">
+                <h2 className="text-lg font-bold text-foreground mb-1">{t('اعرض موضوعك', 'Describe Your Matter')}</h2>
+                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                  {t('اكتب موضوعك بلغتك — عقداً تريد مراجعته، أو نزاعاً قائماً، أو استفساراً نظامياً. نحدّد الخدمة المناسبة ونجهّز ملفك.', 'Describe your matter in your own words — a contract to review, an ongoing dispute, or a legal question. We will identify the right service and prepare your case.') }
                 </p>
                 <textarea
                   value={topicInput}
                   onChange={e => setTopicInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && topicInput.trim().length >= 10) { e.preventDefault(); handleTopicSubmit(); } }}
-                  placeholder="مثال: لدينا عقد توريد مع مورّد خارجي ونرغب في مراجعته قبل التوقيع…"
+                  placeholder={t('مثال: لدينا عقد توريد مع مورّد خارجي ونرغب في مراجعته قبل التوقيع…', 'Example: We have a supply contract with an overseas vendor and would like it reviewed before signing…')}
                   rows={3}
-                  className="w-full bg-transparent resize-none rounded-xl border border-border/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary/40 transition-all mb-3"
-                  dir="rtl"
+                  className="w-full bg-transparent resize-none rounded-xl border-2 border-secondary/45 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary transition-all mb-3"
+                  dir={lang === 'ar' ? 'rtl' : 'ltr'}
                 />
                 <div className="flex items-center justify-between">
                   <button disabled title="التسجيل الصوتي — قريباً"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground/40 border border-border/30 cursor-not-allowed select-none">
                     <Mic className="w-3.5 h-3.5" />
-                    <span>صوت — قريباً</span>
+                    <span>{t('صوت — قريباً', 'Voice — Coming Soon')}</span>
                   </button>
                   <button onClick={handleTopicSubmit}
                     disabled={topicInput.trim().length < 10 || isRouting}
-                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-base hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                     {isRouting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    ابدأ
+                    {t('ابدأ', 'Start')}
                   </button>
                 </div>
               </div>
@@ -386,28 +406,28 @@ export default function LegalAssistant() {
           )}
 
           {caseId && (
-            <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-primary/10 border border-primary/20 rounded-xl text-sm font-medium text-primary">
+            <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-primary/10 border border-primary/20 rounded-xl text-base font-medium text-primary">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              مرتبطة بقضية مسجّلة — حدّد نوع المذكرة والمسار للمتابعة
+               {t('مرتبطة بقضية مسجّلة — حدّد نوع المذكرة والمسار للمتابعة', 'Linked to a registered case — select the memorandum type and judicial path to continue')}
             </div>
           )}
 
-          <div className={`w-full max-w-7xl mx-auto ${
+          <div className={`w-full ${
             isPleadingsOnly ? 'grid grid-cols-1 gap-5' : 'grid grid-cols-1 sm:grid-cols-2 gap-5'
           }`}>
             {SERVICES
               .slice()
               .sort((a, b) => SERVICE_DISPLAY_ORDER.indexOf(a.id) - SERVICE_DISPLAY_ORDER.indexOf(b.id))
               .filter(svc => !isPleadingsOnly || svc.id === 'pleadings')
-              .map(svc => (
+              .map((svc, index) => (
               <div key={svc.id} className="flex flex-col">
                 {/* Card header */}
                 <div
                   onClick={() => handleCardClick(svc)}
-                  className={`group border rounded-2xl p-5 cursor-pointer transition-all duration-200 select-none ${
+                   className={`group border-2 rounded-2xl p-5 cursor-pointer transition-all duration-200 select-none ${
                     expandedId === svc.id
-                      ? 'border-primary/60 bg-primary/5 rounded-b-none border-b-0'
-                      : 'border-border/60 bg-card hover:border-primary/40 hover:shadow-md'
+                       ? `${SERVICE_FRAME_STYLES[index % SERVICE_FRAME_STYLES.length].active} rounded-b-none border-b-0`
+                       : `${SERVICE_FRAME_STYLES[index % SERVICE_FRAME_STYLES.length].idle} bg-card hover:shadow-md`
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -415,9 +435,9 @@ export default function LegalAssistant() {
                       {svc.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="font-bold text-foreground text-sm md:text-base">{svc.title}</h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">{svc.subtitle}</p>
-                      <p className="text-xs text-muted-foreground/80 mt-1.5 leading-relaxed hidden md:block">{svc.desc}</p>
+                       <h2 className="font-bold text-foreground text-lg">{lang === 'ar' ? svc.title : translateArabicText(svc.title)}</h2>
+                       <p className="text-sm text-muted-foreground mt-0.5">{lang === 'ar' ? svc.subtitle : translateArabicText(svc.subtitle)}</p>
+                       <p className="text-sm text-muted-foreground/80 mt-1.5 leading-relaxed hidden md:block">{lang === 'ar' ? svc.desc : translateArabicText(svc.desc)}</p>
                     </div>
                     {svc.branches && (
                       <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 mt-1 transition-transform ${expandedId === svc.id ? 'rotate-180' : ''}`} />
@@ -436,44 +456,44 @@ export default function LegalAssistant() {
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="overflow-hidden border border-primary/40 border-t-0 rounded-b-2xl bg-card"
+                       className={`overflow-hidden border-2 border-t-0 rounded-b-2xl bg-card ${SERVICE_FRAME_STYLES[index % SERVICE_FRAME_STYLES.length].panel}`}
                     >
                       {svc.branches === 'pleadings' ? (
                         <div className="p-5 space-y-5">
                           {/* Step 1: نوع المذكرة */}
                           <div>
-                            <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">نوع المذكرة</p>
+                            <p className="text-base font-bold text-primary-foreground mb-2 tracking-wide">{t('نوع المذكرة', 'Memorandum Type')}</p>
                             <div className="grid grid-cols-1 gap-1.5">
                               {PLEADING_TYPES.map(t => (
                                 <button
                                   key={t.id}
                                   onClick={() => setMemoType(t.id)}
-                                  className={`text-right px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  className={`text-right px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
                                     memoType === t.id
                                       ? 'bg-primary text-primary-foreground'
                                       : 'bg-muted/40 text-foreground hover:bg-muted'
                                   }`}
                                 >
-                                  {t.label}
+                                   {lang === 'ar' ? t.label : t.labelEn}
                                 </button>
                               ))}
                             </div>
                           </div>
                           {/* Step 2: المسار القضائي */}
                           <div>
-                            <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">المسار القضائي</p>
+                            <p className="text-base font-bold text-primary-foreground mb-2 tracking-wide">{t('المسار القضائي', 'Judicial Path')}</p>
                             <div className="grid grid-cols-1 gap-1.5">
                               {JUDICIAL_TRACKS.map(tr => (
                                 <button
                                   key={tr.id}
                                   onClick={() => setTrack(tr.id)}
-                                  className={`text-right px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  className={`text-right px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
                                     track === tr.id
                                       ? 'bg-secondary text-primary'
                                       : 'bg-muted/40 text-foreground hover:bg-muted'
                                   }`}
                                 >
-                                  {tr.label}
+                                   {lang === 'ar' ? tr.label : tr.labelEn}
                                 </button>
                               ))}
                             </div>
@@ -481,9 +501,9 @@ export default function LegalAssistant() {
                           <Link href={pleadingsHref ?? '#'}>
                             <button
                               disabled={!pleadingsHref}
-                              className="w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
+                              className="w-full py-3 px-4 rounded-xl font-bold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
                             >
-                              {pleadingsHref ? 'ابدأ التحرير' : 'حدّد النوع والمسار للمتابعة'}
+                               {pleadingsHref ? t('ابدأ التحرير', 'Start Drafting') : t('حدّد النوع والمسار للمتابعة', 'Select a type and path to continue')}
                             </button>
                           </Link>
                         </div>
@@ -491,8 +511,8 @@ export default function LegalAssistant() {
                         <div className="p-4 flex flex-col gap-1.5">
                           {(svc.branches as ServiceBranch[]).map(branch => {
                             const content = (
-                              <div className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group/branch">
-                                <span className="text-sm font-medium text-foreground">{branch.label}</span>
+                              <div className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-muted/50 transition-colors group/branch">
+                                <span className="text-base font-medium text-foreground">{branch.label}</span>
                                 <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground rotate-180 group-hover/branch:translate-x-[-3px] transition-transform" />
                               </div>
                             );

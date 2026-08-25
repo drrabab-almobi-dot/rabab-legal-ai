@@ -35,9 +35,9 @@ export const THEMES: ThemeDef[] = [
   },
   {
     id:       'burgundy',
-    labelAr:  'عنابي وذهبي',
-    labelEn:  'Burgundy & Gold',
-    swatches: ['#20140F', '#2E1C15', '#D4AF37'],
+    labelAr:  'كحلي أزرق',
+    labelEn:  'Midnight Blue',
+    swatches: ['#081527', '#00D4FF', '#8B5CF6'],
     dark:     true,
   },
 ];
@@ -68,6 +68,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>(() => {
     try {
       const saved = localStorage.getItem('rabab-theme') as ThemeId | null;
+      if (saved === 'burgundy') return 'tech';
       if (saved && THEMES.some(t => t.id === saved)) return saved;
     } catch {}
     return 'tech';

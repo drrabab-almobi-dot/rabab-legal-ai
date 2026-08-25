@@ -119,10 +119,10 @@ const MD_COMPONENTS: React.ComponentProps<typeof ReactMarkdown>['components'] = 
   ),
   // ── قوائم: نقطة بسيطة (•) بدلاً من ◆، مسافة بادئة واضحة ─────────────────
   ul: ({ children }) => (
-    <ul className="mb-4 space-y-2 pr-2">{children}</ul>
+    <ul className="mb-4 space-y-2 ps-2">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="mb-4 space-y-2 pr-5 list-decimal">{children}</ol>
+    <ol className="mb-4 space-y-2 ps-5 list-decimal">{children}</ol>
   ),
   li: ({ children }) => (
     <li className="text-[15px] leading-[1.85] flex gap-2.5 items-start">
@@ -138,7 +138,7 @@ const MD_COMPONENTS: React.ComponentProps<typeof ReactMarkdown>['components'] = 
   ),
   hr: () => <hr className="border-border/30 my-6" />,
   blockquote: ({ children }) => (
-    <blockquote className="border-r-4 border-secondary/60 pr-4 my-3 text-muted-foreground text-[14px] leading-[1.8] bg-muted/30 py-2 rounded-sm">
+    <blockquote className="border-s-4 border-secondary/60 ps-4 my-3 text-muted-foreground text-[14px] leading-[1.8] bg-muted/30 py-2 rounded-sm">
       {children}
     </blockquote>
   ),
@@ -157,10 +157,10 @@ const MD_COMPONENTS: React.ComponentProps<typeof ReactMarkdown>['components'] = 
     </div>
   ),
   th: ({ children }) => (
-    <th className="border border-border/40 bg-muted/60 px-3 py-2 text-right font-semibold text-foreground/90">{children}</th>
+    <th className="border border-border/40 bg-muted/60 px-3 py-2 text-start font-semibold text-foreground/90">{children}</th>
   ),
   td: ({ children }) => (
-    <td className="border border-border/40 px-3 py-2 text-right">{children}</td>
+    <td className="border border-border/40 px-3 py-2 text-start">{children}</td>
   ),
 };
 
@@ -176,10 +176,9 @@ export function LegalMarkdown({ children, className = '', maxHeight }: LegalMark
   return (
     <div
       className={`legal-response text-[15px] leading-[1.9] ${className}`}
-      dir="rtl"
+      dir="auto"
       style={{
-        direction: 'rtl',
-        textAlign: 'right',
+        textAlign: 'start',
         ...(maxHeight ? { maxHeight, overflowY: 'auto' } : {}),
       }}
     >

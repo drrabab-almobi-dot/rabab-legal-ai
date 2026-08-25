@@ -3,6 +3,8 @@
  * Call setPageSEO() at the top of each page component (not in hooks to avoid deps issues).
  */
 
+import { translateArabicText } from './translations';
+
 const SITE_NAME = "RABAB LEGAL AI";
 const DEFAULT_DESCRIPTION =
   "منصة رقمية متطورة تقدم استشارات قانونية دقيقة وموثقة للأفراد والشركات في المملكة العربية السعودية ودول مجلس التعاون — مدعومة بالذكاء الاصطناعي.";
@@ -34,14 +36,17 @@ function setLink(rel: string, href: string) {
 }
 
 export function setPageSEO({ title, description = DEFAULT_DESCRIPTION, canonical }: PageSEO) {
-  const fullTitle = `${title} | ${SITE_NAME}`;
+  const isEnglish = typeof document !== 'undefined' && document.documentElement.lang === 'en';
+  const localizedTitle = isEnglish ? translateArabicText(title) : title;
+  const localizedDescription = isEnglish ? translateArabicText(description) : description;
+  const fullTitle = `${localizedTitle} | ${SITE_NAME}`;
   document.title = fullTitle;
 
-  setMeta("description", description);
+  setMeta("description", localizedDescription);
   setMeta("og:title", fullTitle, "property");
-  setMeta("og:description", description, "property");
+  setMeta("og:description", localizedDescription, "property");
   setMeta("twitter:title", fullTitle, "name");
-  setMeta("twitter:description", description, "name");
+  setMeta("twitter:description", localizedDescription, "name");
 
   if (canonical) {
     setLink("canonical", canonical);

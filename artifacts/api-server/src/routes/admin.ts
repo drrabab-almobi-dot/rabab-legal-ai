@@ -4,7 +4,7 @@ import { requireAdmin } from "../middlewares/auth";
 import { GetAdminUserParams, UpdateAdminUserParams, UpdateAdminUserBody, UpdateAdminCouponParams, UpdateAdminCouponBody, DeleteAdminCouponParams, CreateAdminCouponBody } from "@workspace/api-zod";
 import { eq, count, sum, and, gte, asc, inArray, isNotNull, sql, desc, type SQL } from "drizzle-orm";
 import { sendEmail } from "../lib/email";
-import { sendWhatsApp } from "../lib/whatsapp";
+import { sendWhatsAppGated } from "../lib/whatsapp-gated";
 import { logger } from "../lib/logger";
 import { getEmailConfig, invalidateEmailConfigCache } from "../lib/email-config";
 import { sendTestExpiryPush, sendSubscriptionExpiryReminders } from "../lib/push-notifications";
@@ -309,7 +309,9 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#f5f7fa;margin:0;
       try {
         const results = await Promise.all([
           sendEmail_ ? sendEmail({ to: u.email, subject, html: htmlBody, text: message }) : Promise.resolve(true),
-          sendWhatsApp_ && u.phone ? sendWhatsApp(u.phone, message) : Promise.resolve(true),
+          sendWhatsApp_
+            ? (u.phone ? sendWhatsAppGated(u.phone, message, u.id) : Promise.resolve(false))
+            : Promise.resolve(true),
         ]);
         if (results.every(Boolean)) sent++;
         else failed++;
@@ -328,8 +330,8 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#f5f7fa;margin:0;
 router.get("/admin/email-config", requireAdmin, async (_req, res): Promise<void> => {
   const cfg = await getEmailConfig();
   const maskedApiKey = cfg.apiKey ? "••••••••••••••••" + cfg.apiKey.slice(-4) : null;
-  const cfgSource = cfg.apiKey ? "db" : (process.env["RESEND_API_KEY"] || process.env["SMTP_PASS"] ? "env" : "default");
-  res.json({ apiKey: maskedApiKey, fromAddress: cfg.fromAddress ?? null, source: cfgSource });
+  const cfgSource = cfg.provider === "smtp" ? "env" : (cfg.apiKey ? "db" : "default");
+  res.json({ apiKey: maskedApiKey, fromAddress: cfg.fromAddress ?? null, source: cfgSource, provider: cfg.provider });
 });
 
 router.post("/admin/email-config", requireAdmin, async (req, res): Promise<void> => {
@@ -341,7 +343,9 @@ router.post("/admin/email-config", requireAdmin, async (req, res): Promise<void>
     apiKey: apiKey?.trim() || existing.apiKey || null,
     fromAddress: fromAddress.trim(),
   };
-  const source = newValue.apiKey ? "db" : (process.env["RESEND_API_KEY"] || process.env["SMTP_PASS"] ? "env" : "default");
+  const source = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
+    ? "env"
+    : (newValue.apiKey ? "db" : "default");
 
   await db.insert(platformSettingsTable)
     .values({ key: "email_config", value: newValue })
@@ -370,6 +374,97 @@ router.post("/admin/email-config/test", requireAdmin, async (req, res): Promise<
   });
 
   res.json({ ok });
+});
+
+// ── Email settings UI aliases ──────────────────────────────────────────────────
+// The web admin screen uses these RESTful paths. Keep the older email-config
+// endpoints above for backwards compatibility with existing admin clients.
+router.get("/admin/email-settings", requireAdmin, async (_req, res): Promise<void> => {
+  const cfg = await getEmailConfig();
+  const configured = cfg.provider !== "unconfigured";
+  const source = cfg.provider === "smtp" ? "env" : (cfg.apiKey ? "db" : "default");
+
+  res.json({
+    configured,
+    maskedApiKey: cfg.provider === "smtp"
+      ? "Gmail SMTP"
+      : (cfg.apiKey ? "••••••••••••••••" + cfg.apiKey.slice(-4) : null),
+    fromAddress: cfg.fromAddress,
+    source,
+    provider: cfg.provider,
+  });
+});
+
+router.put("/admin/email-settings", requireAdmin, async (req, res): Promise<void> => {
+  const { apiKey, fromAddress } = req.body as { apiKey?: string; fromAddress?: string };
+  const normalizedFrom = fromAddress?.trim();
+  if (!normalizedFrom || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedFrom)) {
+    res.status(400).json({ error: "عنوان المُرسِل غير صالح" });
+    return;
+  }
+
+  const [stored] = await db
+    .select({ value: platformSettingsTable.value })
+    .from(platformSettingsTable)
+    .where(eq(platformSettingsTable.key, "email_config"));
+  const previous = (stored?.value as { apiKey?: string } | undefined) ?? {};
+  const value = {
+    apiKey: apiKey?.trim() || previous.apiKey || null,
+    fromAddress: normalizedFrom,
+  };
+
+  await db.insert(platformSettingsTable)
+    .values({ key: "email_config", value })
+    .onConflictDoUpdate({
+      target: platformSettingsTable.key,
+      set: { value, updatedAt: new Date() },
+    });
+  invalidateEmailConfigCache();
+
+  const cfg = await getEmailConfig();
+  res.json({
+    ok: true,
+    settings: {
+      configured: cfg.provider !== "unconfigured",
+      maskedApiKey: cfg.provider === "smtp"
+        ? "Gmail SMTP"
+        : (cfg.apiKey ? "••••••••••••••••" + cfg.apiKey.slice(-4) : null),
+      fromAddress: cfg.fromAddress,
+      source: cfg.provider === "smtp" ? "env" : (cfg.apiKey ? "db" : "default"),
+      provider: cfg.provider,
+    },
+  });
+});
+
+router.post("/admin/email-settings/test", requireAdmin, async (req, res): Promise<void> => {
+  const { to } = req.body as { to?: string };
+  const recipient = to?.trim();
+  if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+    res.status(400).json({ success: false, message: "عنوان البريد المستلم غير صالح" });
+    return;
+  }
+
+  const ok = await sendEmail({
+    to: recipient,
+    subject: "اختبار Gmail — RABAB LEGAL AI",
+    html: `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"/></head>
+<body style="font-family:'Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;padding:32px;color:#202938">
+  <h2 style="color:#0f8ca8">تم إعداد بريد RABAB LEGAL AI بنجاح</h2>
+  <p>هذه رسالة اختبار من <strong>info@rabablegal.com</strong>.</p>
+  <p>وصول هذه الرسالة يعني أن البريد جاهز لإرسال الفواتير والإشعارات إلى المستفيدين.</p>
+</body></html>`,
+    text: "تم إعداد بريد RABAB LEGAL AI بنجاح. البريد جاهز لإرسال الفواتير والإشعارات إلى المستفيدين.",
+  });
+
+  if (!ok) {
+    res.status(502).json({
+      success: false,
+      message: "فشل اتصال Gmail. تحققي من بريد Google Workspace وكلمة مرور التطبيقات في الأسرار.",
+    });
+    return;
+  }
+
+  res.json({ success: true, message: "تم إرسال بريد الاختبار بنجاح من info@rabablegal.com." });
 });
 
 // ── POST /admin/test-whatsapp ─────────────────────────────────────────────────

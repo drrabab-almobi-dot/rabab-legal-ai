@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AdminSidebar } from '@/components/layout';
 import { Card, CardContent, Skeleton } from '@/components/ui';
 import { DollarSign, CheckCircle, Clock, XCircle, ShieldCheck, X, Send } from 'lucide-react';
+import { useLang } from '@/hooks/use-language';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -107,6 +108,7 @@ function ManualVerifyModal({ payment, onClose, onSuccess }: VerifyModalProps) {
 }
 
 export default function AdminPayments() {
+  const { lang, t } = useLang();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,20 +151,20 @@ export default function AdminPayments() {
   const paidCount = payments.filter(p => p.status === 'paid').length;
 
   return (
-    <AdminSidebar>
+    <AdminSidebar><div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-primary">المدفوعات</h1>
-        <p className="text-muted-foreground mt-1">سجل كامل بجميع المعاملات المالية</p>
+        <h1 className="text-2xl font-bold text-primary">{t('المدفوعات', 'Payments')}</h1>
+        <p className="text-muted-foreground mt-1">{t('سجل كامل بجميع المعاملات المالية', 'Complete record of all financial transactions')}</p>
       </div>
 
       {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold text-primary">{payments.length}</p><p className="text-sm text-muted-foreground">إجمالي</p></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold text-green-600">{paidCount}</p><p className="text-sm text-muted-foreground">مدفوع</p></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold text-yellow-600">{pending}</p><p className="text-sm text-muted-foreground">معلق</p></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><p className="text-xl font-bold text-blue-600">{totalRevenue.toLocaleString()} <span className="text-xs">ر.س</span></p><p className="text-sm text-muted-foreground">الإيرادات</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold text-primary">{payments.length}</p><p className="text-sm text-muted-foreground">{t('إجمالي', 'Total')}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold text-green-600">{paidCount}</p><p className="text-sm text-muted-foreground">{t('مدفوع', 'Paid')}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-2xl font-bold text-yellow-600">{pending}</p><p className="text-sm text-muted-foreground">{t('معلق', 'Pending')}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-xl font-bold text-blue-600">{totalRevenue.toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')} <span className="text-xs">{t('ر.س', 'SAR')}</span></p><p className="text-sm text-muted-foreground">{t('الإيرادات', 'Revenue')}</p></CardContent></Card>
       </div>
 
       {/* Filter */}
@@ -170,7 +172,7 @@ export default function AdminPayments() {
         {(['all', 'paid', 'pending', 'failed'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === f ? 'bg-primary text-white' : 'bg-muted hover:bg-muted/70 text-foreground'}`}>
-            {f === 'all' ? 'الكل' : STATUS_CONFIG[f]?.label}
+            {f === 'all' ? t('الكل', 'All') : t(STATUS_CONFIG[f]?.label ?? '', ({ paid: 'Paid', pending: 'Pending', failed: 'Failed' }[f] ?? ''))}
           </button>
         ))}
       </div>
@@ -180,44 +182,45 @@ export default function AdminPayments() {
           {loading ? (
             <div className="p-6 space-y-3">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">لا توجد مدفوعات</div>
+            <div className="text-center py-12 text-muted-foreground">{t('لا توجد مدفوعات', 'No payments')}</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-right">
+              <table className={`w-full text-sm ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
                 <thead className="bg-muted text-xs text-muted-foreground border-b">
                   <tr>
                     <th className="py-3 px-4 font-semibold">#</th>
-                    <th className="py-3 px-4 font-semibold">المستخدم</th>
-                    <th className="py-3 px-4 font-semibold">الباقة</th>
-                    <th className="py-3 px-4 font-semibold">المبلغ</th>
-                    <th className="py-3 px-4 font-semibold">الكوبون</th>
-                    <th className="py-3 px-4 font-semibold">الحالة</th>
-                    <th className="py-3 px-4 font-semibold">التاريخ</th>
-                    <th className="py-3 px-4 font-semibold">إجراء</th>
+                    <th className="py-3 px-4 font-semibold">{t('المستخدم', 'User')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('الباقة', 'Package')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('المبلغ', 'Amount')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('الكوبون', 'Coupon')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('الحالة', 'Status')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('التاريخ', 'Date')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('إجراء', 'Action')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(p => {
                     const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.pending;
+                    const statusEn: Record<string, string> = { paid: 'Paid', pending: 'Pending', failed: 'Failed', refunded: 'Refunded' };
                     return (
                       <tr key={p.id} className="border-b border-border/50 hover:bg-muted/20">
                         <td className="py-3 px-4 text-muted-foreground font-mono">{p.id}</td>
                         <td className="py-3 px-4">
-                          <p className="font-medium">{p.userName ?? p.billingName ?? `مستخدم ${p.userId}`}</p>
+                          <p dir="auto" className="font-medium">{p.userName ?? p.billingName ?? `${t('مستخدم', 'User')} ${p.userId}`}</p>
                           {(p.userEmail ?? p.billingEmail) && <p className="text-xs text-muted-foreground">{p.userEmail ?? p.billingEmail}</p>}
                         </td>
                         <td className="py-3 px-4">{p.package?.nameAr ?? '—'}</td>
                         <td className="py-3 px-4">
-                          <p className="font-semibold">{p.totalAmount.toFixed(2)} ر.س</p>
-                          {p.discountAmount > 0 && <p className="text-xs text-green-600">- {p.discountAmount.toFixed(2)} خصم</p>}
+                          <p className="font-semibold">{p.totalAmount.toFixed(2)} {t('ر.س', 'SAR')}</p>
+                          {p.discountAmount > 0 && <p className="text-xs text-green-600">- {p.discountAmount.toFixed(2)} {t('خصم', 'discount')}</p>}
                         </td>
                         <td className="py-3 px-4">{p.couponCode ? <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{p.couponCode}</span> : '—'}</td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}>
-                            {cfg.icon}{cfg.label}
+                            {cfg.icon}{t(cfg.label, statusEn[p.status] ?? p.status)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-muted-foreground">{new Date(p.createdAt).toLocaleDateString('ar-SA')}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{new Date(p.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</td>
                         <td className="py-3 px-4">
                           <div className="flex flex-col gap-1.5">
                             {p.status === 'pending' && (
@@ -226,7 +229,7 @@ export default function AdminPayments() {
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
                               >
                                 <ShieldCheck className="w-3.5 h-3.5" />
-                                تحقق
+                                {t('تحقق', 'Verify')}
                               </button>
                             )}
                             {p.status === 'paid' && (p.billingEmail ?? p.userEmail) && (
@@ -236,7 +239,7 @@ export default function AdminPayments() {
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-60"
                               >
                                 <Send className="w-3.5 h-3.5" />
-                                {resendingId === p.id ? 'جارٍ الإرسال...' : 'إعادة إرسال الفاتورة'}
+                                {resendingId === p.id ? t('جارٍ الإرسال...', 'Sending...') : t('إعادة إرسال الفاتورة', 'Resend invoice')}
                               </button>
                             )}
                             {resendMsg?.id === p.id && (
@@ -263,6 +266,6 @@ export default function AdminPayments() {
           onSuccess={fetchPayments}
         />
       )}
-    </AdminSidebar>
+    </div></AdminSidebar>
   );
 }

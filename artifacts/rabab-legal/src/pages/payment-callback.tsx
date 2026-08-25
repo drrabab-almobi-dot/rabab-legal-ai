@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { Loader2, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetMySubscriptionQueryKey } from '@workspace/api-client-react';
+import { useLang } from '@/hooks/use-language';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -11,6 +12,7 @@ type Phase = 'verifying' | 'failed' | 'success';
 export default function PaymentCallback() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { lang, t } = useLang();
   const ran = useRef(false);
   const [phase, setPhase] = useState<Phase>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
@@ -30,12 +32,12 @@ export default function PaymentCallback() {
       // ── 1. Quick checks ──────────────────────────────────────────────────
       if (!moyasarId) {
         setPhase('failed');
-        setErrorMsg('لم يُرسل معرّف الدفعة من بوابة الدفع');
+        setErrorMsg(t('لم يُرسل معرّف الدفعة من بوابة الدفع', 'No payment ID was sent by the payment gateway'));
         return;
       }
       if (status !== 'paid') {
         setPhase('failed');
-        setErrorMsg('تم إلغاء الدفع أو رفضه من بوابة الدفع');
+        setErrorMsg(t('تم إلغاء الدفع أو رفضه من بوابة الدفع', 'Payment was cancelled or declined by the payment gateway'));
         return;
       }
 
@@ -65,7 +67,7 @@ export default function PaymentCallback() {
 
       if (!localPaymentId) {
         setPhase('failed');
-        setErrorMsg('تعذّر الربط بسجل الدفعة — يرجى التواصل مع الدعم مع الاحتفاظ برقم المرجع: ' + moyasarId);
+        setErrorMsg(t('تعذّر الربط بسجل الدفعة — يرجى التواصل مع الدعم مع الاحتفاظ برقم المرجع: ', 'Could not link to the payment record — please contact support and retain reference number: ') + `\u2066${moyasarId}\u2069`);
         return;
       }
 
@@ -79,7 +81,7 @@ export default function PaymentCallback() {
 
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(e.error || 'فشل التحقق من الدفعة');
+        throw new Error(e.error || t('فشل التحقق من الدفعة', 'Payment verification failed'));
       }
 
       const data = await res.json();
@@ -89,35 +91,35 @@ export default function PaymentCallback() {
 
     } catch (err: any) {
       setPhase('failed');
-      setErrorMsg(err.message || 'حدث خطأ غير متوقع');
+      setErrorMsg(err.message || t('حدث خطأ غير متوقع', 'An unexpected error occurred'));
     }
   }
 
   if (phase === 'verifying') {
     return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="text-lg font-medium text-primary">جارٍ التحقق من الدفع…</p>
-        <p className="text-sm text-muted-foreground">لا تغلق هذه الصفحة</p>
+        <p className="text-lg font-medium text-primary">{t('جارٍ التحقق من الدفع…', 'Verifying payment…')}</p>
+        <p className="text-sm text-muted-foreground">{t('لا تغلق هذه الصفحة', 'Do not close this page')}</p>
       </div>
     );
   }
 
   if (phase === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <CheckCircle2 className="w-14 h-14 text-green-500" />
-        <p className="text-xl font-bold text-primary">تم التحقق بنجاح! جارٍ التوجيه…</p>
+        <p className="text-xl font-bold text-primary">{t('تم التحقق بنجاح! جارٍ التوجيه…', 'Verified successfully! Redirecting…')}</p>
       </div>
     );
   }
 
   // failed
   return (
-    <div className="min-h-screen flex items-center justify-center flex-col gap-5 px-4" dir="rtl">
+    <div className="min-h-screen flex items-center justify-center flex-col gap-5 px-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <XCircle className="w-14 h-14 text-destructive" />
       <div className="text-center">
-        <p className="text-xl font-bold text-destructive mb-2">تعذّر اكتمال التحقق</p>
+        <p className="text-xl font-bold text-destructive mb-2">{t('تعذّر اكتمال التحقق', 'Verification could not be completed')}</p>
         <p className="text-sm text-muted-foreground max-w-md leading-relaxed">{errorMsg}</p>
       </div>
       <div className="flex gap-3 flex-wrap justify-center">
@@ -125,17 +127,17 @@ export default function PaymentCallback() {
           onClick={() => { ran.current = false; setPhase('verifying'); setErrorMsg(''); verify(); }}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold text-sm"
         >
-          <RefreshCw className="w-4 h-4" /> إعادة المحاولة
+          <RefreshCw className="w-4 h-4" /> {t('إعادة المحاولة', 'Try again')}
         </button>
         <button
           onClick={() => setLocation('/payment/failed?reason=' + encodeURIComponent(errorMsg))}
           className="px-4 py-2 border border-border rounded-xl text-sm text-muted-foreground hover:bg-muted/40"
         >
-          الذهاب لصفحة الخطأ
+          {t('الذهاب لصفحة الخطأ', 'Go to error page')}
         </button>
       </div>
       <p className="text-xs text-muted-foreground/60 text-center max-w-sm">
-        إذا تم خصم المبلغ من حسابك، تواصل معنا وسنفعّل اشتراكك يدوياً.
+        {t('إذا تم خصم المبلغ من حسابك، تواصل معنا وسنفعّل اشتراكك يدوياً.', 'If your account was charged, contact us and we will activate your subscription manually.')}
       </p>
     </div>
   );

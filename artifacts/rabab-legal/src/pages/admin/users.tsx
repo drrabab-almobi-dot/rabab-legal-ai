@@ -5,21 +5,24 @@ import { Card, CardContent, Input, Button, Badge, Skeleton } from '@/components/
 import { Search, Filter, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { arSA } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
+import { useLang } from '@/hooks/use-language';
 
 export default function AdminUsers() {
+  const { lang, t } = useLang();
   const { data: users, isLoading } = useListAdminUsers();
 
   return (
-    <AdminSidebar>
+    <AdminSidebar><div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-primary">المستخدمين</h1>
-          <p className="text-muted-foreground mt-1">إدارة عملاء المنصة وصلاحياتهم</p>
+          <h1 className="text-2xl font-bold text-primary">{t('المستخدمين', 'Users')}</h1>
+          <p className="text-muted-foreground mt-1">{t('إدارة عملاء المنصة وصلاحياتهم', 'Manage platform customers and permissions')}</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <div className="relative w-full md:w-64">
-            <Search className="w-4 h-4 absolute right-3 top-3 text-muted-foreground" />
-            <Input className="pr-9" placeholder="بحث بالاسم أو البريد..." />
+            <Search className={`w-4 h-4 absolute ${lang === 'ar' ? 'right-3' : 'left-3'} top-3 text-muted-foreground`} />
+            <Input className={lang === 'ar' ? 'pr-9' : 'pl-9'} placeholder={t('بحث بالاسم أو البريد...', 'Search by name or email...')} />
           </div>
           <Button variant="outline" size="icon"><Filter className="w-4 h-4" /></Button>
         </div>
@@ -27,14 +30,14 @@ export default function AdminUsers() {
 
       <Card className="border-border/50 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-right">
+          <table className={`w-full ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
             <thead className="bg-muted border-b border-border text-sm">
               <tr>
-                <th className="py-4 px-6 font-bold text-foreground">الاسم</th>
-                <th className="py-4 px-6 font-bold text-foreground">البريد الإلكتروني</th>
-                <th className="py-4 px-6 font-bold text-foreground">تاريخ التسجيل</th>
-                <th className="py-4 px-6 font-bold text-foreground">الدور</th>
-                <th className="py-4 px-6 font-bold text-foreground text-center">إجراءات</th>
+                <th className="py-4 px-6 font-bold text-foreground">{t('الاسم', 'Name')}</th>
+                <th className="py-4 px-6 font-bold text-foreground">{t('البريد الإلكتروني', 'Email')}</th>
+                <th className="py-4 px-6 font-bold text-foreground">{t('تاريخ التسجيل', 'Registration date')}</th>
+                <th className="py-4 px-6 font-bold text-foreground">{t('الدور', 'Role')}</th>
+                <th className="py-4 px-6 font-bold text-foreground text-center">{t('إجراءات', 'Actions')}</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -53,11 +56,11 @@ export default function AdminUsers() {
                   <td className="py-4 px-6 font-medium text-foreground">{user.name}</td>
                   <td className="py-4 px-6 text-muted-foreground font-mono text-sm">{user.email}</td>
                   <td className="py-4 px-6 text-muted-foreground">
-                    {format(new Date(user.createdAt), 'dd/MM/yyyy', { locale: arSA })}
+                     {format(new Date(user.createdAt), 'dd/MM/yyyy', { locale: lang === 'ar' ? arSA : enUS })}
                   </td>
                   <td className="py-4 px-6">
                     <Badge variant={user.role === 'admin' ? 'secondary' : 'default'} className={user.role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
-                      {user.role === 'admin' ? 'مدير' : 'عميل'}
+                       {user.role === 'admin' ? t('مدير', 'Admin') : t('عميل', 'Customer')}
                     </Badge>
                   </td>
                   <td className="py-4 px-6 text-center">
@@ -71,9 +74,9 @@ export default function AdminUsers() {
           </table>
         </div>
         {users?.length === 0 && !isLoading && (
-          <div className="p-8 text-center text-muted-foreground">لا يوجد مستخدمين لعرضهم</div>
+          <div className="p-8 text-center text-muted-foreground">{t('لا يوجد مستخدمين لعرضهم', 'No users to display')}</div>
         )}
       </Card>
-    </AdminSidebar>
+    </div></AdminSidebar>
   );
 }

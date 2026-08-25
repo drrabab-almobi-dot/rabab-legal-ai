@@ -1,0 +1,52 @@
+- [Priority: Web First](priority-web-first.md) — المنصة الويب أولاً؛ تطبيق الجوال يُعلَّق حتى نجاح المنصة — قرار صريح من المستخدم
+- [Design Freeze](design-freeze.md) — يُحظر تعديل index.css أو أي قيمة لون/خط — أمر صريح ودائم من المستخدم
+- [Localization Content Boundary](localization-content-boundary.md) — تُترجم واجهة React صراحةً؛ المحتوى القانوني والمصادر يبقيان بلغتهما واتجاههما
+- [RAG Knowledge Base](rag-knowledge-base.md) — admin uploads PDF/TXT/DOCX OR pastes URL → chunked+embedded → injected in chat before each OpenAI call
+- [Moyasar Integration](moyasar-integration.md) — sandbox/production flow, secrets setup, Vite define trick, callback page, amount validation
+- [8 New Features July 2026](features-8.md) — PDF export, contract analysis, notifications, EN lang, 6-country selector, enterprise pricing, KB search, audit log
+- [Session persistence & payment fixes](session-persist.md) — PostgreSQL sessions, atomic payment verify, free package bypass, chat sub ordering
+- [Cookie config for Replit](cookie-replit.md) — sameSite:'none' + secure:true + trust proxy:1 required in Replit HTTPS env
+- [OpenAI error handling](openai-errors.md) — friendly Arabic messages returned as assistant reply (HTTP 200), not HTTP 502
+- [Quota deduction rule](quota-deduction.md) — deduct only in chat.ts after successful OpenAI reply; never in consultations.ts
+- [customFetch credentials](custom-fetch-credentials.md) — must include credentials:'include' for session cookies in Replit proxy
+- [MTProto Channel Sync](mtproto-sync.md) — gramjs sync for channel https://t.me/+P8ChJlncd1sNkmon; needs TELEGRAM_API_ID + TELEGRAM_API_HASH secrets; session in .local/telegram-session.txt
+- [Verification Layer](verification-layer.md) — anti-hallucination: verifyResponse() + verifyArticles() run after OpenAI reply; confidence badge in UI; chunks must be in outer scope
+- [Payment Recovery Flow](payment-recovery.md) — ProtectedRoute now passes ?returnTo=, login redirects back; POST /api/payments/recover activates paid-but-unactivated subscriptions; manual-verify fixed (startDate/endDate not startedAt/expiresAt)
+- [Arabic Text Quality Fix](arabic-text-quality.md) — TWO reversal types + pdftotext (Poppler) as primary extraction in legal-codex-processor; kashida stripping in preprocessExtractedText; quality gate in extractCasesFromCodex; batch scan endpoints; admin UI has quality scan + reextract buttons
+- [Legal Citation System](citation-system.md) — page tracking + GPT case metadata extraction; CitationCard UI; filter by court/stage; استئناس notice; admin extraction dashboard; use psql for additive migrations (not drizzle push)
+- [Circulars Visibility & MOJ Crawler](circulars-moj.md) — browse list free for all auth'd users; AI search/detail subscription-gated; MOJ Tavily crawler at POST /admin/knowledge/crawl-moj; Telegram sync auto-sets category=circular for circulars channels; restoreMojCrawlSchedule() called on startup
+- [Regulatory Research Engine](regulatory-research.md) — Phase 1: POST /api/knowledge/regulatory-research; lib in api-server/src/lib/regulatory-research.ts; 4 parallel Tavily passes (main/exec-reg/amendment/circular) + KB; GPT-4o JSON extraction; programmatic article verification via isTextVerified(); regulation tab now actionOnly:true with RegulatoryResearcher component
+- [Unified Search Engine Phase-1](unified-search-engine.md) — RRF + multi-query + literal-match-always-wins in rag.ts; affects ALL routes (chat, search, circular, legal-research, regulatory); literalMatch flag propagated to frontend as 🎯 badge; autoLink opt-in in retrieveRelevantChunks
+- [Platform Section Control](platform-section-control.md) — feature flags in DB to hide judicial/circulars/blog sections; quality gate before re-enabling; chat route enforces source restriction when sections hidden
+- [Quota & Trial System](quota-trial-system.md) — 3 free services/user (server-side), per-type paid quotas, grace period dedup via clientSession UUID, commitService after success only
+- [Telegram Import Toggle](telegram-import-toggle.md) — DB toggle disables sync+indexing+RAG; source_type column tags docs; /admin/source-status page; default disabled
+- [Domain & Payment URLs](domain-payment-urls.md) — rabablegal.com هو الدومين الرسمي للمنصة؛ callback URL هو /payment/callback
+- [Startup Reminders Regression](startup-reminders-regression.md) — task merges تُعيد الاستدعاء الفوري في scheduler → يجب حذف السطر الأول بعد كل merge يمس reminder files
+- [Dev DB Missing Columns](dev-db-missing-columns.md) — session/consultations tables need manual migration after schema changes; session table name is "session" (singular); reminder_sent_at added manually Aug 2026
+- [Telegram 409 Fix](telegram-409-fix.md) — polling_error handler catches 409 → stops polling + restarts after 15s; prevents infinite log spam; deployed app still uses old code until republish
+- [KB Stats API](kb-stats-api.md) — GET /api/knowledge/stats (public, no auth); returns judicial/circular/regulation/totalDocs/totalChunks counts; displayed on homepage in stats section
+- [Theme System](theme-system.md) — 3 themes (tech/olive/burgundy) via data-theme on <html>; CSS vars in themes.css; ThemeProvider in use-theme.tsx; saved in localStorage key 'rabab-theme'
+- [Signature Stripping](signature-stripping.md) — stripSignature() in content-filter.ts uses indexOf cut-points (not regex); called inside sanitizeOutput(); anchors: 'سعدنا بخدمتكم' / 'بإشراف المحامية' etc.
+- [Legal Codex System](legal-codex-system.md) — قسم المدونات القضائية: schema+routes+processor+UI كاملة؛ pdf-parse must be lazy-loaded; routes mounted without /api prefix inside /api router
+- [Structured Summary Template](structured-summary-template.md) — القالب الإلزامي للملخصات: StructuredSummaryBlock component + CIRCULAR_TEMPLATE_SYSTEM_PROMPT; moj_circulars.structured_summary JSONB; two-column layout (summary + image) in MOJ detail view; always-visible case sections in LegalCodexBrowser
+- [Smart Legal Search](smart-legal-search.md) — POST /api/codex/smart-search: GPT-4o-mini expands query → 4 parallel DB searches → deduped RRF; city+disputeType filters added to GET /api/codex/search too; standalone page /legal-search with two-panel view
+- [Two-Panel Codex Viewer](two-panel-viewer.md) — DocumentPageViewer accepts inline=true (flex not fixed); LegalCodexBrowser splits case detail (40%) + viewer (60%) side-by-side; auto-opens at pageStartFile
+- [Community Initiatives](community-initiatives.md) — table community_initiatives; GET /api/initiatives (public); admin CRUD at /api/admin/initiatives; pages /initiatives + /admin/initiatives; navbar link added
+- [WhatsApp Footer in Chat](whatsapp-footer.md) — every assistant ChatBubble ends with: disclaimer + wa.me/966504647649 green button; added in consultation.tsx not backend
+- [Navbar Services Structure](navbar-services-structure.md) — 10 links: الرئيسية + 4 خدمات مستقلة + الباحثة الذكية + الباقات + مبادرات + حجز موعد + تواصل
+- [Memo Mandatory Question](memo-mandatory.md) — system prompt in chat.ts: after first memo draft ask user صراحةً about adding مواد نظامية وسوابق قضائية; if yes add with full attribution
+- [Service Module Prompts](service-module-prompts.md) — prompts/modules/ has 7 placeholder files; loadServiceModule() in legal-charter.ts maps taskType→file; placeholder files return null gracefully
+- [Daily Quota Limit](daily-quota-limit.md) — 25% of monthly quota per day; checked in checkAndReserveService() before session insert; only for paid non-unlimited plans
+- [SQL ANY array fix](sql-any-array-fix.md) — Drizzle sql\`${array}::int[]\` creates record not array; use sql\`IN (${sql.raw(ids.join(','))})\` for integer-only arrays from DB
+- [Public Service Discovery](public-service-discovery.md) — visitors browse services freely; login gates only metered actions and preserves return path
+- [Publishing Hold](publishing-hold.md) — keep changes in development until the user explicitly confirms all requested work is complete
+- [Password Reset Preview Links](reset-links-preview.md) — recovery emails in development must return to the active preview, not the unpublished production domain
+- [Gmail SMTP Verification](gmail-smtp-verification.md) — بعد تحديث SMTP_PASS أعد تشغيل API؛ EAUTH 535 يعني أن Gmail رفض بيانات المصادقة ولا يجوز اعتبار الإرسال ناجحاً
+- [Contract Dispute Handling](contract-dispute-handling.md) — صياغة العقود تعرض آلية النزاع (قضاء/تحكيم) باختيار مختصر؛ تفاصيل التحكيم تظهر بعد اختياره فقط
+- [Google Drive Connector Uploads](google-drive-connector-uploads.md) — استخدم multipart للملفات الكبيرة؛ جلسات resumable عبر بوابة الموصل قد ترفض PUT، وفكّك المحتوى عند رفض WAF
+- [Secrets Channel Closure](secrets-channel-closed.md) — خطأ متكرر في واجهة Secrets قد يغلق قناة get/set قبل حفظ المفتاح؛ لا تُنقل القيم إلى الشات أو الملفات
+- [Supabase Connection Fallback](supabase-connection-fallback.md) — الهدف الوحيد هو Supabase؛ استخدم Pooler مُرمّزًا وفشّل بوضوح عند عدم تطابق بيانات الدخول
+- [Vercel ESM Function Boundary](vercel-esm-function-boundary.md) — مدخل Vercel يجب أن يكون ‎.mjs‎ ويستورد حزمة ESM مسبقة، لأن إعداد api/ المتداخل لا يمنع تحويلها إلى CommonJS
+- [GitHub Actions OAuth scope](github-workflows-scope.md) — كتابة ملفات ‎.github/workflows‎ تحتاج نطاق workflow منفصلًا عن repo في اتصال GitHub
+- [Repository Backup Boundary](repository-backup-boundary.md) — مستودع GitHub يحفظ المصدر والترحيلات فقط؛ نسخ قواعد البيانات وبيانات المستخدمين والأرشيفات الكبيرة تبقى خارج المستودع
+- [Multi-Artifact Publishing](multi-artifact-publishing.md) — Replit ينشر كل الـArtifacts معًا؛ الخدمات الاختيارية يجب أن تكون آمنة وقابلة للتشغيل في الإنتاج

@@ -1,17 +1,9 @@
 /**
- * Mailer — Invoice email sender via Resend HTTP API.
- *
- * Configuration priority (highest → lowest):
- *   1. DB setting stored via admin panel  (platformSettingsTable key: "email_config")
- *   2. RESEND_API_KEY env var
- *   3. SMTP_PASS env var  (legacy alias)
- *
- * The send functions never throw — they log errors and return false.
+ * Mailer — invoice sender. It delegates delivery to the shared mail service so
+ * invoices follow the same Gmail / Resend configuration as all notifications.
  */
 
-import { getEmailConfig } from "./email-config";
-
-const RESEND_API = "https://api.resend.com/emails";
+import { sendEmail } from "./email";
 
 // ── Invoice email ─────────────────────────────────────────────────────────────
 
@@ -142,30 +134,10 @@ function buildInvoiceHtml(d: InvoiceEmailData): string {
 }
 
 export async function sendInvoiceEmail(data: InvoiceEmailData): Promise<boolean> {
-  const cfg = await getEmailConfig();
-  if (!cfg.apiKey) return false;
-
-  const fromLine = cfg.fromAddress.includes("<")
-    ? cfg.fromAddress
-    : `RABAB LEGAL AI <${cfg.fromAddress}>`;
-
-  try {
-    const res = await fetch(RESEND_API, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${cfg.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromLine,
-        to: [`${data.toName} <${data.toEmail}>`],
-        subject: `فاتورتك من RABAB LEGAL AI — ${data.invoiceNumber}`,
-        html: buildInvoiceHtml(data),
-      }),
-    });
-    return res.ok;
-  } catch (err) {
-    console.error("[mailer] Failed to send invoice email:", err);
-    return false;
-  }
+  return sendEmail({
+    to: `${data.toName} <${data.toEmail}>`,
+    subject: `فاتورتك من RABAB LEGAL AI — ${data.invoiceNumber}`,
+    html: buildInvoiceHtml(data),
+    text: `فاتورة ${data.invoiceNumber} من RABAB LEGAL AI. إجمالي الدفع: ${formatSAR(data.totalAmount)}.`,
+  });
 }

@@ -3,41 +3,42 @@ import { AdminSidebar } from '@/components/layout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customFetch } from '@workspace/api-client-react';
 import { ExternalLink, RefreshCw, FileText, Scale, BookOpen, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { useLang } from '@/hooks/use-language';
 
 const SOURCES = [
   {
     id: 'judicial',
-    label: 'الأحكام القضائية',
+    labelAr: 'الأحكام القضائية', labelEn: 'Judicial decisions',
     icon: Scale,
     category: 'judicial',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/30',
     links: [
-      { label: 'البوابة القانونية — وزارة العدل', url: 'https://laws.moj.gov.sa/ar/JudicialDecisionsList/1' },
-      { label: 'ديوان المظالم', url: 'https://www.bog.gov.sa' },
+      { labelAr: 'البوابة القانونية — وزارة العدل', labelEn: 'Ministry of Justice Legal Portal', url: 'https://laws.moj.gov.sa/ar/JudicialDecisionsList/1' },
+      { labelAr: 'ديوان المظالم', labelEn: 'Board of Grievances', url: 'https://www.bog.gov.sa' },
     ],
   },
   {
     id: 'circulars',
-    label: 'تعاميم وزارة العدل',
+    labelAr: 'تعاميم وزارة العدل', labelEn: 'Ministry of Justice circulars',
     icon: FileText,
     category: 'circular',
     color: 'text-amber-400',
     bg: 'bg-amber-500/10 border-amber-500/30',
     links: [
-      { label: 'بوابة التعاميم الرسمية', url: 'https://www.moj.gov.sa/TameemPortal/Pages/default.aspx' },
+      { labelAr: 'بوابة التعاميم الرسمية', labelEn: 'Official circulars portal', url: 'https://www.moj.gov.sa/TameemPortal/Pages/default.aspx' },
     ],
   },
   {
     id: 'laws',
-    label: 'الأنظمة واللوائح',
+    labelAr: 'الأنظمة واللوائح', labelEn: 'Laws and regulations',
     icon: BookOpen,
     category: 'regulation',
     color: 'text-green-400',
     bg: 'bg-green-500/10 border-green-500/30',
     links: [
-      { label: 'الأنظمة واللوائح — وزارة العدل', url: 'https://laws.moj.gov.sa/ar/legislations-regulations?pageNumber=1&pageSize=9&sortingBy=7' },
-      { label: 'هيئة الخبراء بمجلس الوزراء', url: 'https://laws.boe.gov.sa' },
+      { labelAr: 'الأنظمة واللوائح — وزارة العدل', labelEn: 'Ministry of Justice laws and regulations', url: 'https://laws.moj.gov.sa/ar/legislations-regulations?pageNumber=1&pageSize=9&sortingBy=7' },
+      { labelAr: 'هيئة الخبراء بمجلس الوزراء', labelEn: 'Bureau of Experts at the Council of Ministers', url: 'https://laws.boe.gov.sa' },
     ],
   },
 ];
@@ -58,6 +59,7 @@ interface CrawlStatus {
 }
 
 export default function MojContent() {
+  const { lang, t } = useLang();
   const [activeTab, setActiveTab] = useState('judicial');
   const qc = useQueryClient();
 
@@ -97,10 +99,11 @@ export default function MojContent() {
 
   return (
     <AdminSidebar>
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">محتوى وزارة العدل</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('محتوى وزارة العدل', 'Ministry of Justice content')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          أحكام وتعاميم وأنظمة مفهرسة في قاعدة المعرفة
+          {t('أحكام وتعاميم وأنظمة مفهرسة في قاعدة المعرفة', 'Decisions, circulars, and regulations indexed in the knowledge base')}
         </p>
       </div>
 
@@ -110,19 +113,19 @@ export default function MojContent() {
           {crawlStatus?.isRunning ? (
             <>
               <RefreshCw className="w-5 h-5 text-amber-400 animate-spin" />
-              <span className="text-sm font-medium text-foreground">جارٍ زحف مواقع وزارة العدل…</span>
+              <span className="text-sm font-medium text-foreground">{t('جارٍ زحف مواقع وزارة العدل…', 'Crawling Ministry of Justice sites…')}</span>
             </>
           ) : (
             <>
               <CheckCircle2 className="w-5 h-5 text-green-400" />
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  {crawlStatus?.totalIndexed ?? 0} وثيقة مفهرسة من وزارة العدل
+                  {crawlStatus?.totalIndexed ?? 0} {t('وثيقة مفهرسة من وزارة العدل', 'documents indexed from the Ministry of Justice')}
                 </p>
                 {crawlStatus?.lastRun && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                     <Clock className="w-3 h-3" />
-                    آخر زحف: {new Date(crawlStatus.lastRun).toLocaleString('ar-SA')}
+                     {t('آخر زحف:', 'Last crawl:')} {new Date(crawlStatus.lastRun).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}
                   </p>
                 )}
               </div>
@@ -135,7 +138,7 @@ export default function MojContent() {
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${crawlMutation.isPending ? 'animate-spin' : ''}`} />
-          زحف الآن
+          {t('زحف الآن', 'Crawl now')}
         </button>
       </div>
 
@@ -155,7 +158,7 @@ export default function MojContent() {
               }`}
             >
               <Icon className="w-4 h-4" />
-              {s.label}
+               {t(s.labelAr, s.labelEn)}
               <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
                 activeTab === s.id ? 'bg-white/20' : 'bg-muted'
               }`}>
@@ -170,7 +173,7 @@ export default function MojContent() {
         {/* الوثائق المفهرسة */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
-            <h2 className="font-bold text-foreground text-base">الوثائق المفهرسة — {source.label}</h2>
+            <h2 className="font-bold text-foreground text-base">{t('الوثائق المفهرسة —', 'Indexed documents —')} {t(source.labelAr, source.labelEn)}</h2>
           </div>
 
           {docsLoading ? (
@@ -180,9 +183,9 @@ export default function MojContent() {
           ) : filteredDocs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center gap-3 px-6">
               <AlertCircle className="w-10 h-10 text-muted-foreground" />
-              <p className="font-medium text-foreground">لا توجد وثائق مفهرسة حتى الآن</p>
+              <p className="font-medium text-foreground">{t('لا توجد وثائق مفهرسة حتى الآن', 'No indexed documents yet')}</p>
               <p className="text-sm text-muted-foreground">
-                اضغط "زحف الآن" لجلب محتوى {source.label} من المواقع الرسمية وفهرستها تلقائياً.
+                {t('اضغط "زحف الآن" لجلب محتوى', 'Click "Crawl now" to fetch')} {t(source.labelAr, source.labelEn)} {t('من المواقع الرسمية وفهرستها تلقائياً.', 'from official sites and index it automatically.')}
               </p>
             </div>
           ) : (
@@ -193,7 +196,7 @@ export default function MojContent() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{doc.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(doc.created_at).toLocaleDateString('ar-SA')}
+                       {new Date(doc.created_at).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}
                     </p>
                   </div>
                   {doc.source_url && (
@@ -202,7 +205,7 @@ export default function MojContent() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
-                      title="المصدر الأصلي"
+                       title={t('المصدر الأصلي', 'Original source')}
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
@@ -217,7 +220,7 @@ export default function MojContent() {
         <div className="space-y-4">
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
-              <h2 className="font-bold text-foreground text-base">المصادر الرسمية</h2>
+              <h2 className="font-bold text-foreground text-base">{t('المصادر الرسمية', 'Official sources')}</h2>
             </div>
             <div className="p-4 flex flex-col gap-2">
               {source.links.map(link => (
@@ -229,7 +232,7 @@ export default function MojContent() {
                   className="flex items-center gap-2 px-4 py-3 bg-muted rounded-lg text-sm text-foreground hover:bg-muted/70 transition-colors group"
                 >
                   <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
-                  {link.label}
+                   {t(link.labelAr, link.labelEn)}
                 </a>
               ))}
             </div>
@@ -238,10 +241,11 @@ export default function MojContent() {
           {/* ملاحظة */}
           <div className={`border rounded-xl p-4 ${source.bg}`}>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              المواقع الحكومية تمنع التضمين المباشر. يستخدم النظام محرك Tavily لجلب الوثائق وفهرستها تلقائياً في قاعدة المعرفة حتى تكون متاحة للمستخدمين دون الحاجة للوصول المباشر.
+               {t('المواقع الحكومية تمنع التضمين المباشر. يستخدم النظام محرك Tavily لجلب الوثائق وفهرستها تلقائياً في قاعدة المعرفة حتى تكون متاحة للمستخدمين دون الحاجة للوصول المباشر.', 'Government websites block direct embedding. The system uses Tavily to retrieve and automatically index documents in the knowledge base, making them available without direct access.')}
             </p>
           </div>
         </div>
+      </div>
       </div>
     </AdminSidebar>
   );

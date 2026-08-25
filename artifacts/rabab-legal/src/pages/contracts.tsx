@@ -17,8 +17,16 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGetMySubscription } from '@workspace/api-client-react';
 import { exportContractWord as exportWordDocx } from '@/lib/export-word';
+import { useLang } from '@/hooks/use-language';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const OPTION_FRAME_STYLES = [
+  { idle: 'border-secondary/70 hover:border-secondary', active: 'border-secondary bg-secondary/20 text-secondary ring-2 ring-secondary/25' },
+  { idle: 'border-accent/70 hover:border-accent', active: 'border-accent bg-accent/20 text-accent ring-2 ring-accent/25' },
+  { idle: 'border-blue-400/70 hover:border-blue-400', active: 'border-blue-400 bg-blue-400/20 text-blue-300 ring-2 ring-blue-400/25' },
+  { idle: 'border-emerald-400/70 hover:border-emerald-400', active: 'border-emerald-400 bg-emerald-400/20 text-emerald-300 ring-2 ring-emerald-400/25' },
+];
 
 // ─── Contract type definitions ──────────────────────────────────────────────
 const CONTRACT_ICONS: Record<string, React.ReactNode> = {
@@ -64,6 +72,7 @@ function downloadTxt(text: string, filename: string) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ContractsPage() {
+  const { lang, t } = useLang();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -82,30 +91,30 @@ export default function ContractsPage() {
   const hasAccess = isAuthenticated && !shouldShowPaywall;
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-background">
+    <div className="min-h-screen flex flex-col font-sans bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       {/* ── Header ── */}
-      <section className="border-b border-border/40 bg-background">
-        <div className="container mx-auto px-4 py-8 max-w-3xl text-center" dir="rtl">
+      <section className="border-b border-primary-foreground/20 bg-background">
+        <div className="w-full px-3 sm:px-5 lg:px-7 py-8 text-center">
           <motion.span
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 bg-secondary/10 border border-secondary/30 rounded-full px-4 py-1.5 text-xs font-bold text-secondary mb-4"
           >
             <FileText className="w-3.5 h-3.5" />
-            خدمات العقود الذكية
+            {t('خدمات العقود الذكية', 'Smart Contract Services')}
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.08 } }}
-            className="text-2xl md:text-3xl font-bold text-primary mb-2"
+            className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2"
           >
-            صياغة وتحليل العقود بالذكاء الاصطناعي
+            {t('صياغة وتحليل العقود بالذكاء الاصطناعي', 'AI Contract Drafting & Analysis')}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.15 } }}
-            className="text-muted-foreground max-w-xl mx-auto text-lg"
+            className="text-muted-foreground max-w-4xl mx-auto text-xl leading-relaxed"
           >
-            أنشئ عقوداً قانونية محكمة وفق النظام السعودي أو أنظمة دول مجلس التعاون أو الإطار الدولي، أو حمّل عقداً لتحليله واستخراج بياناته الرئيسية
+            {t('أنشئ عقوداً قانونية محكمة وفق النظام السعودي أو أنظمة دول مجلس التعاون أو الإطار الدولي، أو حمّل عقداً لتحليله واستخراج بياناته الرئيسية', 'Create robust legal contracts under Saudi, GCC, or international frameworks, or upload a contract to analyze and extract its key details.')}
           </motion.p>
           {isAuthenticated && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.25 } }}
@@ -117,18 +126,18 @@ export default function ContractsPage() {
       </section>
 
       {/* ── Tabs ── */}
-      <div className="sticky top-16 z-30 bg-card border-b border-border shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-0">
+      <div className="sticky top-16 z-30 bg-card border-b border-secondary/30 shadow-sm">
+        <div className="w-full px-3 sm:px-5 lg:px-7">
+          <div className="flex min-w-0 gap-0 overflow-x-auto">
             {([
-              { key: 'draft',   label: 'صياغة عقد جديد',    icon: <PenLine className="w-4 h-4" /> },
-              { key: 'analyze', label: 'دراسة المخاطر والتوصيات', icon: null },
-              { key: 'extract', label: 'استخراج البيانات',   icon: <Database className="w-4 h-4" /> },
+              { key: 'draft',   label: t('صياغة عقد جديد', 'Draft a New Contract'),    icon: <PenLine className="w-4 h-4" /> },
+              { key: 'analyze', label: t('دراسة المخاطر والتوصيات', 'Risk Analysis & Recommendations'), icon: null },
+              { key: 'extract', label: t('استخراج البيانات', 'Extract Data'),   icon: <Database className="w-4 h-4" /> },
             ] as { key: Tab; label: string; icon: React.ReactNode }[]).map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-5 py-4 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-5 py-4 text-base font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.key
                     ? 'border-secondary text-secondary'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -142,7 +151,7 @@ export default function ContractsPage() {
       </div>
 
       {/* ── Tab Content ── */}
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <AnimatePresence mode="wait">
           {activeTab === 'draft'   && <DraftTab   key="draft"   hasAccess={hasAccess} toast={toast} />}
           {activeTab === 'analyze' && <AnalyzeTab key="analyze" hasAccess={hasAccess} toast={toast} />}
@@ -156,6 +165,7 @@ export default function ContractsPage() {
 
 // ─── Gate wrapper ─────────────────────────────────────────────────────────────
 function GateWrap({ hasAccess, children, serviceLabel }: { hasAccess: boolean; children: React.ReactNode; serviceLabel?: string }) {
+  const { lang, t } = useLang();
   const { shouldShowPaywall, quota } = usePaywall();
   const { isAuthenticated } = useAuth();
   if (hasAccess) return <>{children}</>;
@@ -163,15 +173,15 @@ function GateWrap({ hasAccess, children, serviceLabel }: { hasAccess: boolean; c
   if (!isAuthenticated) {
     const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
     return (
-      <div className="relative min-h-[400px]">
+      <div className="relative min-h-[400px]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="blur-sm pointer-events-none select-none opacity-50">{children}</div>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background/80 backdrop-blur-sm rounded-xl px-4 text-center">
           <Lock className="w-10 h-10 text-secondary" />
-          <p className="text-lg font-bold text-primary">اطّلع على الخدمة ثم ابدأ تجربتك المجانية</p>
-          <p className="text-muted-foreground text-sm">سجّل الدخول لاستخدام صياغة العقود أو تحليلها. ستحصل على 3 خدمات مجانية.</p>
+          <p className="text-lg font-bold text-primary">{t('اطّلع على الخدمة ثم ابدأ تجربتك المجانية', 'Explore the service, then start your free trial')}</p>
+          <p className="text-muted-foreground text-sm">{t('سجّل الدخول لاستخدام صياغة العقود أو تحليلها. ستحصل على 3 خدمات مجانية.', 'Sign in to draft or analyze contracts. You will receive 3 free services.')}</p>
           <Link href={`/login?returnTo=${returnTo}`}>
             <Button className="bg-secondary text-primary hover:bg-secondary/90 font-bold shadow-lg">
-              تسجيل الدخول للبدء
+              {t('تسجيل الدخول للبدء', 'Sign in to begin')}
             </Button>
           </Link>
         </div>
@@ -182,36 +192,36 @@ function GateWrap({ hasAccess, children, serviceLabel }: { hasAccess: boolean; c
   // Trial exhausted → friendly upgrade screen (not blurred content)
   if (shouldShowPaywall) {
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-20 text-center px-4">
+      <div className="flex flex-col items-center justify-center gap-6 py-20 text-center px-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="w-20 h-20 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
           <Lock className="w-9 h-9 text-primary" />
         </div>
         <div>
-          <h2 className="text-xl font-black text-primary mb-2">انتهت خدماتك المجانية الثلاث</h2>
+          <h2 className="text-xl font-black text-primary mb-2">{t('انتهت خدماتك المجانية الثلاث', 'Your three free services have ended')}</h2>
           <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-            {serviceLabel ?? 'للمتابعة'} اشترك في إحدى الباقات — جودة الاشتراك مطابقة تماماً لما جربته
+            {serviceLabel ?? t('للمتابعة', 'To continue')}{t(' اشترك في إحدى الباقات — جودة الاشتراك مطابقة تماماً لما جربته', ', subscribe to a plan — the quality is exactly what you have experienced.')}
           </p>
         </div>
         <Link href="/pricing">
           <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold shadow-lg px-8">
-            عرض الباقات والأسعار
+            {t('عرض الباقات والأسعار', 'View plans and pricing')}
           </Button>
         </Link>
-        <p className="text-xs text-muted-foreground">🔒 مخرجات خدماتك السابقة محفوظة ومتاحة في استشاراتك</p>
+        <p className="text-xs text-muted-foreground">{t('🔒 مخرجات خدماتك السابقة محفوظة ومتاحة في استشاراتك', '🔒 Your previous service outputs are saved and available in your consultations.')}</p>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[400px]">
+    <div className="relative min-h-[400px]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="blur-sm pointer-events-none select-none opacity-50">{children}</div>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background/80 backdrop-blur-sm rounded-xl">
         <Lock className="w-10 h-10 text-secondary" />
-        <p className="text-lg font-bold text-primary">هذه الخدمة للمشتركين فقط</p>
-        <p className="text-muted-foreground text-sm">سجّل حساباً للحصول على 3 خدمات مجانية</p>
+        <p className="text-lg font-bold text-primary">{t('هذه الخدمة للمشتركين فقط', 'This service is for subscribers only')}</p>
+        <p className="text-muted-foreground text-sm">{t('سجّل حساباً للحصول على 3 خدمات مجانية', 'Create an account to get 3 free services')}</p>
         <Link href="/pricing">
           <Button className="bg-secondary text-primary hover:bg-secondary/90 font-bold shadow-lg">
-            عرض الباقات
+            {t('عرض الباقات', 'View plans')}
           </Button>
         </Link>
       </div>
@@ -224,33 +234,35 @@ interface ChatMsg { role: 'user' | 'rabab'; text: string; isDraft?: boolean }
 type ApiMsg = { role: 'user' | 'assistant'; content: string }
 
 // ─── أنظمة التحكيم لكل دولة ─────────────────────────────────────────────────
-const ARBITRATION_SYSTEMS: Record<string, { code: string; label: string }[]> = {
-  sa:   [{ code: 'SCCA',    label: 'هيئة التحكيم التجاري السعودية (SCCA)' }, { code: 'CRCICA', label: 'مركز القاهرة الإقليمي' }, { code: 'ICC',    label: 'غرفة التجارة الدولية (ICC)' }],
-  ae:   [{ code: 'DIAC',   label: 'مركز دبي للتحكيم الدولي (DIAC)' }, { code: 'ADCCAC', label: 'مركز أبوظبي للتوفيق والتحكيم' }, { code: 'DIFC-LCIA', label: 'مركز DIFC-LCIA' }, { code: 'ICC', label: 'ICC' }],
-  kw:   [{ code: 'KAC',    label: 'مركز الكويت للتحكيم' }, { code: 'GCC-CAC', label: 'مركز التحكيم التجاري الخليجي' }, { code: 'ICC', label: 'ICC' }],
-  qa:   [{ code: 'QICCA',  label: 'مركز قطر الدولي للتوفيق والتحكيم (QICCA)' }, { code: 'QFC',   label: 'مركز QFC لتسوية النزاعات' }, { code: 'ICC', label: 'ICC' }],
-  bh:   [{ code: 'GCC-CAC', label: 'مركز التحكيم التجاري الخليجي' }, { code: 'BCDR-AAA', label: 'مركز التحكيم BCDR-AAA' }, { code: 'ICC', label: 'ICC' }],
-  om:   [{ code: 'CACS',   label: 'مركز تسوية النزاعات التجارية العُماني' }, { code: 'ICC', label: 'ICC' }],
-  intl: [{ code: 'ICC',    label: 'غرفة التجارة الدولية (ICC)' }, { code: 'LCIA', label: 'محكمة التحكيم الدولي (LCIA)' }, { code: 'SIAC', label: 'مركز سنغافورة الدولي (SIAC)' }, { code: 'UNCITRAL', label: 'UNCITRAL (تحكيم حر)' }],
+type LocalizedLabel = { ar: string; en: string };
+
+const ARBITRATION_SYSTEMS: Record<string, { code: string; label: LocalizedLabel }[]> = {
+  sa:   [{ code: 'SCCA', label: { ar: 'هيئة التحكيم التجاري السعودية (SCCA)', en: 'Saudi Center for Commercial Arbitration (SCCA)' } }, { code: 'CRCICA', label: { ar: 'مركز القاهرة الإقليمي', en: 'Cairo Regional Centre for International Commercial Arbitration' } }, { code: 'ICC', label: { ar: 'غرفة التجارة الدولية (ICC)', en: 'International Chamber of Commerce (ICC)' } }],
+  ae:   [{ code: 'DIAC', label: { ar: 'مركز دبي للتحكيم الدولي (DIAC)', en: 'Dubai International Arbitration Centre (DIAC)' } }, { code: 'ADCCAC', label: { ar: 'مركز أبوظبي للتوفيق والتحكيم', en: 'Abu Dhabi Commercial Conciliation and Arbitration Centre' } }, { code: 'DIFC-LCIA', label: { ar: 'مركز DIFC-LCIA', en: 'DIFC-LCIA Arbitration Centre' } }, { code: 'ICC', label: { ar: 'ICC', en: 'ICC' } }],
+  kw:   [{ code: 'KAC', label: { ar: 'مركز الكويت للتحكيم', en: 'Kuwait Arbitration Center' } }, { code: 'GCC-CAC', label: { ar: 'مركز التحكيم التجاري الخليجي', en: 'GCC Commercial Arbitration Centre' } }, { code: 'ICC', label: { ar: 'ICC', en: 'ICC' } }],
+  qa:   [{ code: 'QICCA', label: { ar: 'مركز قطر الدولي للتوفيق والتحكيم (QICCA)', en: 'Qatar International Center for Conciliation and Arbitration (QICCA)' } }, { code: 'QFC', label: { ar: 'مركز QFC لتسوية النزاعات', en: 'QFC Dispute Resolution Centre' } }, { code: 'ICC', label: { ar: 'ICC', en: 'ICC' } }],
+  bh:   [{ code: 'GCC-CAC', label: { ar: 'مركز التحكيم التجاري الخليجي', en: 'GCC Commercial Arbitration Centre' } }, { code: 'BCDR-AAA', label: { ar: 'مركز التحكيم BCDR-AAA', en: 'BCDR-AAA International Arbitration Centre' } }, { code: 'ICC', label: { ar: 'ICC', en: 'ICC' } }],
+  om:   [{ code: 'CACS', label: { ar: 'مركز تسوية النزاعات التجارية العُماني', en: 'Oman Commercial Arbitration Centre' } }, { code: 'ICC', label: { ar: 'ICC', en: 'ICC' } }],
+  intl: [{ code: 'ICC', label: { ar: 'غرفة التجارة الدولية (ICC)', en: 'International Chamber of Commerce (ICC)' } }, { code: 'LCIA', label: { ar: 'محكمة التحكيم الدولي (LCIA)', en: 'London Court of International Arbitration (LCIA)' } }, { code: 'SIAC', label: { ar: 'مركز سنغافورة الدولي (SIAC)', en: 'Singapore International Arbitration Centre (SIAC)' } }, { code: 'UNCITRAL', label: { ar: 'UNCITRAL (تحكيم حر)', en: 'UNCITRAL (ad hoc arbitration)' } }],
 };
 
 // ─── بيانات الدول وأنواع العقود للعرض في الواجهة ─────────────────────────────
 const ENFORCE_COUNTRIES = [
-  { code: 'sa', flag: '🇸🇦', name: 'السعودية'  },
-  { code: 'ae', flag: '🇦🇪', name: 'الإمارات'  },
-  { code: 'kw', flag: '🇰🇼', name: 'الكويت'    },
-  { code: 'qa', flag: '🇶🇦', name: 'قطر'       },
-  { code: 'bh', flag: '🇧🇭', name: 'البحرين'   },
-  { code: 'om', flag: '🇴🇲', name: 'عُمان'     },
-  { code: 'intl', flag: '🌍', name: 'دولي'     },
+  { code: 'sa', flag: '🇸🇦', name: { ar: 'السعودية', en: 'Saudi Arabia' } },
+  { code: 'ae', flag: '🇦🇪', name: { ar: 'الإمارات', en: 'United Arab Emirates' } },
+  { code: 'kw', flag: '🇰🇼', name: { ar: 'الكويت', en: 'Kuwait' } },
+  { code: 'qa', flag: '🇶🇦', name: { ar: 'قطر', en: 'Qatar' } },
+  { code: 'bh', flag: '🇧🇭', name: { ar: 'البحرين', en: 'Bahrain' } },
+  { code: 'om', flag: '🇴🇲', name: { ar: 'عُمان', en: 'Oman' } },
+  { code: 'intl', flag: '🌍', name: { ar: 'دولي', en: 'International' } },
 ] as const;
 
 const GCC_COUNTRY_CODES = ['ae', 'kw', 'qa', 'bh', 'om'];
 
 const JURISDICTION_SCOPES = [
-  { code: 'sa' as const, icon: '🇸🇦', label: 'النظام السعودي' },
-  { code: 'gcc' as const, icon: '🌐', label: 'دول مجلس التعاون' },
-  { code: 'intl' as const, icon: '🌍', label: 'عقود دولية' },
+  { code: 'sa' as const, icon: '🇸🇦', label: { ar: 'النظام السعودي', en: 'Saudi law' } },
+  { code: 'gcc' as const, icon: '🌐', label: { ar: 'دول مجلس التعاون', en: 'GCC countries' } },
+  { code: 'intl' as const, icon: '🌍', label: { ar: 'عقود دولية', en: 'International contracts' } },
 ] as const;
 
 const ENFORCE_CONTRACT_TYPES = [
@@ -274,6 +286,7 @@ interface DraftConfig {
 }
 
 function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
+  const { lang, t } = useLang();
   const [messages,    setMessages]    = useState<ChatMsg[]>([]);
   const [apiHistory,  setApiHistory]  = useState<ApiMsg[]>([]);   // sent to backend
   const [input,       setInput]       = useState('');
@@ -364,8 +377,8 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
       if (!res.ok) {
         const errMsg = data.code === 'TRIAL_EXHAUSTED' || data.code === 'QUOTA_EXHAUSTED'
-          ? '🔒 انتهت خدماتك المجانية — اشترك للمتابعة.'
-          : `⚠️ ${data.error ?? 'حدث خطأ، يرجى المحاولة مجدداً'}`;
+          ? `🔒 ${t('انتهت خدماتك المجانية — اشترك للمتابعة.', 'Your free services have ended—subscribe to continue.')}`
+          : `⚠️ ${data.error ?? t('حدث خطأ، يرجى المحاولة مجدداً', 'Something went wrong. Please try again.')}`;
         setMessages(prev => [...prev, { role: 'rabab', text: errMsg }]);
         if (data.needsUpgrade) setLocation('/pricing');
         return;
@@ -405,7 +418,7 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
   const handleCopy = (text: string, idx: number) => {
     copyText(text);
     setCopiedIdx(idx);
-    toast({ title: 'تم النسخ ✓' });
+    toast({ title: t('تم النسخ ✓', 'Copied ✓') });
     setTimeout(() => setCopiedIdx(null), 2000);
   };
 
@@ -454,7 +467,7 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
         if (data.isScanned) {
           setFileError(data.hint || 'الملف مصوّر ضوئياً — لا يمكن قراءته تلقائياً.');
         } else {
-          setFileError(data.error || 'فشل استخراج النص');
+          setFileError(data.error || t('فشل استخراج النص', 'Text extraction failed'));
         }
         setAttachedFile(null);
         return;
@@ -468,7 +481,7 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
         charCount: data.charCount ?? 0,
       });
     } catch (err: any) {
-      setFileError(err.message || 'فشل استخراج النص');
+      setFileError(err.message || t('فشل استخراج النص', 'Text extraction failed'));
       setAttachedFile(null);
     } finally {
       setExtracting(false);
@@ -478,8 +491,12 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
   const confirmExtractedText = () => {
     const { text, fileName, truncated, charCount } = extractReview;
+    const numberLocale = lang === 'ar' ? 'ar-SA' : 'en-US';
     const truncationNote = truncated
-      ? `\n\n⚠️ تنبيه: العقد طويل — تم تحليل أول ${(40000).toLocaleString('ar-SA')} حرف فقط من أصل ${charCount.toLocaleString('ar-SA')} حرف. قد تكون بنود في نهاية العقد غير محللة.`
+      ? `\n\n⚠️ ${t(
+        `تنبيه: العقد طويل — تم تحليل أول ${(40000).toLocaleString(numberLocale)} حرف فقط من أصل ${charCount.toLocaleString(numberLocale)} حرف. قد تكون بنود في نهاية العقد غير محللة.`,
+        `Notice: The contract is long—only the first ${(40000).toLocaleString(numberLocale)} characters out of ${charCount.toLocaleString(numberLocale)} were analyzed. Clauses at the end of the contract may not have been analyzed.`,
+      )}`
       : '';
     setInput(prev => `📄 **${fileName}**\n\n${prev ? prev + '\n\n' : ''}${text}${truncationNote}`);
     setFileCharInfo({ count: charCount, truncated });
@@ -495,15 +512,15 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
     <>
     {/* ── مراجعة النص المستخرج قبل التحليل ── */}
     {extractReview.open && (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4" dir="rtl">
-        <div className="w-full max-w-2xl bg-background rounded-2xl shadow-2xl border border-border/60 flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="w-full max-w-2xl bg-background rounded-2xl shadow-2xl border border-secondary/40 flex flex-col max-h-[85vh]">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border/40 shrink-0">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-secondary/20 shrink-0">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
               <div>
-                <p className="text-sm font-bold text-foreground">مراجعة النص المستخرج</p>
-                <p className="text-xs text-muted-foreground truncate max-w-xs">{extractReview.fileName}</p>
+                <p className="text-sm font-bold text-foreground">{t('مراجعة النص المستخرج', 'Review extracted text')}</p>
+                <p className="text-xs text-muted-foreground truncate max-w-xs" dir="auto">{extractReview.fileName}</p>
               </div>
             </div>
             <button onClick={cancelExtractedText} className="p-1 rounded-lg hover:bg-muted transition-colors">
@@ -513,7 +530,7 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
           {/* Instruction */}
           <div className="px-5 py-3 bg-blue-50 border-b border-blue-100 shrink-0">
             <p className="text-xs text-blue-700">
-              ✏️ تحقق من دقة النص المستخرج وعدّله إن لزم — خاصةً في ملفات المسح الضوئي. عند تأكيده سيُرسل للتحليل.
+              {t('✏️ تحقق من دقة النص المستخرج وعدّله إن لزم — خاصةً في ملفات المسح الضوئي. عند تأكيده سيُرسل للتحليل.', '✏️ Check the extracted text and edit it if needed—especially for scanned files. Once confirmed, it will be sent for analysis.')}
             </p>
           </div>
           {/* Editable textarea */}
@@ -521,58 +538,58 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
             {extractReview.truncated && (
               <div className="mb-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>العقد طويل — تم اقتصاص النص. يمكنك تعديله قبل الإرسال.</span>
+                <span>{t('العقد طويل — تم اقتصاص النص. يمكنك تعديله قبل الإرسال.', 'The contract is long—the text was truncated. You can edit it before sending.')}</span>
               </div>
             )}
             <textarea
               value={extractReview.text}
               onChange={e => setExtractReview(prev => ({ ...prev, text: e.target.value }))}
-              className="w-full h-64 text-sm leading-relaxed bg-muted/30 border border-border/50 rounded-xl p-3 resize-none focus:outline-none focus:border-primary transition-colors font-mono"
-              dir="rtl"
-              placeholder="النص المستخرج..."
+              className="w-full h-64 text-sm leading-relaxed bg-muted/30 border border-secondary/30 rounded-xl p-3 resize-none focus:outline-none focus:border-secondary transition-colors font-mono"
+              dir="auto"
+              placeholder={t('النص المستخرج...', 'Extracted text...')}
             />
           </div>
           {/* Actions */}
-          <div className="flex items-center gap-3 px-5 py-4 border-t border-border/40 shrink-0">
+          <div className="flex items-center gap-3 px-5 py-4 border-t border-secondary/20 shrink-0">
             <button
               onClick={confirmExtractedText}
               className="flex-1 h-10 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              تأكيد واستمرار
+              {t('تأكيد واستمرار', 'Confirm and continue')}
             </button>
             <button
               onClick={cancelExtractedText}
-              className="h-10 px-5 border border-border rounded-xl text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+              className="h-10 px-5 border border-secondary/40 rounded-xl text-sm text-muted-foreground hover:bg-secondary/10 transition-colors"
             >
-              إلغاء
+              {t('إلغاء', 'Cancel')}
             </button>
           </div>
         </div>
       </div>
     )}
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="container mx-auto px-4 py-6 max-w-7xl">
+      className="w-full px-3 sm:px-5 lg:px-7 py-6">
       <GateWrap hasAccess={hasAccess}>
-        <div className="flex flex-col rounded-2xl border border-border/60 bg-card overflow-hidden" style={{ height: '70vh', minHeight: 520 }}>
+        <div className="flex min-w-0 flex-col rounded-2xl border-2 border-secondary/60 bg-card overflow-hidden shadow-[0_0_30px_hsl(191_100%_50%_/_0.12)]" style={{ height: '70vh', minHeight: 'min(520px, calc(100dvh - 190px))' }}>
 
           {/* ── رباب opening message (fixed at top) ── */}
-          <div className="shrink-0 px-6 pt-5 pb-3 border-b border-border/40 text-center relative" dir="rtl">
+          <div className="shrink-0 px-6 pt-5 pb-3 border-b border-primary-foreground/20 text-center relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
             {messages.length > 0 && (
               <button
                 onClick={handleReset}
                 className="absolute right-3 top-3 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
-                <span>رجوع</span>
+                <span>{t('رجوع', 'Back')}</span>
               </button>
             )}
             <div className="flex items-center justify-center gap-2 mb-1">
               <div className="w-9 h-9 rounded-full bg-secondary/20 border-2 border-secondary/40 flex items-center justify-center text-lg">⚖️</div>
-              <span className="text-base font-bold text-secondary">رباب · محاميتك الرقمية</span>
+              <span className="text-base font-bold text-secondary">{t('رباب · محاميتك الرقمية', 'Rabab · Your Digital Lawyer')}</span>
             </div>
-            <p className="text-xl font-bold">مرحباً 👋 أنا رباب، استشارتك القانونية ومن ثمّ صياغة وثائقك.</p>
-            <p className="text-base text-muted-foreground mt-1">اطرح سؤالك القانوني أو صِف العقد المطلوب — وسأبدأ بالتحليل أو الصياغة حسب ما تحتاج.</p>
+            <p className="text-2xl font-bold text-primary-foreground">{t('مرحباً 👋 أنا رباب، استشارتك القانونية ومن ثمّ صياغة وثائقك.', 'Hello 👋 I’m Rabab, your legal consultant, here to draft your documents.')}</p>
+            <p className="text-lg text-muted-foreground mt-1">{t('اطرح سؤالك القانوني أو صِف العقد المطلوب — وسأبدأ بالتحليل أو الصياغة حسب ما تحتاج.', 'Ask your legal question or describe the contract you need—I’ll begin the analysis or drafting as needed.')}</p>
           </div>
 
           {/* ── إعدادات الصياغة ── */}
@@ -584,21 +601,21 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
             const availableGccCountries = ENFORCE_COUNTRIES.filter(c => GCC_COUNTRY_CODES.includes(c.code));
 
             return (
-              <div className="shrink-0 border-b border-border/40 bg-secondary/5" dir="rtl">
+              <div className="shrink-0 border-b border-secondary/30 bg-secondary/5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 {/* ── شريط ملخّص دائم (قابل للنقر للتوسيع/الطيّ) ── */}
                 <button
                   onClick={() => setSettingsOpen(o => !o)}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-xs hover:bg-secondary/10 transition-colors"
+                  className="w-full flex flex-wrap items-center gap-3 px-5 py-3 text-base hover:bg-secondary/10 transition-colors"
                 >
-                  <span className="font-bold text-secondary">⚙ إعدادات الصياغة</span>
-                  <span className="text-muted-foreground">{jurisdictionScope.label} · {country.flag} {country.name}</span>
+                  <span className="font-bold text-primary-foreground">{t('⚙ إعدادات الصياغة', '⚙ Drafting settings')}</span>
+                  <span className="text-base text-muted-foreground">{t(jurisdictionScope.label.ar, jurisdictionScope.label.en)} · {country.flag} {t(country.name.ar, country.name.en)}</span>
                   {draftConfig.contractType && (
-                    <span className="bg-secondary/15 text-secondary px-2 py-0.5 rounded-full">
+                      <span className="bg-secondary/15 text-secondary px-3 py-1 rounded-full text-sm">
                       {ENFORCE_CONTRACT_TYPES.find(t => t.code === draftConfig.contractType)?.label}
                     </span>
                   )}
-                  <span className="bg-secondary/15 text-secondary px-2 py-0.5 rounded-full">
-                    {draftConfig.resolutionMethod === 'judiciary' ? '⚖️ قضاء رسمي' : `🔨 تحكيم · ${selectedArb?.code ?? ''}`}
+                  <span className="bg-secondary/15 text-secondary px-3 py-1 rounded-full text-sm">
+                    {draftConfig.resolutionMethod === 'judiciary' ? t('⚖️ قضاء رسمي', '⚖️ Court litigation') : `🔨 ${t('تحكيم', 'Arbitration')} · ${selectedArb?.code ?? ''}`}
                   </span>
                   <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground mr-auto transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -612,21 +629,21 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-4 pb-4 space-y-4">
+                      <div className="px-5 sm:px-8 pb-6 space-y-6">
 
                         {/* نطاق النظام */}
                         <div>
-                          <p className="text-[11px] font-bold text-muted-foreground mb-1.5">⚖️ نطاق النظام القانوني</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {JURISDICTION_SCOPES.map(scope => (
+                          <p className="text-base font-bold text-primary-foreground mb-1.5">{t('⚖️ نطاق النظام القانوني', '⚖️ Legal framework')}</p>
+                          <div className="flex flex-wrap gap-2.5">
+                            {JURISDICTION_SCOPES.map((scope, index) => (
                               <button key={scope.code} type="button"
                                 onClick={() => handleJurisdictionScopeChange(scope.code)}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
+                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-base font-semibold border transition-all ${
                                   draftConfig.jurisdictionScope === scope.code
-                                    ? 'border-secondary bg-secondary/20 text-secondary'
-                                    : 'border-border text-muted-foreground hover:border-secondary/40'
+                                    ? OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].active
+                                    : `${OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].idle} text-muted-foreground`
                                 }`}>
-                                <span>{scope.icon}</span><span>{scope.label}</span>
+                                <span>{scope.icon}</span><span>{scope.code === 'sa' ? t('النظام السعودي', 'Saudi law') : scope.code === 'gcc' ? t('دول مجلس التعاون', 'GCC countries') : t('عقود دولية', 'International contracts')}</span>
                               </button>
                             ))}
                           </div>
@@ -635,41 +652,41 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
                         {/* تظهر دول المجلس عند اختيار النطاق الخليجي فقط */}
                         {draftConfig.jurisdictionScope === 'gcc' ? (
                           <div>
-                            <p className="text-[11px] font-bold text-muted-foreground mb-1.5">🌍 دولة مجلس التعاون</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {availableGccCountries.map(c => (
+                            <p className="text-base font-bold text-primary-foreground mb-1.5">{t('🌍 دولة مجلس التعاون', '🌍 GCC country')}</p>
+                            <div className="flex flex-wrap gap-2.5">
+                              {availableGccCountries.map((c, index) => (
                                 <button key={c.code} type="button"
                                   onClick={() => handleCountryChange(c.code)}
-                                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
+                                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-base font-semibold border transition-all ${
                                     draftConfig.country === c.code
-                                      ? 'border-secondary bg-secondary/20 text-secondary'
-                                      : 'border-border text-muted-foreground hover:border-secondary/40'
+                                      ? OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].active
+                                      : `${OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].idle} text-muted-foreground`
                                   }`}>
-                                  <span>{c.flag}</span><span>{c.name}</span>
+                                  <span>{c.flag}</span><span>{t(c.name.ar, c.name.en)}</span>
                                 </button>
                               ))}
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2 rounded-xl border border-secondary/30 bg-background/60 px-3 py-2.5 text-sm text-muted-foreground">
                             <span>{country.flag}</span>
-                            <span>{draftConfig.jurisdictionScope === 'sa' ? 'سيُصاغ العقد وفق النظام السعودي.' : 'سيُصاغ العقد وفق الإطار الدولي للعقود.'}</span>
+                            <span>{draftConfig.jurisdictionScope === 'sa' ? t('سيُصاغ العقد وفق النظام السعودي.', 'The contract will be drafted under Saudi law.') : t('سيُصاغ العقد وفق الإطار الدولي للعقود.', 'The contract will be drafted under the international contract framework.')}</span>
                           </div>
                         )}
 
                         {/* نوع العقد */}
                         <div>
-                          <p className="text-[11px] font-bold text-muted-foreground mb-1.5">📄 نوع العقد (اختياري — تساعد رباب على الصياغة الفورية)</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {ENFORCE_CONTRACT_TYPES.map(t => (
-                              <button key={t.code} type="button"
-                                onClick={() => setDraftConfig(p => ({ ...p, contractType: p.contractType === t.code ? '' : t.code }))}
-                                className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
-                                  draftConfig.contractType === t.code
-                                    ? 'border-secondary bg-secondary/20 text-secondary'
-                                    : 'border-border text-muted-foreground hover:border-secondary/40'
+                          <p className="text-base font-bold text-primary-foreground mb-1.5">{t('📄 نوع العقد (اختياري — تساعد رباب على الصياغة الفورية)', '📄 Contract type (optional—helps Rabab draft immediately)')}</p>
+                          <div className="flex flex-wrap gap-2.5">
+                            {ENFORCE_CONTRACT_TYPES.map((contractType, index) => (
+                              <button key={contractType.code} type="button"
+                                onClick={() => setDraftConfig(p => ({ ...p, contractType: p.contractType === contractType.code ? '' : contractType.code }))}
+                                className={`px-3 py-1.5 rounded-full text-base font-semibold border transition-all ${
+                                  draftConfig.contractType === contractType.code
+                                    ? OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].active
+                                    : `${OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].idle} text-muted-foreground`
                                 }`}>
-                                {t.label}
+                                {t(contractType.label, ({ sales: 'Sale & Purchase', services: 'Services', construction: 'Construction', partnership: 'Partnership', nda: 'Non-disclosure', agency: 'Commercial Agency', other: 'Other' } as Record<string, string>)[contractType.code])}
                               </button>
                             ))}
                           </div>
@@ -677,40 +694,40 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
                         {/* مدة التسوية الودية */}
                         <div>
-                          <p className="text-[11px] font-bold text-muted-foreground mb-1.5">🤝 مدة التسوية الودية قبل آلية النزاع</p>
-                          <div className="flex gap-1.5 flex-wrap">
-                            {[15, 30, 60, 90].map(d => (
+                          <p className="text-base font-bold text-primary-foreground mb-1.5">{t('🤝 مدة التسوية الودية قبل آلية النزاع', '🤝 Amicable settlement period before dispute resolution')}</p>
+                          <div className="flex gap-2.5 flex-wrap">
+                            {[15, 30, 60, 90].map((d, index) => (
                               <button key={d} type="button"
                                 onClick={() => setDraftConfig(p => ({ ...p, amicableDays: d }))}
-                                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                                className={`px-3 py-1.5 rounded-full text-base font-semibold border transition-all ${
                                   draftConfig.amicableDays === d
-                                    ? 'border-secondary bg-secondary/20 text-secondary'
-                                    : 'border-border text-muted-foreground hover:border-secondary/40'
+                                    ? OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].active
+                                    : `${OPTION_FRAME_STYLES[index % OPTION_FRAME_STYLES.length].idle} text-muted-foreground`
                                 }`}>
-                                {d} يوماً
+                                {d} {t('يوماً', 'days')}
                               </button>
                             ))}
                           </div>
                         </div>
 
                         {/* آلية النزاع — اختيار مختصر */}
-                        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-secondary/30 bg-background/60 px-4 py-3">
+                          <span className="inline-flex items-center gap-1 text-base font-bold text-primary-foreground">
                             <span aria-hidden="true">⚖️</span>
-                            آلية النزاع
+                             {t('آلية النزاع', 'Dispute resolution')}
                           </span>
                           {[
-                            { value: 'judiciary', label: 'قضاء', icon: '🏛' },
-                            { value: 'arbitration', label: 'تحكيم', icon: '🔨' },
+                             { value: 'judiciary', label: t('قضاء', 'Court'), icon: '🏛' },
+                             { value: 'arbitration', label: t('تحكيم', 'Arbitration'), icon: '🔨' },
                           ].map(option => (
                             <button
                               key={option.value}
                               type="button"
                               onClick={() => setDraftConfig(previous => ({ ...previous, resolutionMethod: option.value as DraftConfig['resolutionMethod'] }))}
-                              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition-all ${
+                              className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-base font-bold transition-all ${
                                 draftConfig.resolutionMethod === option.value
                                   ? 'border-secondary bg-secondary/20 text-secondary'
-                                  : 'border-border text-muted-foreground hover:border-secondary/40'
+                                  : 'border-secondary/40 text-muted-foreground hover:border-secondary'
                               }`}
                             >
                               <span aria-hidden="true">{option.icon}</span>
@@ -728,40 +745,40 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
                               className="overflow-hidden grid grid-cols-1 gap-2 sm:grid-cols-2"
                             >
                               <div>
-                                <p className="mb-1 text-[11px] font-bold text-muted-foreground">مركز التحكيم</p>
-                                <div className="flex flex-wrap gap-1.5">
+                                 <p className="mb-1 text-base font-bold text-primary-foreground">{t('مركز التحكيم', 'Arbitration center')}</p>
+                                <div className="flex flex-wrap gap-2">
                                   {arbSystems.map(system => (
                                     <button
                                       key={system.code}
                                       type="button"
                                       onClick={() => setDraftConfig(previous => ({ ...previous, arbitrationSystem: system.code }))}
-                                      className={`rounded-lg border px-2 py-1 text-xs font-semibold transition-all ${
+                                      className={`rounded-lg border px-3 py-1.5 text-base font-semibold transition-all ${
                                         draftConfig.arbitrationSystem === system.code
                                           ? 'border-secondary bg-secondary/20 text-secondary'
-                                          : 'border-border text-muted-foreground hover:border-secondary/40'
+                                          : 'border-secondary/40 text-muted-foreground hover:border-secondary'
                                       }`}
                                     >
-                                      {system.label}
+                                      {t(system.label.ar, system.label.en)}
                                     </button>
                                   ))}
                                 </div>
                               </div>
 
                               <div>
-                                <p className="mb-1 text-[11px] font-bold text-muted-foreground">عدد المحكّمين</p>
+                                 <p className="mb-1 text-base font-bold text-primary-foreground">{t('عدد المحكّمين', 'Number of arbitrators')}</p>
                                 <div className="flex gap-1.5">
                                   {([1, 3] as const).map(count => (
                                     <button
                                       key={count}
                                       type="button"
                                       onClick={() => setDraftConfig(previous => ({ ...previous, arbitratorCount: count }))}
-                                      className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition-all ${
+                                      className={`rounded-lg border px-3 py-1.5 text-base font-bold transition-all ${
                                         draftConfig.arbitratorCount === count
                                           ? 'border-secondary bg-secondary/20 text-secondary'
-                                          : 'border-border text-muted-foreground hover:border-secondary/40'
+                                          : 'border-secondary/40 text-muted-foreground hover:border-secondary'
                                       }`}
                                     >
-                                      {count === 1 ? 'محكّم واحد' : 'ثلاثة محكّمين'}
+                                       {count === 1 ? t('محكّم واحد', 'One arbitrator') : t('ثلاثة محكّمين', 'Three arbitrators')}
                                     </button>
                                   ))}
                                 </div>
@@ -780,14 +797,14 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
           {/* ── Input bar (fixed at top) ── */}
           <input ref={fileInputRef} type="file" accept=".pdf,.txt,.docx" className="hidden" onChange={handleFileSelect} />
-          <div className="shrink-0 border-b border-border/60 px-6 py-4 bg-background/50 flex flex-col items-center">
+          <div className="shrink-0 border-b border-secondary/30 px-4 sm:px-6 py-4 bg-background/50 flex flex-col items-center">
             {/* خطأ ملف مصوّر */}
             {fileError && (
-              <div className="flex items-start gap-2 mb-2 bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2 w-full max-w-2xl" dir="rtl">
+              <div className="flex items-start gap-2 mb-2 bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2.5 w-full" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-destructive">تعذّر قراءة الملف</p>
-                  <p className="text-xs text-destructive/80 mt-0.5 leading-relaxed">{fileError}</p>
+                  <p className="text-sm font-semibold text-destructive">{t('تعذّر قراءة الملف', 'Unable to read file')}</p>
+                  <p className="text-sm text-destructive/80 mt-0.5 leading-relaxed" dir="auto">{fileError}</p>
                 </div>
                 <button onClick={() => setFileError(null)} className="text-muted-foreground hover:text-destructive shrink-0">
                   <X className="w-3.5 h-3.5" />
@@ -796,14 +813,16 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
             )}
             {/* مؤشر نجاح الاستخراج */}
             {attachedFile && !fileError && (
-              <div className="flex items-center gap-2 mb-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-1.5 w-full max-w-2xl">
+              <div className="flex items-center gap-2 mb-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 w-full">
                 <FileText className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-xs text-primary flex-1 truncate">{attachedFile.name}</span>
+                <span className="text-sm text-primary flex-1 truncate" dir="auto">{attachedFile.name}</span>
                 {extracting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
                 ) : fileCharInfo ? (
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${fileCharInfo.truncated ? 'bg-amber-500/20 text-amber-600' : 'bg-green-500/20 text-green-600'}`}>
-                    {fileCharInfo.truncated ? `⚠ ${(40000).toLocaleString('ar-SA')} / ${fileCharInfo.count.toLocaleString('ar-SA')} حرف` : `✓ ${fileCharInfo.count.toLocaleString('ar-SA')} حرف`}
+                    {fileCharInfo.truncated
+                      ? `⚠ ${(40000).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')} / ${fileCharInfo.count.toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')} ${t('حرف', 'characters')}`
+                      : `✓ ${fileCharInfo.count.toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')} ${t('حرف', 'characters')}`}
                   </span>
                 ) : null}
                 <button onClick={() => { setAttachedFile(null); setInput(''); setFileCharInfo(null); }} className="text-muted-foreground hover:text-destructive">
@@ -811,62 +830,62 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
                 </button>
               </div>
             )}
-            <div className="flex gap-2 items-end w-full max-w-2xl">
+            <div className="flex gap-2 items-end w-full">
               <div className="relative flex-1">
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  placeholder={extracting ? 'جارٍ استخراج نص الملف...' : 'مثال: أريد عقد خدمات بين شركة تقنية وعميل بقيمة 120,000 ريال لمدة سنة…'}
+                   placeholder={extracting ? t('جارٍ استخراج نص الملف...', 'Extracting file text...') : t('مثال: أريد عقد خدمات بين شركة تقنية وعميل بقيمة 120,000 ريال لمدة سنة…', 'Example: I need a services contract between a technology company and a client worth SAR 120,000 for one year…')}
                   rows={2}
                   disabled={loading}
-                  className="w-full rounded-xl border-[3px] border-secondary/70 bg-transparent px-4 py-2.5 pb-8 text-base focus:outline-none focus:ring-2 focus:ring-secondary/40 resize-none text-right"
-                  dir="rtl"
+                   className="w-full rounded-xl border-[3px] border-secondary/70 bg-transparent px-5 py-3 pb-9 text-lg focus:outline-none focus:ring-2 focus:ring-secondary/40 resize-none"
+                   dir="auto"
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={loading || extracting}
-                  className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                  className="absolute bottom-2 left-2 flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                 >
                   {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" /> : <Paperclip className="w-3.5 h-3.5" />}
-                  <span>{extracting ? 'جارٍ الاستخراج...' : 'إضافة مرفق'}</span>
+                   <span>{extracting ? t('جارٍ الاستخراج...', 'Extracting...') : t('إضافة مرفق', 'Attach file')}</span>
                 </button>
               </div>
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || loading}
-                className="w-11 h-11 rounded-xl bg-secondary text-primary flex items-center justify-center hover:bg-secondary/90 disabled:opacity-40 transition-all shrink-0 shadow-md"
+                className="w-12 h-12 rounded-xl bg-secondary text-primary flex items-center justify-center hover:bg-secondary/90 disabled:opacity-40 transition-all shrink-0 shadow-md"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-muted-foreground/40 mt-1.5 self-end">Enter للإرسال · Shift+Enter لسطر جديد</p>
+            <p className="text-sm text-muted-foreground/60 mt-2 self-end">{t('Enter للإرسال · Shift+Enter لسطر جديد', 'Enter to send · Shift+Enter for a new line')}</p>
           </div>
 
           {/* ── Messages area ── */}
           <div className="flex-1 overflow-y-auto">
-          <div className="p-5 space-y-5">
+          <div className="p-6 sm:p-8 space-y-6">
 
             {/* Chat history */}
             {messages.map((msg, i) =>
               msg.role === 'user' ? (
                 /* ── رسالة المستخدم (يمين) ── */
-                <div key={i} className="flex items-end justify-end gap-3">
-                  <div className="flex flex-col items-end gap-1 max-w-lg">
-                    <span className="text-xs text-muted-foreground font-medium">أنت</span>
-                    <div className="bg-primary/80 rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-white leading-relaxed text-right" dir="rtl">
+                <div key={i} className="flex min-w-0 items-end justify-end gap-3">
+                  <div className="flex min-w-0 max-w-[85%] flex-col items-end gap-1">
+                     <span className="text-sm text-muted-foreground font-medium">{t('أنت', 'You')}</span>
+                      <div className="min-w-0 break-words bg-primary/80 rounded-2xl rounded-bl-sm px-5 py-3 text-base text-white leading-relaxed" dir="auto">
                       {msg.text}
                     </div>
                   </div>
-                  <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 text-sm">👤</div>
+                  <div className="w-9 h-9 rounded-full bg-muted border border-secondary/30 flex items-center justify-center shrink-0 text-sm">👤</div>
                 </div>
               ) : isError(msg.text) ? (
                 /* ── رسالة خطأ / قفل ── */
-                <div key={i} className="flex items-end gap-3">
+                <div key={i} className="flex min-w-0 items-end gap-3">
                   <div className="w-9 h-9 rounded-full bg-secondary/20 border-2 border-secondary/40 flex items-center justify-center shrink-0 text-base">⚖️</div>
-                  <div className="flex flex-col gap-1 max-w-lg">
-                    <span className="text-xs text-muted-foreground font-medium">رباب</span>
-                    <div className="bg-secondary/10 border border-secondary/25 rounded-2xl rounded-br-sm px-4 py-3 text-sm text-foreground" dir="rtl">
+                  <div className="flex min-w-0 max-w-[85%] flex-col gap-1">
+                     <span className="text-sm text-muted-foreground font-medium">Rabab</span>
+                      <div className="min-w-0 break-words bg-secondary/10 border border-secondary/25 rounded-2xl rounded-br-sm px-5 py-3 text-base text-foreground" dir="auto">
                       {msg.text}
                     </div>
                   </div>
@@ -876,41 +895,43 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
                 <div key={i} className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-full bg-secondary/20 border-2 border-secondary/40 flex items-center justify-center shrink-0 mt-5 text-base">⚖️</div>
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <span className="text-xs text-muted-foreground font-medium">رباب · محاميتك الرقمية</span>
-                    <div className="border border-border rounded-2xl overflow-hidden">
+                     <span className="text-sm text-muted-foreground font-medium">{t('رباب · محاميتك الرقمية', 'Rabab · Your Digital Lawyer')}</span>
+                    <div className="border border-secondary/40 rounded-2xl overflow-hidden shadow-sm">
                       {/* toolbar */}
-                      <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border">
-                        <span className="text-xs font-semibold text-primary-foreground flex items-center gap-1.5">
-                          <FileText className="w-3.5 h-3.5" /> مسودة العقد
+                      <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-secondary/30">
+                        <span className="text-sm font-semibold text-primary-foreground flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5" /> {t('مسودة العقد', 'Contract draft')}
                           {draftLiveSearch && (
                             <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded-full">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              مصادر حية
+                               {t('مصادر حية', 'Live sources')}
                             </span>
                           )}
                         </span>
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleCopy(msg.text, i)}
-                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                           >
                             {copiedIdx === i ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                            {copiedIdx === i ? 'تم' : 'نسخ'}
+                             {copiedIdx === i ? t('تم', 'Copied') : t('نسخ', 'Copy')}
                           </button>
                           <button
                             onClick={() => exportWordDocx({ text: msg.text, title: 'عقد' })}
-                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                           >
                             <Download className="w-3.5 h-3.5" /> Word .docx
                           </button>
-                          <span className="text-xs text-muted-foreground/50">{msg.text.split(/\s+/).length} كلمة</span>
+                          <span className="text-sm text-muted-foreground/50">{msg.text.split(/\s+/).length} كلمة</span>
                         </div>
                       </div>
                       {/* contract body */}
-                      <LegalMarkdown className="p-5" maxHeight="55vh">{msg.text}</LegalMarkdown>
+                      <div dir="auto">
+                        <LegalMarkdown className="p-5" maxHeight="55vh">{msg.text}</LegalMarkdown>
+                      </div>
                       <div className="px-4 py-2.5 bg-amber-950/30 border-t border-amber-900/30 flex gap-2 items-start">
                         <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                        <p className="text-xs text-amber-300/80">للاسترشاد فقط — يُنصح بمراجعة محامٍ مرخّص قبل التوقيع.</p>
+                         <p className="text-sm text-amber-300/80">{t('للاسترشاد فقط — يُنصح بمراجعة محامٍ مرخّص قبل التوقيع.', 'For guidance only—please consult a licensed lawyer before signing.')}</p>
                       </div>
                     </div>
                   </div>
@@ -923,10 +944,10 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
               <div className="flex items-end gap-3">
                 <div className="w-9 h-9 rounded-full bg-secondary/20 border-2 border-secondary/40 flex items-center justify-center shrink-0 text-base">⚖️</div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground font-medium">رباب</span>
-                  <div className="bg-secondary/10 border border-secondary/25 rounded-2xl rounded-br-sm px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
+                   <span className="text-sm text-muted-foreground font-medium">Rabab</span>
+                  <div className="bg-secondary/10 border border-secondary/25 rounded-2xl rounded-br-sm px-4 py-3 flex items-center gap-2 text-base text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin text-secondary" />
-                    جارٍ صياغة العقد وفق الأنظمة السعودية...
+                     {t('جارٍ صياغة العقد وفق الأنظمة السعودية...', 'Drafting the contract under Saudi regulations...')}
                   </div>
                 </div>
               </div>
@@ -996,6 +1017,7 @@ interface FeedbackChatProps {
   toast: any;
 }
 function FeedbackChat({ contractText, mode, priorResult, toast }: FeedbackChatProps) {
+  const { lang, t } = useLang();
   const [msgs,    setMsgs]    = useState<FeedbackMsg[]>([]);
   const [history, setHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     { role: 'assistant', content: priorResult },
@@ -1021,23 +1043,27 @@ function FeedbackChat({ contractText, mode, priorResult, toast }: FeedbackChatPr
         body: JSON.stringify({ contractText, mode, messages: newHistory }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'فشل التحديث');
+      if (!res.ok) throw new Error(data.error ?? t('فشل التحديث', 'Update failed'));
       const reply = data.reply ?? '';
       setMsgs(prev => [...prev, { role: 'rabab', text: reply }]);
       setHistory(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'فشل التحديث', description: err.message });
+      toast({
+        variant: 'destructive',
+        title: t('فشل التحديث', 'Update failed'),
+        description: err.message || t('حدث خطأ، يرجى المحاولة مجدداً', 'Something went wrong. Please try again.'),
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="mt-4 border border-secondary/30 rounded-2xl overflow-hidden" dir="rtl">
+    <div className="mt-4 border border-secondary/30 rounded-2xl overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="px-4 py-3 bg-secondary/10 border-b border-secondary/20 flex items-center gap-2">
+       <div className="px-4 py-3 bg-secondary/10 border-b border-secondary/20 flex items-center gap-2">
         <MessageSquare className="w-4 h-4 text-secondary shrink-0" />
-        <span className="text-sm font-semibold text-secondary">لديكِ ملاحظة؟ اطلبي تعديلاً أو توضيحاً</span>
+         <span className="text-sm font-semibold text-secondary">{t('لديكِ ملاحظة؟ اطلبي تعديلاً أو توضيحاً', 'Have feedback? Request a change or clarification.')}</span>
       </div>
 
       {/* Messages */}
@@ -1050,23 +1076,23 @@ function FeedbackChat({ contractText, mode, priorResult, toast }: FeedbackChatPr
               )}
               <div className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 msg.role === 'user'
-                  ? 'bg-primary/80 text-white rounded-bl-sm text-right'
-                  : 'bg-muted border border-border rounded-br-sm'
-              }`}>
+                  ? 'bg-primary/80 text-white rounded-bl-sm'
+                  : 'bg-muted border border-secondary/30 rounded-br-sm'
+                }`} dir="auto">
                 {msg.role === 'rabab'
                   ? <LegalMarkdown maxHeight="none">{msg.text}</LegalMarkdown>
                   : msg.text}
               </div>
               {msg.role === 'user' && (
-                <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 mt-1 text-xs">👤</div>
+                <div className="w-7 h-7 rounded-full bg-muted border border-secondary/30 flex items-center justify-center shrink-0 mt-1 text-xs">👤</div>
               )}
             </div>
           ))}
           {loading && (
             <div className="flex justify-start gap-2">
               <div className="w-7 h-7 rounded-full bg-secondary/20 border-2 border-secondary/30 flex items-center justify-center shrink-0 text-xs">⚖️</div>
-              <div className="bg-muted border border-border rounded-2xl rounded-br-sm px-4 py-2.5 flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-secondary" />جارٍ التحديث...
+              <div className="bg-muted border border-secondary/30 rounded-2xl rounded-br-sm px-4 py-2.5 flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-secondary" />{t('جارٍ التحديث...', 'Updating...')}
               </div>
             </div>
           )}
@@ -1075,16 +1101,16 @@ function FeedbackChat({ contractText, mode, priorResult, toast }: FeedbackChatPr
       )}
 
       {/* Input */}
-      <div className="px-4 py-3 bg-background/60 border-t border-border flex gap-2">
+      <div className="px-4 py-3 bg-background/60 border-t border-secondary/20 flex gap-2">
         <textarea
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-          placeholder="مثال: ركّزي على بنود الغرامات · اشرحي لي البند الثالث · صحّحي اسم الطرف الأول..."
+           placeholder={t('مثال: ركّزي على بنود الغرامات · اشرحي لي البند الثالث · صحّحي اسم الطرف الأول...', 'Example: Focus on penalty clauses · explain clause three · correct the first party’s name...')}
           rows={1}
           disabled={loading}
-          className="flex-1 rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 resize-none text-right"
-          dir="rtl"
+           className="flex-1 rounded-xl border border-secondary/30 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 resize-none"
+           dir="auto"
         />
         <button
           onClick={handleSend}
@@ -1100,6 +1126,7 @@ function FeedbackChat({ contractText, mode, priorResult, toast }: FeedbackChatPr
 
 // ─── Tab 2: Analyze ───────────────────────────────────────────────────────────
 function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
+  const { lang, t } = useLang();
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState<ReviewModeKey>('review');
   const [loading, setLoading] = useState(false);
@@ -1144,11 +1171,11 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
       const data = await res.json();
       if (!res.ok) {
         if (data.code === 'TRIAL_EXHAUSTED') {
-          toast({ variant: 'destructive', title: 'انتهت خدماتك المجانية', description: 'اشترك للمتابعة' });
+          toast({ variant: 'destructive', title: t('انتهت خدماتك المجانية', 'Your free services have ended'), description: t('اشترك للمتابعة', 'Subscribe to continue') });
           setLocation('/pricing');
           return;
         }
-        throw new Error(data.error ?? 'فشل التحليل');
+        throw new Error(data.error ?? t('فشل التحليل', 'Analysis failed'));
       }
       setResult(data[selectedMode.resultKey] ?? '');
       setContractText(data.contractText ?? '');
@@ -1157,7 +1184,7 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
       // Rotate session after success
       clientSession.current = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'فشل التحليل', description: err.message });
+      toast({ variant: 'destructive', title: t('فشل التحليل', 'Analysis failed'), description: err.message });
     } finally {
       setLoading(false);
     }
@@ -1165,17 +1192,17 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="container mx-auto px-4 py-10 max-w-7xl">
+      className="w-full px-3 sm:px-5 lg:px-7 py-10">
       <GateWrap hasAccess={hasAccess}>
 
         {/* ── Welcome header ── */}
-        <div className="text-center mb-6 pb-5 border-b border-border/40" dir="rtl">
+        <div className="text-center mb-6 pb-5 border-b-2 border-secondary/50" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-9 h-9 rounded-full bg-secondary/20 border-2 border-secondary/40 flex items-center justify-center text-lg">⚖️</div>
-            <span className="text-base font-bold text-secondary">رباب · محاميتك الرقمية</span>
+           <span className="text-base font-bold text-secondary">{t('رباب · محاميتك الرقمية', 'Rabab · Your Digital Lawyer')}</span>
           </div>
-          <p className="text-xl font-bold">مرحباً 👋 أنا رباب، أساعدك في مراجعة عقودك وتحليل بنودها.</p>
-          <p className="text-base text-muted-foreground mt-1">ارفع ملف العقد واختر نوع المراجعة — مراجعة شاملة، تحليل المخاطر والتوصيات، أو مراجعة نهائية.</p>
+           <p className="text-2xl font-bold text-secondary">{t('مرحباً 👋 أنا رباب، أساعدك في مراجعة عقودك وتحليل بنودها.', 'Hello 👋 I’m Rabab. I help you review your contracts and analyze their clauses.')}</p>
+           <p className="text-lg text-foreground/80 mt-1">{t('ارفع ملف العقد واختر نوع المراجعة — مراجعة شاملة، تحليل المخاطر والتوصيات، أو مراجعة نهائية.', 'Upload a contract and choose a review type—comprehensive review, risk analysis and recommendations, or final review.')}</p>
         </div>
 
         {/* Mode selector */}
@@ -1184,19 +1211,19 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
             <button
               key={m.key}
               onClick={() => { setMode(m.key); setResult(''); setShowOverwriteConfirm(false); }}
-              className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-right transition-all ${
+              className={`flex flex-col gap-2 p-5 rounded-xl border-2 ${lang === 'ar' ? 'text-right' : 'text-left'} transition-all ${
                 mode === m.key
-                  ? 'border-secondary bg-secondary/10'
-                  : 'border-border hover:border-secondary/40'
+                  ? 'border-secondary bg-secondary/10 shadow-[0_0_18px_hsl(191_100%_50%_/_0.08)]'
+                  : 'border-blue-400/70 hover:border-secondary/70 bg-card/40'
               }`}
             >
               <div className={`${mode === m.key ? 'text-secondary' : 'text-muted-foreground'}`}>
                 {m.icon}
               </div>
-              <p className={`text-sm font-bold leading-snug ${mode === m.key ? 'text-secondary' : 'text-foreground'}`}>
+              <p className={`text-base font-bold leading-snug ${mode === m.key ? 'text-secondary' : 'text-foreground'}`}>
                 {m.label}
               </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{m.sublabel}</p>
+              <p className="text-base text-muted-foreground leading-relaxed">{m.sublabel}</p>
             </button>
           ))}
         </div>
@@ -1204,8 +1231,8 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
         {/* Upload zone */}
         <div
           onClick={() => fileRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors ${
-            file ? 'border-secondary bg-secondary/5' : 'border-border hover:border-secondary/50 hover:bg-muted/20'
+          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
+            file ? 'border-secondary bg-secondary/5' : 'border-blue-400/70 hover:border-secondary hover:bg-muted/20'
           }`}
         >
           <input ref={fileRef} type="file" accept=".pdf,.docx,.txt" className="hidden"
@@ -1213,13 +1240,13 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
           <Upload className={`w-9 h-9 mx-auto mb-2 ${file ? 'text-secondary' : 'text-muted-foreground/40'}`} />
           {file ? (
             <div>
-              <p className="font-semibold text-primary text-sm">{file.name}</p>
-              <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024).toFixed(0)} KB</p>
+              <p className="font-semibold text-primary text-base" dir="auto">{file.name}</p>
+              <p className="text-sm text-muted-foreground mt-1">{(file.size / 1024).toFixed(0)} KB</p>
             </div>
           ) : (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">اضغط لرفع ملف العقد</p>
-              <p className="text-xs text-muted-foreground mt-1">PDF · DOCX · TXT — حتى 20MB</p>
+               <p className="text-base font-medium text-secondary">{t('اضغط لرفع ملف العقد', 'Click to upload a contract file')}</p>
+               <p className="text-sm text-foreground/75 mt-1">{t('PDF · DOCX · TXT — حتى 20MB', 'PDF · DOCX · TXT — up to 20MB')}</p>
             </div>
           )}
         </div>
@@ -1233,29 +1260,29 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mt-5 space-y-4 border border-secondary/25 rounded-2xl p-4 bg-secondary/5" dir="rtl">
-                <p className="text-xs font-bold text-secondary flex items-center gap-1.5">
+              <div className="mt-5 space-y-6 border-2 border-secondary/65 rounded-2xl p-5 sm:p-6 bg-secondary/5" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                <p className="text-base font-bold text-secondary flex items-center gap-1.5">
                   <span className="text-base">⚖️</span>
-                  خصّصي نطاق التحليل — الدولة ونوع العقد
+                  {t('خصّصي نطاق التحليل — الدولة ونوع العقد', 'Customize the analysis scope—country and contract type')}
                 </p>
 
                 {/* Country selector */}
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">الدولة / الولاية القضائية</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-base font-semibold text-secondary mb-3">{t('الدولة / الولاية القضائية', 'Country / jurisdiction')}</p>
+                  <div className="flex flex-wrap gap-2.5">
                     {ENFORCE_COUNTRIES.map(c => (
                       <button
                         key={c.code}
                         type="button"
                         onClick={() => setEnforceCountry(c.code)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold border-2 transition-all ${
                           enforceCountry === c.code
                             ? 'border-secondary bg-secondary/20 text-secondary'
-                            : 'border-border hover:border-secondary/40 text-muted-foreground'
+                            : 'border-blue-400/60 hover:border-secondary text-foreground/80'
                         }`}
                       >
                         <span>{c.flag}</span>
-                        <span>{c.name}</span>
+                        <span>{t(c.name.ar, c.name.en)}</span>
                       </button>
                     ))}
                   </div>
@@ -1263,17 +1290,17 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
                 {/* Contract type selector */}
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">نوع العقد</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-base font-semibold text-secondary mb-3">{t('نوع العقد', 'Contract type')}</p>
+                  <div className="flex flex-wrap gap-2.5">
                     {ENFORCE_CONTRACT_TYPES.map(t => (
                       <button
                         key={t.code}
                         type="button"
                         onClick={() => setEnforceContractType(t.code)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
+                        className={`px-3 py-2 rounded-full text-sm font-semibold border-2 transition-all ${
                           enforceContractType === t.code
                             ? 'border-secondary bg-secondary/20 text-secondary'
-                            : 'border-border hover:border-secondary/40 text-muted-foreground'
+                            : 'border-emerald-400/60 hover:border-secondary text-foreground/80'
                         }`}
                       >
                         {t.label}
@@ -1288,40 +1315,46 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
         {file && (
           <Button onClick={handleAnalyze} disabled={loading}
-            className="mt-4 w-full bg-secondary text-primary hover:bg-secondary/90 font-bold h-11">
+            className="mt-4 w-full bg-secondary text-primary hover:bg-secondary/90 font-bold h-12 text-base">
             {loading
               ? <><Loader2 className="w-4 h-4 animate-spin ml-2" />
                   {mode === 'enforce'
-                    ? `جارٍ تحليل المخاطر والتوصيات في ${selectedCountry?.name ?? ''}...`
+                    ? t(
+                      `جارٍ تحليل المخاطر والتوصيات في ${selectedCountry ? selectedCountry.name.ar : ''}...`,
+                      `Analyzing risks and recommendations in ${selectedCountry ? selectedCountry.name.en : ''}...`,
+                    )
                     : selectedMode.loadingMsg}</>
               : <><FileSearch className="w-4 h-4 ml-2" />
                   {mode === 'enforce'
-                    ? `تحليل المخاطر والتوصيات — ${selectedCountry?.flag ?? ''} ${selectedCountry?.name ?? ''}`
+                    ? t(
+                      `تحليل المخاطر والتوصيات — ${selectedCountry?.flag ?? ''} ${selectedCountry ? selectedCountry.name.ar : ''}`,
+                      `Risk Analysis & Recommendations — ${selectedCountry?.flag ?? ''} ${selectedCountry ? selectedCountry.name.en : ''}`,
+                    )
                     : selectedMode.label}</>}
           </Button>
         )}
 
         {/* ── Overwrite confirmation dialog ── */}
         {showOverwriteConfirm && (
-          <div className="mt-4 flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-4" dir="rtl">
+          <div className="mt-4 flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
             <TriangleAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-900">ستُفقد نتيجة المراجعة الحالية — هل تريدين المتابعة؟</p>
-              <p className="text-xs text-amber-700 mt-0.5">إعادة التحليل ستحل محل النتيجة الحالية نهائياً.</p>
+              <p className="text-sm font-semibold text-amber-900">{t('ستُفقد نتيجة المراجعة الحالية — هل تريدين المتابعة؟', 'The current review result will be lost—do you want to continue?')}</p>
+              <p className="text-xs text-amber-700 mt-0.5">{t('إعادة التحليل ستحل محل النتيجة الحالية نهائياً.', 'Running the analysis again will permanently replace the current result.')}</p>
               <div className="flex items-center gap-2 mt-3">
                 <button
                   type="button"
                   onClick={handleAnalyze}
                   className="text-xs px-3.5 py-1.5 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors"
                 >
-                  متابعة
+                  {t('متابعة', 'Continue')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowOverwriteConfirm(false)}
                   className="text-xs px-3.5 py-1.5 border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-100 transition-colors"
                 >
-                  إلغاء
+                  {t('إلغاء', 'Cancel')}
                 </button>
               </div>
             </div>
@@ -1332,7 +1365,7 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
           <div className="mt-6 rounded-2xl border border-secondary/30 bg-card p-10 flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-secondary" />
             <p className="text-muted-foreground text-sm text-center">{selectedMode.loadingMsg}</p>
-            <p className="text-xs text-muted-foreground">قد يستغرق حتى 60 ثانية للعقود الطويلة</p>
+               <p className="text-sm text-muted-foreground">{t('قد يستغرق حتى 60 ثانية للعقود الطويلة', 'This may take up to 60 seconds for long contracts.')}</p>
           </div>
         )}
 
@@ -1344,25 +1377,27 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
               {usedLiveSearch && (
                 <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  مصادر حية
+                   {t('مصادر حية', 'Live sources')}
                 </span>
               )}
               <div className="mr-auto flex gap-2">
                 <Button size="sm" variant="outline" className="gap-1.5"
                   onClick={() => { copyText(result); toast({ title: 'تم النسخ ✓' }); }}>
-                  <Copy className="w-3.5 h-3.5" />نسخ
+                   <Copy className="w-3.5 h-3.5" />{t('نسخ', 'Copy')}
                 </Button>
                 <Button size="sm" variant="outline" className="gap-1.5"
                   onClick={() => downloadTxt(result, `${selectedMode.label} — ${file?.name ?? 'عقد'}.txt`)}>
-                  <Download className="w-3.5 h-3.5" />تحميل
+                   <Download className="w-3.5 h-3.5" />{t('تحميل', 'Download')}
                 </Button>
               </div>
             </div>
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <LegalMarkdown className="p-6" maxHeight="600px">{result}</LegalMarkdown>
+            <div className="bg-card border border-secondary/40 rounded-2xl overflow-hidden shadow-sm">
+              <div dir="auto">
+                <LegalMarkdown className="p-6" maxHeight="600px">{result}</LegalMarkdown>
+              </div>
               <div className="px-4 py-2.5 bg-amber-950/30 border-t border-amber-900/30 flex gap-2 items-start">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-300/80">للاسترشاد فقط — يُنصح بمراجعة محامٍ مرخّص والتحقق من المصدر الرسمي.</p>
+                 <p className="text-xs text-amber-300/80">{t('للاسترشاد فقط — يُنصح بمراجعة محامٍ مرخّص والتحقق من المصدر الرسمي.', 'For guidance only—please consult a licensed lawyer and verify the official source.')}</p>
               </div>
             </div>
 
@@ -1385,6 +1420,7 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
 // ─── Tab 3: Extract Data ──────────────────────────────────────────────────────
 function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
+  const { lang, t } = useLang();
   const [file, setFile] = useState<File | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [data, setData] = useState<any>(null);
@@ -1417,7 +1453,7 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
       setFilename(json.filename);
       setUsedLiveSearch(json.usedLiveSearch ?? false);
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'فشل استخراج البيانات', description: err.message });
+      toast({ variant: 'destructive', title: t('فشل استخراج البيانات', 'Data extraction failed'), description: err.message });
     } finally {
       setExtracting(false);
     }
@@ -1426,9 +1462,9 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
   const DataRow = ({ label, value }: { label: string; value: any }) => {
     if (!value || (Array.isArray(value) && value.length === 0)) return null;
     return (
-      <div className="grid grid-cols-3 gap-4 py-3 border-b border-border last:border-0">
-        <span className="text-xs font-bold text-muted-foreground col-span-1">{label}</span>
-        <div className="col-span-2 text-sm text-foreground">
+      <div className="grid grid-cols-1 gap-2 py-3 border-b border-secondary/20 last:border-0 sm:grid-cols-3 sm:gap-4">
+        <span className="text-sm font-bold text-muted-foreground col-span-1">{label}</span>
+        <div className="min-w-0 break-words sm:col-span-2 text-base text-foreground" dir="auto">
           {Array.isArray(value) ? (
             <ul className="space-y-1">{value.map((v: string, i: number) => <li key={i} className="flex gap-2"><ChevronRight className="w-4 h-4 text-secondary shrink-0 mt-0.5" />{v}</li>)}</ul>
           ) : (
@@ -1441,23 +1477,23 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="container mx-auto px-4 py-10 max-w-7xl">
+      className="w-full px-3 sm:px-5 lg:px-7 py-10">
       <GateWrap hasAccess={hasAccess}>
 
         {/* ── Welcome header ── */}
-        <div className="text-center mb-6 pb-5 border-b border-border/40" dir="rtl">
+        <div className="text-center mb-6 pb-5 border-b border-secondary/20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-9 h-9 rounded-full bg-secondary/20 border-2 border-secondary/40 flex items-center justify-center text-lg">⚖️</div>
-            <span className="text-base font-bold text-secondary">رباب · محاميتك الرقمية</span>
+            <span className="text-base font-bold text-secondary">{t('رباب · محاميتك الرقمية', 'Rabab · Your Digital Lawyer')}</span>
           </div>
-          <p className="text-xl font-bold">مرحباً 👋 أنا رباب، أساعدك في استخراج البيانات المنظّمة من عقودك تلقائياً.</p>
-          <p className="text-base text-muted-foreground mt-1">ارفع ملف العقد لاستخراج الأطراف، التواريخ، القيمة، الالتزامات، وبنود الغرامات.</p>
+          <p className="text-2xl font-bold text-primary-foreground">{t('مرحباً 👋 أنا رباب، أساعدك في استخراج البيانات المنظّمة من عقودك تلقائياً.', 'Hello 👋 I’m Rabab. I help you automatically extract structured data from your contracts.')}</p>
+          <p className="text-lg text-muted-foreground mt-1">{t('ارفع ملف العقد لاستخراج الأطراف، التواريخ، القيمة، الالتزامات، وبنود الغرامات.', 'Upload a contract to extract parties, dates, value, obligations, and penalty clauses.')}</p>
         </div>
 
         <div
           onClick={() => fileRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
-            file ? 'border-secondary bg-secondary/5' : 'border-border hover:border-secondary/50 hover:bg-muted/20'
+          className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors ${
+            file ? 'border-secondary bg-secondary/5 shadow-sm shadow-secondary/15' : 'border-blue-400/65 hover:border-secondary hover:bg-secondary/5 hover:shadow-sm hover:shadow-secondary/10'
           }`}
         >
           <input ref={fileRef} type="file" accept=".pdf,.docx,.txt" className="hidden"
@@ -1465,45 +1501,45 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
           <Database className={`w-10 h-10 mx-auto mb-3 ${file ? 'text-secondary' : 'text-muted-foreground/40'}`} />
           {file ? (
             <div>
-              <p className="font-semibold text-primary">{file.name}</p>
-              <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024).toFixed(0)} KB</p>
+              <p className="font-semibold text-primary text-base" dir="auto">{file.name}</p>
+              <p className="text-sm text-muted-foreground mt-1">{(file.size / 1024).toFixed(0)} KB</p>
             </div>
           ) : (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">اضغط لرفع ملف العقد</p>
-              <p className="text-xs text-muted-foreground mt-1">PDF · DOCX · TXT — حتى 20MB</p>
+              <p className="text-base font-medium text-muted-foreground">{t('اضغط لرفع ملف العقد', 'Click to upload a contract file')}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t('PDF · DOCX · TXT — حتى 20MB', 'PDF · DOCX · TXT — up to 20MB')}</p>
             </div>
           )}
         </div>
 
         {file && (
           <Button onClick={handleExtract} disabled={extracting}
-            className="mt-4 w-full bg-secondary text-primary hover:bg-secondary/90 font-bold h-11">
-            {extracting ? <><Loader2 className="w-4 h-4 animate-spin ml-2" />جارٍ الاستخراج...</> : <><Database className="w-4 h-4 ml-2" />استخرج البيانات</>}
+            className="mt-4 w-full bg-secondary text-primary hover:bg-secondary/90 font-bold h-12 text-base">
+            {extracting ? <><Loader2 className="w-4 h-4 animate-spin ml-2" />{t('جارٍ الاستخراج...', 'Extracting...')}</> : <><Database className="w-4 h-4 ml-2" />{t('استخرج البيانات', 'Extract data')}</>}
           </Button>
         )}
 
         {/* ── Overwrite confirmation dialog ── */}
         {showOverwriteConfirm && (
-          <div className="mt-4 flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-4" dir="rtl">
+          <div className="mt-4 flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
             <TriangleAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-900">ستُفقد البيانات المستخرجة الحالية — هل تريدين المتابعة؟</p>
-              <p className="text-xs text-amber-700 mt-0.5">إعادة الاستخراج ستحل محل النتائج الحالية نهائياً.</p>
+              <p className="text-sm font-semibold text-amber-900">{t('ستُفقد البيانات المستخرجة الحالية — هل تريدين المتابعة؟', 'The current extracted data will be lost—do you want to continue?')}</p>
+              <p className="text-xs text-amber-700 mt-0.5">{t('إعادة الاستخراج ستحل محل النتائج الحالية نهائياً.', 'Running extraction again will permanently replace the current results.')}</p>
               <div className="flex items-center gap-2 mt-3">
                 <button
                   type="button"
                   onClick={handleExtract}
                   className="text-xs px-3.5 py-1.5 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors"
                 >
-                  متابعة
+                  {t('متابعة', 'Continue')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowOverwriteConfirm(false)}
                   className="text-xs px-3.5 py-1.5 border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-100 transition-colors"
                 >
-                  إلغاء
+                  {t('إلغاء', 'Cancel')}
                 </button>
               </div>
             </div>
@@ -1513,7 +1549,7 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
         {extracting && (
           <div className="mt-6 rounded-2xl border border-secondary/30 bg-card p-10 flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-secondary" />
-            <p className="text-muted-foreground text-sm">جارٍ قراءة العقد واستخراج البيانات المنظّمة...</p>
+            <p className="text-muted-foreground text-sm">{t('جارٍ قراءة العقد واستخراج البيانات المنظّمة...', 'Reading the contract and extracting structured data...')}</p>
           </div>
         )}
 
@@ -1521,42 +1557,42 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
               <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-              <span className="font-semibold text-primary text-sm">تم استخراج البيانات من: {filename}</span>
+              <span className="font-semibold text-primary text-sm">{t('تم استخراج البيانات من:', 'Data extracted from:')} <bdi>{filename}</bdi></span>
               {usedLiveSearch && (
                 <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  مصادر حية
+                  {t('مصادر حية', 'Live sources')}
                 </span>
               )}
               <Button size="sm" variant="outline" className="mr-auto gap-1.5"
-                onClick={() => { copyText(JSON.stringify(data, null, 2)); toast({ title: 'تم نسخ البيانات JSON ✓' }); }}>
-                <Copy className="w-3.5 h-3.5" />نسخ JSON
+                onClick={() => { copyText(JSON.stringify(data, null, 2)); toast({ title: t('تم نسخ البيانات JSON ✓', 'JSON data copied ✓') }); }}>
+                <Copy className="w-3.5 h-3.5" />{t('نسخ JSON', 'Copy JSON')}
               </Button>
             </div>
 
             {/* Summary card */}
             {data.summary && (
               <div className="bg-secondary/10 border border-secondary/30 rounded-xl p-4">
-                <p className="text-xs font-bold text-secondary mb-1">ملخص</p>
-                <p className="text-sm text-foreground leading-relaxed">{data.summary}</p>
+                <p className="text-xs font-bold text-secondary mb-1">{t('ملخص', 'Summary')}</p>
+                <p className="text-sm text-foreground leading-relaxed" dir="auto">{data.summary}</p>
               </div>
             )}
 
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="p-5 divide-y divide-border">
-                <DataRow label="نوع العقد"       value={data.contractType} />
-                <DataRow label="الأطراف"         value={data.parties?.map((p: any) => `${p.name} — ${p.role}`)} />
-                <DataRow label="تاريخ النفاذ"    value={data.effectiveDate} />
-                <DataRow label="تاريخ الانتهاء"  value={data.expiryDate} />
-                <DataRow label="القيمة الإجمالية" value={data.totalValue ? `${data.totalValue} ${data.currency ?? ''}` : null} />
-                <DataRow label="الالتزامات الرئيسية" value={data.keyObligations} />
-                <DataRow label="بنود الغرامات"   value={data.penaltyClauses} />
-                <DataRow label="شروط التجديد"    value={data.renewalTerms} />
-                <DataRow label="القانون الحاكم"  value={data.governingLaw} />
+            <div className="bg-card border border-secondary/40 rounded-2xl overflow-hidden shadow-sm">
+              <div className="p-5 divide-y divide-secondary/20">
+                <DataRow label={t('نوع العقد', 'Contract type')} value={data.contractType} />
+                <DataRow label={t('الأطراف', 'Parties')} value={data.parties?.map((p: any) => `${p.name} — ${p.role}`)} />
+                <DataRow label={t('تاريخ النفاذ', 'Effective date')} value={data.effectiveDate} />
+                <DataRow label={t('تاريخ الانتهاء', 'Expiry date')} value={data.expiryDate} />
+                <DataRow label={t('القيمة الإجمالية', 'Total value')} value={data.totalValue ? `${data.totalValue} ${data.currency ?? ''}` : null} />
+                <DataRow label={t('الالتزامات الرئيسية', 'Key obligations')} value={data.keyObligations} />
+                <DataRow label={t('بنود الغرامات', 'Penalty clauses')} value={data.penaltyClauses} />
+                <DataRow label={t('شروط التجديد', 'Renewal terms')} value={data.renewalTerms} />
+                <DataRow label={t('القانون الحاكم', 'Governing law')} value={data.governingLaw} />
               </div>
               <div className="px-4 py-2.5 bg-amber-950/30 border-t border-amber-900/30 flex gap-2 items-start">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-300/80">للاسترشاد فقط — يُنصح بمراجعة محامٍ مرخّص والتحقق من المصدر الرسمي.</p>
+                <p className="text-xs text-amber-300/80">{t('للاسترشاد فقط — يُنصح بمراجعة محامٍ مرخّص والتحقق من المصدر الرسمي.', 'For guidance only—please consult a licensed lawyer and verify the official source.')}</p>
               </div>
             </div>
 

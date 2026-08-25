@@ -10,6 +10,7 @@ import {
   Mail, CheckCircle2, XCircle, Loader2, Save, Send, Eye, EyeOff, Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/hooks/use-language';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -27,6 +28,7 @@ interface TestResult {
 
 export default function AdminEmailSettings() {
   const { toast } = useToast();
+  const { lang, t } = useLang();
 
   const [settings, setSettings] = useState<EmailSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,12 +49,12 @@ export default function AdminEmailSettings() {
         const res = await fetch(`${API_BASE}/api/admin/email-settings`, {
           credentials: 'include',
         });
-        if (!res.ok) throw new Error('فشل جلب الإعدادات');
+        if (!res.ok) throw new Error(t('فشل جلب الإعدادات', 'Failed to load settings'));
         const data: EmailSettings = await res.json();
         setSettings(data);
         setFromAddress(data.fromAddress);
       } catch (err: any) {
-        toast({ variant: 'destructive', title: 'خطأ', description: err.message });
+        toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: err.message });
       } finally {
         setLoading(false);
       }
@@ -63,7 +65,7 @@ export default function AdminEmailSettings() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fromAddress.trim()) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'عنوان المُرسِل مطلوب' });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: t('عنوان المُرسِل مطلوب', 'Sender address is required') });
       return;
     }
 
@@ -79,14 +81,14 @@ export default function AdminEmailSettings() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'فشل الحفظ');
+      if (!res.ok) throw new Error(data.error ?? t('فشل الحفظ', 'Save failed'));
 
       setSettings(data.settings);
       setApiKey(''); // clear plaintext key from memory
       setTestResult(null);
-      toast({ title: '✅ تم الحفظ', description: 'تم تحديث إعدادات البريد بنجاح' });
+      toast({ title: `✅ ${t('تم الحفظ', 'Saved')}`, description: t('تم تحديث إعدادات البريد بنجاح', 'Email settings updated successfully') });
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'خطأ', description: err.message });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: err.message });
     } finally {
       setSaving(false);
     }
@@ -95,7 +97,7 @@ export default function AdminEmailSettings() {
   // ── Test email ─────────────────────────────────────────────────────────────
   const handleTest = async () => {
     if (!testEmail.trim()) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'أدخلي عنوان بريدك الإلكتروني' });
+      toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: t('أدخلي عنوان بريدك الإلكتروني', 'Enter your email address') });
       return;
     }
 
@@ -111,7 +113,7 @@ export default function AdminEmailSettings() {
       const data = await res.json();
       setTestResult({
         success: res.ok && data.success,
-        message: data.message ?? (res.ok ? 'تم إرسال البريد التجريبي بنجاح' : 'فشل الإرسال'),
+        message: data.message ?? (res.ok ? t('تم إرسال البريد التجريبي بنجاح', 'Test email sent successfully') : t('فشل الإرسال', 'Sending failed')),
       });
     } catch (err: any) {
       setTestResult({ success: false, message: err.message });
@@ -122,22 +124,22 @@ export default function AdminEmailSettings() {
 
   // ── Source badge ───────────────────────────────────────────────────────────
   const sourceBadge = (src: EmailSettings['source']) => {
-    if (src === 'db') return <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">من قاعدة البيانات</span>;
-    if (src === 'env') return <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">من المتغيرات البيئية</span>;
-    return <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">القيمة الافتراضية</span>;
+    if (src === 'db') return <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{t('من قاعدة البيانات', 'From database')}</span>;
+    if (src === 'env') return <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{t('من المتغيرات البيئية', 'From environment')}</span>;
+    return <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{t('القيمة الافتراضية', 'Default value')}</span>;
   };
 
   return (
     <AdminSidebar>
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto" dir="rtl">
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         {/* Page header */}
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
             <Mail className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">إعدادات البريد الإلكتروني</h1>
-            <p className="text-sm text-muted-foreground">ضبط Resend API لإرسال الفواتير والإشعارات</p>
+            <h1 className="text-2xl font-bold text-foreground">{t('إعدادات البريد الإلكتروني', 'Email settings')}</h1>
+            <p className="text-sm text-muted-foreground">{t('ضبط Resend API لإرسال الفواتير والإشعارات', 'Configure Resend API for invoices and notifications')}</p>
           </div>
         </div>
 
@@ -161,17 +163,17 @@ export default function AdminEmailSettings() {
                   : <XCircle className="w-6 h-6 text-red-500 mt-0.5 shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <p className={cn('font-semibold', settings.configured ? 'text-green-800' : 'text-red-700')}>
-                    {settings.configured ? 'البريد مفعّل' : 'البريد غير مفعّل'}
+                    {settings.configured ? t('البريد مفعّل', 'Email enabled') : t('البريد غير مفعّل', 'Email disabled')}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {settings.configured
-                      ? `مفتاح API: ${settings.maskedApiKey ?? '••••••••'}`
-                      : 'لم يُضبط مفتاح Resend API بعد — الفواتير والإشعارات لن تُرسَل.'}
+                      ? `${t('مفتاح API', 'API key')}: ${settings.maskedApiKey ?? '••••••••'}`
+                      : t('لم يُضبط مفتاح Resend API بعد — الفواتير والإشعارات لن تُرسَل.', 'Resend API key is not configured; invoices and notifications will not be sent.')}
                   </p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="text-xs text-muted-foreground">المصدر:</span>
+                     <span className="text-xs text-muted-foreground">{t('المصدر:', 'Source:')}</span>
                     {sourceBadge(settings.source)}
-                    <span className="text-xs text-muted-foreground mr-2">المُرسِل:</span>
+                     <span className="text-xs text-muted-foreground mr-2">{t('المُرسِل:', 'Sender:')}</span>
                     <span className="text-xs font-mono text-foreground">{settings.fromAddress}</span>
                   </div>
                 </div>
@@ -192,13 +194,13 @@ export default function AdminEmailSettings() {
 
             {/* Settings form */}
             <form onSubmit={handleSave} className="bg-card rounded-xl border border-border p-6 space-y-5">
-              <h2 className="text-base font-semibold text-foreground">تحديث الإعدادات</h2>
+              <h2 className="text-base font-semibold text-foreground">{t('تحديث الإعدادات', 'Update settings')}</h2>
 
               {/* API Key */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  مفتاح Resend API
-                  <span className="text-muted-foreground font-normal mr-1">(اتركيه فارغاً للإبقاء على الحالي)</span>
+                  {t('مفتاح Resend API', 'Resend API key')}
+                  <span className="text-muted-foreground font-normal mr-1">{t('(اتركيه فارغاً للإبقاء على الحالي)', '(leave blank to keep current)')}</span>
                 </label>
                 <div className="relative">
                   <input
@@ -223,7 +225,7 @@ export default function AdminEmailSettings() {
               {/* From address */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  عنوان المُرسِل (From)
+                  {t('عنوان المُرسِل (From)', 'Sender address (From)')}
                 </label>
                 <input
                   type="email"
@@ -246,16 +248,16 @@ export default function AdminEmailSettings() {
                   className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {saving ? 'جارٍ الحفظ…' : 'حفظ الإعدادات'}
+                  {saving ? t('جارٍ الحفظ…', 'Saving…') : t('حفظ الإعدادات', 'Save settings')}
                 </button>
               </div>
             </form>
 
             {/* Test send */}
             <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-              <h2 className="text-base font-semibold text-foreground">اختبار الإرسال</h2>
+              <h2 className="text-base font-semibold text-foreground">{t('اختبار الإرسال', 'Test sending')}</h2>
               <p className="text-sm text-muted-foreground">
-                أرسلي بريداً تجريبياً للتحقق من أن الإعداد يعمل بشكل صحيح.
+                {t('أرسلي بريداً تجريبياً للتحقق من أن الإعداد يعمل بشكل صحيح.', 'Send a test email to verify the configuration works correctly.')}
               </p>
 
               <div className="flex gap-3">
@@ -271,11 +273,11 @@ export default function AdminEmailSettings() {
                   type="button"
                   onClick={handleTest}
                   disabled={testing || !settings?.configured}
-                  title={!settings?.configured ? 'يجب ضبط مفتاح API أولاً' : undefined}
+                   title={!settings?.configured ? t('يجب ضبط مفتاح API أولاً', 'Configure an API key first') : undefined}
                   className="flex items-center gap-2 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
                 >
                   {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {testing ? 'جارٍ الإرسال…' : 'إرسال تجريبي'}
+                   {testing ? t('جارٍ الإرسال…', 'Sending…') : t('إرسال تجريبي', 'Send test')}
                 </button>
               </div>
 

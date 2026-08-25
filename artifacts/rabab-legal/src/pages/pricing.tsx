@@ -7,6 +7,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton } fro
 import { Check, Info, Building2, Star, Users, Zap, FileText, Phone, Shield, Search } from 'lucide-react';
 import { useLang } from '@/hooks/use-language';
 import { cn } from '@/lib/utils';
+import { translateArabicText } from '@/lib/translations';
 
 const HARDCODED_PACKAGES: Package[] = [
   {
@@ -68,17 +69,17 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 const COLOR_MAP: Record<string, string> = {
-  free: 'from-green-500 to-green-600',
-  questions: 'from-blue-500 to-blue-600',
-  monthly: 'from-secondary to-secondary/70',
-  business: 'from-blue-700 to-blue-800',
+  free: 'from-emerald-400 to-emerald-600',
+  questions: 'from-secondary to-secondary/70',
+  monthly: 'from-blue-500 to-blue-700',
+  business: 'from-accent to-purple-700',
 };
 
 const BORDER_MAP: Record<string, string> = {
-  free:      'border-2 border-green-500 shadow-[0_0_0_1px_rgba(34,197,94,0.4),0_0_24px_rgba(34,197,94,0.25)]',
-  questions: 'border-2 border-blue-400 shadow-[0_0_0_1px_rgba(96,165,250,0.4),0_0_24px_rgba(96,165,250,0.25)]',
-  monthly:   'border-2 border-secondary shadow-[0_0_0_1px_rgba(234,179,8,0.4),0_0_24px_rgba(234,179,8,0.25)]',
-  business:  'border-2 border-blue-700 shadow-[0_0_0_1px_rgba(29,78,216,0.4),0_0_24px_rgba(29,78,216,0.25)]',
+  free:      'border-2 border-emerald-400/80 shadow-[0_0_0_1px_rgba(52,211,153,0.35),0_0_24px_rgba(52,211,153,0.18)]',
+  questions: 'border-2 border-secondary/80 shadow-[0_0_0_1px_hsl(191_100%_50%_/_0.35),0_0_24px_hsl(191_100%_50%_/_0.16)]',
+  monthly:   'border-2 border-blue-400/80 shadow-[0_0_0_1px_rgba(96,165,250,0.35),0_0_24px_rgba(96,165,250,0.16)]',
+  business:  'border-2 border-accent/80 shadow-[0_0_0_1px_hsl(263_87%_65%_/_0.35),0_0_24px_hsl(263_87%_65%_/_0.16)]',
 };
 
 // ── Comparison Table features ──────────────────────────────────────────────────
@@ -97,7 +98,7 @@ const COMPARE_FEATURES = [
 ];
 
 function FeatureCell({ val }: { val: boolean | string }) {
-  if (val === false) return <span className="text-muted-foreground/30 text-lg">—</span>;
+  if (val === false) return <span className="text-white/40 text-lg">—</span>;
   if (val === true) return <Check className="w-5 h-5 text-green-600 mx-auto" />;
   return <span className="text-xs font-medium text-foreground">{val}</span>;
 }
@@ -169,9 +170,11 @@ export default function Pricing() {
                       {ICON_MAP[pkg.type]}
                     </div>
                     <CardTitle className="text-xl font-bold text-white mb-1">
-                      {lang === 'ar' ? pkg.nameAr : (pkg.nameEn || pkg.nameAr)}
+                      {lang === 'ar' ? pkg.nameAr : (pkg.nameEn || translateArabicText(pkg.nameAr))}
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground h-8 leading-relaxed">{pkg.descriptionAr}</p>
+                    <p className="text-sm text-white h-8 leading-relaxed">
+                      {lang === 'ar' ? pkg.descriptionAr : translateArabicText(pkg.descriptionAr ?? '')}
+                    </p>
                   </CardHeader>
 
                   <CardContent className="flex-1 flex flex-col">
@@ -181,7 +184,7 @@ export default function Pricing() {
                       ) : (
                         <>
                           <span className="text-5xl font-bold" style={{color:'hsl(47 100% 48%)'}}>{pkg.price}</span>
-                          <span className="text-muted-foreground mr-1 ml-1">{t('ريال', 'SAR')}</span>
+                          <span className="text-white mr-1 ml-1">{t('ريال', 'SAR')}</span>
                           
                         </>
                       )}
@@ -191,7 +194,7 @@ export default function Pricing() {
                       {pkg.features.map((feature, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <Check className="w-3.5 h-3.5 text-green-600 shrink-0" />
-                          <span className="text-xs text-foreground/80">{feature}</span>
+                          <span className="text-sm text-white">{lang === 'ar' ? feature : translateArabicText(feature)}</span>
                         </li>
                       ))}
                     </ul>
@@ -221,20 +224,20 @@ export default function Pricing() {
 
           {/* Comparison Table */}
           {showCompare && (
-            <div className="mt-8 max-w-5xl mx-auto overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
+            <div className="mt-8 max-w-5xl mx-auto overflow-x-auto rounded-2xl border-2 border-secondary/55 bg-card p-2 shadow-sm shadow-secondary/10">
+              <table className="w-full min-w-[680px] text-sm border-collapse">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
                     <th className="px-4 py-3 text-right font-bold">{t('الميزة', 'Feature')}</th>
                     {['مجاني', 'استشارات', 'شهري', 'أعمال'].map(n => (
-                      <th key={n} className="px-4 py-3 text-center font-bold">{n}</th>
+                      <th key={n} className="px-4 py-3 text-center font-bold">{lang === 'ar' ? n : translateArabicText(n)}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARE_FEATURES.map((row, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
-                      <td className="px-4 py-2.5 text-foreground/80">{row.feature}</td>
+                      <td className="px-4 py-2.5 text-white">{lang === 'ar' ? row.feature : translateArabicText(row.feature)}</td>
                       <td className="px-4 py-2.5 text-center"><FeatureCell val={row.free} /></td>
                       <td className="px-4 py-2.5 text-center"><FeatureCell val={row.q} /></td>
                       <td className="px-4 py-2.5 text-center"><FeatureCell val={row.monthly} /></td>
@@ -248,15 +251,15 @@ export default function Pricing() {
 
           {/* Enterprise CTA */}
           <div className="mt-12 max-w-4xl mx-auto">
-            <div className="bg-gradient-to-l from-primary/5 to-secondary/5 border border-primary/20 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6">
-              <div className="w-16 h-16 bg-secondary/20 border border-secondary/40 rounded-2xl flex items-center justify-center text-secondary shrink-0">
+            <div className="bg-gradient-to-l from-accent/10 via-primary/10 to-secondary/10 border-2 border-accent/60 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_0_1px_hsl(263_87%_65%_/_0.2),0_0_28px_hsl(263_87%_65%_/_0.12)]">
+              <div className="w-16 h-16 bg-accent/15 border border-accent/50 rounded-2xl flex items-center justify-center text-accent shrink-0">
                 <Building2 className="w-8 h-8" />
               </div>
               <div className="flex-1 text-center md:text-right">
                 <h3 className="text-xl font-bold text-foreground mb-2">
                   {t('باقة المؤسسات أو الشركات', 'Enterprise Plan')}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-base text-white leading-relaxed">
                   {t(
                     'حلول قانونية مخصصة للمؤسسات الكبرى، ودعم مباشر في أوقات العمل الرسمية.',
                     'Custom legal solutions for large enterprises: team management, multiple accounts, dedicated API, SLA, and 24/7 support.'

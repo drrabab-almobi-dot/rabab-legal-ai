@@ -82,7 +82,7 @@ export function NotificationBell({ lang = 'ar' }: { lang?: 'ar' | 'en' }) {
 
       {open && (
         <div className={cn(
-          "absolute top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden",
+          "absolute top-full mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-card border-2 border-secondary/50 rounded-xl shadow-xl z-50 overflow-hidden",
           lang === 'ar' ? 'right-0' : 'left-0'
         )} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">

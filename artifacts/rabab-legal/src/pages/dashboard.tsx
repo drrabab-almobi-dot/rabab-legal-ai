@@ -12,9 +12,11 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton } fro
 import { MessageSquare, FileText, CheckCircle2, Clock, Plus, ExternalLink, AlertCircle, RefreshCw, CalendarClock, Download, BarChart2, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { arSA } from 'date-fns/locale';
+import { useLang } from '@/hooks/use-language';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { lang, t } = useLang();
   
   const { data: subscription, isLoading: subLoading } = useGetMySubscription({
     query: { queryKey: getGetMySubscriptionQueryKey(), retry: false }
@@ -26,23 +28,23 @@ export default function Dashboard() {
   const getTaskTypeBadge = (taskType?: string | null) => {
     if (!taskType) return null;
     if (taskType === 'judicial') {
-      return <Badge variant="secondary" className="gap-1 text-xs">🏛️ قضائية</Badge>;
+      return <Badge variant="secondary" className="gap-1 text-xs">🏛️ {t('قضائية', 'Judicial')}</Badge>;
     }
-    return <Badge className="gap-1 text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15">⚖️ قانونية</Badge>;
+    return <Badge className="gap-1 text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15">⚖️ {t('قانونية', 'Legal')}</Badge>;
   };
 
   const getStatusBadge = (status: string) => {
     switch(status) {
-      case 'answered': return <Badge className="bg-green-500 hover:bg-green-600">مجاب عليها</Badge>;
-      case 'pending': return <Badge variant="secondary" className="bg-amber-500 text-white hover:bg-amber-600">قيد المراجعة</Badge>;
-      case 'closed': return <Badge variant="outline">مغلقة</Badge>;
+      case 'answered': return <Badge className="bg-green-500 hover:bg-green-600">{t('مجاب عليها', 'Answered')}</Badge>;
+      case 'pending': return <Badge variant="secondary" className="bg-amber-500 text-white hover:bg-amber-600">{t('قيد المراجعة', 'Under review')}</Badge>;
+      case 'closed': return <Badge variant="outline">{t('مغلقة', 'Closed')}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const formatDate = (dateStr: string) => {
     try {
-      return format(new Date(dateStr), 'dd MMMM yyyy', { locale: arSA });
+      return format(new Date(dateStr), 'dd MMMM yyyy', lang === 'ar' ? { locale: arSA } : undefined);
     } catch {
       return dateStr;
     }
@@ -66,29 +68,29 @@ export default function Dashboard() {
   const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining >= 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/20">
+    <div className="min-h-screen flex flex-col bg-muted/20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-primary">لوحة التحكم</h1>
-            <p className="text-muted-foreground mt-1">مرحباً {user?.name}، إليك نظرة عامة على حسابك</p>
+            <h1 className="text-2xl font-bold text-primary">{t('لوحة التحكم', 'Dashboard')}</h1>
+            <p className="text-muted-foreground mt-1">{t(`مرحباً ${user?.name}، إليك نظرة عامة على حسابك`, `Welcome ${user?.name}, here is an overview of your account`)}</p>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/usage-log">
               <Button variant="outline" className="gap-2 text-muted-foreground">
-                <BarChart2 className="w-4 h-4" /> سجل الاستهلاك
+                <BarChart2 className="w-4 h-4" /> {t('سجل الاستهلاك', 'Usage log')}
               </Button>
             </Link>
             <Link href="/organization">
               <Button variant="outline" className="gap-2 text-muted-foreground">
-                <Building2 className="w-4 h-4" /> المنشأة
+                <Building2 className="w-4 h-4" /> {t('المنشأة', 'Organization')}
               </Button>
             </Link>
             <Link href="/consultation">
               <Button className="gap-2 shadow-md">
-                <Plus className="w-4 h-4" /> ابدأ استشارة جديدة
+                <Plus className="w-4 h-4" /> {t('ابدأ استشارة جديدة', 'Start a new consultation')}
               </Button>
             </Link>
           </div>
@@ -97,12 +99,12 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Subscription & Quick Actions */}
           <div className="space-y-6">
-            <Card className="border-border/50 shadow-sm overflow-hidden">
+            <Card className="border-secondary/40 shadow-sm shadow-secondary/10 overflow-hidden">
               <div className="h-2 bg-secondary w-full"></div>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
                   <CheckCircle2 className="w-5 h-5 text-secondary" /> 
-                  الباقة الحالية
+                  {t('الباقة الحالية', 'Current plan')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -116,10 +118,10 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     {/* Package name + billing cycle badge */}
                     <div className="flex flex-col items-center gap-1.5">
-                      <h3 className="text-lg font-bold text-center">{subscription.package?.nameAr || 'باقة غير معروفة'}</h3>
+                       <h3 className="text-lg font-bold text-center">{subscription.package?.nameAr || t('باقة غير معروفة', 'Unknown plan')}</h3>
                       {subscription.package?.billingPeriod && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary/15 text-secondary border border-secondary/30">
-                          {subscription.package.billingPeriod === 'annual' ? 'سنوي' : 'شهري'}
+                           {subscription.package.billingPeriod === 'annual' ? t('سنوي', 'Annual') : t('شهري', 'Monthly')}
                         </span>
                       )}
                     </div>
@@ -130,10 +132,10 @@ export default function Dashboard() {
                         <CalendarClock className="w-4 h-4 shrink-0 text-amber-600" />
                         <span>
                           {daysRemaining === 0
-                            ? 'ينتهي اشتراكك اليوم!'
+                             ? t('ينتهي اشتراكك اليوم!', 'Your subscription ends today!')
                             : daysRemaining === 1
-                            ? 'ينتهي اشتراكك غداً!'
-                            : `ينتهي اشتراكك خلال ${daysRemaining} أيام`}
+                             ? t('ينتهي اشتراكك غداً!', 'Your subscription ends tomorrow!')
+                             : t(`ينتهي اشتراكك خلال ${daysRemaining} أيام`, `Your subscription ends in ${daysRemaining} days`)}
                         </span>
                       </div>
                     )}
@@ -141,7 +143,7 @@ export default function Dashboard() {
                     {/* Consultations progress bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">الاستشارات المستخدمة</span>
+                         <span className="text-muted-foreground">{t('الاستشارات المستخدمة', 'Consultations used')}</span>
                         <span className="font-medium">
                           {isUnlimited ? (
                             <span className="flex items-center gap-1">{used} <span className="text-muted-foreground">/ ∞</span></span>
@@ -160,18 +162,18 @@ export default function Dashboard() {
                         />
                       </div>
                       {!isUnlimited && (
-                        <p className="text-xs text-muted-foreground text-left">{remaining} استشارة متبقية</p>
+                         <p className="text-xs text-muted-foreground text-start">{t(`${remaining} استشارة متبقية`, `${remaining} consultations remaining`)}</p>
                       )}
                       {/* Low-quota warning banner — shown when ≤20% remain */}
                       {!isUnlimited && total > 0 && progressPercent >= 80 && (
                         <div className="flex items-start gap-2 p-3 rounded-lg bg-orange-50 border border-orange-200 text-orange-800 text-sm">
                           <AlertCircle className="w-4 h-4 shrink-0 text-orange-500 mt-0.5" />
                           <span>
-                            تبقّت لكِ <strong>{remaining}</strong> استشارة فقط.{' '}
+                             {t('تبقّت لكِ ', 'Only ')}<strong>{remaining}</strong>{t(' استشارة فقط. ', ' consultations remain. ')}
                             <Link href="/pricing" className="underline font-semibold hover:text-orange-900">
-                              جدّدي باقتك
+                               {t('جدّدي باقتك', 'Renew your plan')}
                             </Link>{' '}
-                            قبل النفاد.
+                             {t(' قبل النفاد.', ' before they run out.')}
                           </span>
                         </div>
                       )}
@@ -180,19 +182,19 @@ export default function Dashboard() {
                     {/* Dates */}
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                       <div className="text-center p-2 rounded-lg bg-muted/40">
-                        <p className="text-xs text-muted-foreground mb-0.5">تاريخ البدء</p>
+                         <p className="text-xs text-muted-foreground mb-0.5">{t('تاريخ البدء', 'Start date')}</p>
                         <p className="text-sm font-medium">{formatDate(subscription.startDate)}</p>
                       </div>
                       {subscription.endDate && (
                         <div className={`text-center p-2 rounded-lg ${isExpiringSoon ? 'bg-amber-50 border border-amber-200' : 'bg-muted/40'}`}>
                           <p className="text-xs text-muted-foreground mb-0.5">
                             {subscription.package?.billingPeriod
-                              ? 'التجديد القادم'
-                              : 'تاريخ الانتهاء'}
+                               ? t('التجديد القادم', 'Next renewal')
+                               : t('تاريخ الانتهاء', 'End date')}
                           </p>
                           <p className={`text-sm font-medium ${isExpiringSoon ? 'text-amber-700' : ''}`}>{formatDate(subscription.endDate)}</p>
                           {daysRemaining !== null && daysRemaining > 0 && (
-                            <p className="text-xs text-muted-foreground">{daysRemaining} يوم متبقي</p>
+                             <p className="text-xs text-muted-foreground">{t(`${daysRemaining} يوم متبقي`, `${daysRemaining} days remaining`)}</p>
                           )}
                         </div>
                       )}
@@ -201,12 +203,12 @@ export default function Dashboard() {
                     {isExpiringSoon ? (
                       <Link href="/pricing" className="block">
                         <Button className="w-full gap-2 bg-amber-600 hover:bg-amber-700 text-white">
-                          <RefreshCw className="w-4 h-4" /> جدّد اشتراكك
+                           <RefreshCw className="w-4 h-4" /> {t('جدّد اشتراكك', 'Renew your subscription')}
                         </Button>
                       </Link>
                     ) : (
                       <Link href="/pricing" className="block">
-                        <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">ترقية الباقة</Button>
+                         <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">{t('ترقية الباقة', 'Upgrade plan')}</Button>
                       </Link>
                     )}
                   </div>
@@ -216,21 +218,21 @@ export default function Dashboard() {
                       <AlertCircle className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="font-semibold text-primary">لا توجد باقة نشطة</p>
-                      <p className="text-sm text-muted-foreground mt-1">اشترك في إحدى باقاتنا للبدء</p>
+                       <p className="font-semibold text-primary">{t('لا توجد باقة نشطة', 'No active plan')}</p>
+                       <p className="text-sm text-muted-foreground mt-1">{t('اشترك في إحدى باقاتنا للبدء', 'Subscribe to one of our plans to get started')}</p>
                     </div>
                     <Link href="/pricing" className="block">
-                      <Button className="w-full">عرض الباقات</Button>
+                       <Button className="w-full">{t('عرض الباقات', 'View plans')}</Button>
                     </Link>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 shadow-sm">
+            <Card className="border-blue-400/30 shadow-sm shadow-blue-400/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
-                  <FileText className="w-5 h-5 text-secondary" /> الفواتير الأخيرة
+                  <FileText className="w-5 h-5 text-blue-500" /> {t('الفواتير الأخيرة', 'Recent invoices')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -244,14 +246,14 @@ export default function Dashboard() {
                     {invoices.slice(0, 3).map(inv => (
                       <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
                         <div>
-                          <p className="font-medium text-sm">{inv.packageNameAr || 'اشتراك'}</p>
+                           <p className="font-medium text-sm">{inv.packageNameAr || t('اشتراك', 'Subscription')}</p>
                           <p className="text-xs text-muted-foreground">{formatDate(inv.createdAt)}</p>
                         </div>
-                        <div className="text-left flex flex-col items-end gap-1">
-                          <p className="font-bold text-primary">{inv.totalAmount} <span className="text-xs font-normal">ر.س</span></p>
+                         <div className="text-start flex flex-col items-end gap-1">
+                           <p className="font-bold text-primary">{inv.totalAmount} <span className="text-xs font-normal">{t('ر.س', 'SAR')}</span></p>
                           <div className="flex items-center gap-2">
                             <Link href={`/invoices/${inv.id}`} className="text-xs text-secondary hover:underline flex items-center gap-1">
-                              عرض <ExternalLink className="w-3 h-3" />
+                               {t('عرض', 'View')} <ExternalLink className="w-3 h-3" />
                             </Link>
                             <a
                               href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/invoices/${inv.id}/pdf`}
@@ -267,7 +269,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">لا توجد فواتير سابقة</p>
+                   <p className="text-sm text-muted-foreground text-center py-4">{t('لا توجد فواتير سابقة', 'No previous invoices')}</p>
                 )}
               </CardContent>
             </Card>
@@ -275,10 +277,10 @@ export default function Dashboard() {
 
           {/* Right Column: Consultations */}
           <div className="lg:col-span-2">
-            <Card className="border-border/50 shadow-sm h-full">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/50 mb-4">
+            <Card className="border-accent/30 shadow-sm shadow-accent/5 h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-accent/20 mb-4">
                 <CardTitle className="flex items-center gap-2 text-primary">
-                  <MessageSquare className="w-5 h-5 text-secondary" /> الاستشارات السابقة
+                  <MessageSquare className="w-5 h-5 text-accent" /> {t('الاستشارات السابقة', 'Previous consultations')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -305,7 +307,7 @@ export default function Dashboard() {
                         </div>
                         <Link href={`/consultation/${cons.id}`}>
                           <Button variant="outline" className="w-full sm:w-auto gap-2">
-                            فتح المحادثة <ExternalLink className="w-4 h-4" />
+                             {t('فتح المحادثة', 'Open conversation')} <ExternalLink className="w-4 h-4" />
                           </Button>
                         </Link>
                       </div>
@@ -316,11 +318,11 @@ export default function Dashboard() {
                     <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto text-muted-foreground mb-4">
                       <MessageSquare className="w-8 h-8" />
                     </div>
-                    <h3 className="text-lg font-bold text-primary mb-2">لا توجد استشارات بعد</h3>
-                    <p className="text-muted-foreground mb-6">ابدأ أول استشارة قانونية لك الآن واحصل على رد فوري.</p>
+                     <h3 className="text-lg font-bold text-primary mb-2">{t('لا توجد استشارات بعد', 'No consultations yet')}</h3>
+                     <p className="text-muted-foreground mb-6">{t('ابدأ أول استشارة قانونية لك الآن واحصل على رد فوري.', 'Start your first legal consultation now and get an immediate response.')}</p>
                     <Link href="/consultation">
                       <Button className="gap-2">
-                        <Plus className="w-4 h-4" /> ابدأ استشارة جديدة
+                         <Plus className="w-4 h-4" /> {t('ابدأ استشارة جديدة', 'Start a new consultation')}
                       </Button>
                     </Link>
                   </div>

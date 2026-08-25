@@ -8,17 +8,18 @@ import {
   Pencil, Save, X, FileWarning, Download,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { useLang } from '@/hooks/use-language';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 type CategoryKey = 'reversed' | 'presentation_forms' | 'low_density' | 'toc_suspected' | 'too_short' | 'pass';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  reversed:           'نص معكوس',
-  presentation_forms: 'أحرف OCR تالفة',
-  low_density:        'كثافة عربية منخفضة',
-  toc_suspected:      'فهرس محتويات',
-  too_short:          'نص قصير جداً',
+const CATEGORY_LABELS: Record<string, [string, string]> = {
+  reversed:           ['نص معكوس', 'Reversed text'],
+  presentation_forms: ['أحرف OCR تالفة', 'Damaged OCR characters'],
+  low_density:        ['كثافة عربية منخفضة', 'Low Arabic density'],
+  toc_suspected:      ['فهرس محتويات', 'Table of contents'],
+  too_short:          ['نص قصير جداً', 'Text too short'],
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -85,6 +86,13 @@ interface CitationStats {
 }
 
 export default function KnowledgeQuality() {
+  const { lang, t } = useLang();
+  const locale = lang === 'ar' ? 'ar-SA' : 'en-US';
+  const categoryLabel = (category: string) => {
+    const label = CATEGORY_LABELS[category];
+    return label ? t(...label) : category;
+  };
+  const formatNumber = (value: number) => value.toLocaleString(locale);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState<number | null>(null);
@@ -134,7 +142,7 @@ export default function KnowledgeQuality() {
     setCoverageLoading(true);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/pages-coverage`, { credentials: 'include' });
-      if (!r.ok) throw new Error('فشل تحميل إحصاءات التغطية');
+      if (!r.ok) throw new Error(t('فشل تحميل إحصاءات التغطية', 'Failed to load coverage statistics'));
       setPagesCoverage(await r.json());
     } catch (e: any) {
       alert(e.message);
@@ -147,7 +155,7 @@ export default function KnowledgeQuality() {
     setCitLoading(true);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/citation-stats`, { credentials: 'include' });
-      if (!r.ok) throw new Error('فشل تحميل الإحصاءات');
+      if (!r.ok) throw new Error(t('فشل تحميل الإحصاءات', 'Failed to load statistics'));
       setCitStats(await r.json());
     } catch (e: any) {
       alert(e.message);
@@ -164,7 +172,7 @@ export default function KnowledgeQuality() {
     setLoading(true);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/quality-scan`, { credentials: 'include' });
-      if (!r.ok) throw new Error('فشل الفحص');
+      if (!r.ok) throw new Error(t('فشل الفحص', 'Scan failed'));
       setResult(await r.json());
     } catch (e: any) {
       alert(e.message);
@@ -174,14 +182,14 @@ export default function KnowledgeQuality() {
   };
 
   const deleteBlockedForDoc = async (docId: number, filename: string) => {
-    if (!confirm(`حذف جميع المقاطع التالفة في "${filename}"؟ سيتم تقليص الوثيقة — يُنصح بإعادة فهرستها بعد الحذف.`)) return;
+    if (!confirm(t(`حذف جميع المقاطع التالفة في "${filename}"؟ سيتم تقليص الوثيقة — يُنصح بإعادة فهرستها بعد الحذف.`, `Delete all damaged chunks in "${filename}"? The document will be reduced; reindexing it afterward is recommended.`))) return;
     setDeletingDoc(docId);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/blocked-chunks/${docId}`, {
         method: 'DELETE', credentials: 'include',
       });
       const data = await r.json();
-      setDeleteMsg(prev => ({ ...prev, [docId]: data.message ?? 'تم' }));
+      setDeleteMsg(prev => ({ ...prev, [docId]: data.message ?? t('تم', 'Done') }));
       // Refresh scan
       await runScan();
     } catch (e: any) {
@@ -194,7 +202,7 @@ export default function KnowledgeQuality() {
   const filteredBlocked = result?.blockedChunks.filter(c => !filterCat || c.category === filterCat) ?? [];
 
   const startReindex = async () => {
-    if (!confirm('سيتم إعادة فهرسة جميع الوثائق من الملفات الأصلية. هذه العملية قد تستغرق عدة دقائق. متابعة؟')) return;
+    if (!confirm(t('سيتم إعادة فهرسة جميع الوثائق من الملفات الأصلية. هذه العملية قد تستغرق عدة دقائق. متابعة؟', 'All documents will be reindexed from their original files. This may take several minutes. Continue?'))) return;
     setReindexLoading(true);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/reindex-all`, { method: 'POST', credentials: 'include' });
@@ -215,7 +223,7 @@ export default function KnowledgeQuality() {
           } catch {}
         }, 3000);
       } else {
-        alert(data.message ?? 'تمت إعادة الفهرسة');
+        alert(data.message ?? t('تمت إعادة الفهرسة', 'Reindexing completed'));
       }
     } catch (e: any) {
       alert(e.message);
@@ -225,7 +233,7 @@ export default function KnowledgeQuality() {
   };
 
   const startPagesReindex = async () => {
-    if (!confirm('سيتم استخراج أرقام الصفحات للمقاطع الموجودة من ملفات PDF المخزّنة. لن تتغير التضمينات. متابعة؟')) return;
+    if (!confirm(t('سيتم استخراج أرقام الصفحات للمقاطع الموجودة من ملفات PDF المخزّنة. لن تتغير التضمينات. متابعة؟', 'Page numbers will be extracted for existing chunks from stored PDF files. Embeddings will not change. Continue?'))) return;
     setPagesLoading(true);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/reindex-all-pages`, { method: 'POST', credentials: 'include' });
@@ -242,7 +250,7 @@ export default function KnowledgeQuality() {
           } catch {}
         }, 3000);
       } else {
-        alert(data.message ?? 'تمت العملية');
+        alert(data.message ?? t('تمت العملية', 'Operation completed'));
       }
     } catch (e: any) {
       alert(e.message);
@@ -252,7 +260,7 @@ export default function KnowledgeQuality() {
   };
 
   const startExtractAllMeta = async () => {
-    if (!confirm('سيتم استخراج بيانات الاستشهاد بالذكاء الاصطناعي لجميع الوثائق القضائية التي لا تحمل بيانات بعد. قد تستغرق العملية عدة دقائق. متابعة؟')) return;
+    if (!confirm(t('سيتم استخراج بيانات الاستشهاد بالذكاء الاصطناعي لجميع الوثائق القضائية التي لا تحمل بيانات بعد. قد تستغرق العملية عدة دقائق. متابعة؟', 'Citation metadata will be extracted with AI for all judicial documents that do not yet have it. This may take several minutes. Continue?'))) return;
     setMetaAllLoading(true);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/extract-all-metadata`, { method: 'POST', credentials: 'include' });
@@ -260,7 +268,7 @@ export default function KnowledgeQuality() {
       if (data.jobId) {
         announceMetaJob(data.jobId, { total: data.total, done: 0, failed: 0, running: true, log: [], extracted: 0 });
       } else {
-        alert(data.message ?? 'تمت العملية');
+        alert(data.message ?? t('تمت العملية', 'Operation completed'));
       }
     } catch (e: any) {
       alert(e.message);
@@ -270,14 +278,14 @@ export default function KnowledgeQuality() {
   };
 
   const sanitizeCitations = async () => {
-    if (!confirm('سيتم فحص جميع بيانات الاستشهاد وتصفير الحقول الخاطئة تلقائياً. متابعة؟')) return;
+    if (!confirm(t('سيتم فحص جميع بيانات الاستشهاد وتصفير الحقول الخاطئة تلقائياً. متابعة؟', 'All citation metadata will be checked and invalid fields cleared automatically. Continue?'))) return;
     setSanitizeLoading(true);
     setSanitizeResult(null);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/sanitize-citation-metadata`, {
         method: 'POST', credentials: 'include',
       });
-      if (!r.ok) throw new Error('فشل تنظيف البيانات');
+      if (!r.ok) throw new Error(t('فشل تنظيف البيانات', 'Failed to clean metadata'));
       setSanitizeResult(await r.json());
     } catch (e: any) {
       alert(e.message);
@@ -293,7 +301,7 @@ export default function KnowledgeQuality() {
         method: 'POST', credentials: 'include',
       });
       const data = await r.json();
-      setMetaMsgs(prev => ({ ...prev, [docId]: data.extracted ? '✓ تم استخراج البيانات' : 'لم تُستخرج بيانات' }));
+      setMetaMsgs(prev => ({ ...prev, [docId]: data.extracted ? t('✓ تم استخراج البيانات', '✓ Metadata extracted') : t('لم تُستخرج بيانات', 'No metadata was extracted') }));
       await loadCitStats();
     } catch (e: any) {
       setMetaMsgs(prev => ({ ...prev, [docId]: e.message }));
@@ -303,14 +311,14 @@ export default function KnowledgeQuality() {
   };
 
   const deleteCitMeta = async (docId: number, filename: string) => {
-    if (!confirm(`حذف بيانات الاستشهاد للوثيقة "${filename}"؟ يمكن إعادة الاستخراج لاحقاً.`)) return;
+    if (!confirm(t(`حذف بيانات الاستشهاد للوثيقة "${filename}"؟ يمكن إعادة الاستخراج لاحقاً.`, `Delete citation metadata for "${filename}"? It can be extracted again later.`))) return;
     setDeletingCit(docId);
     try {
       const r = await fetch(`${BASE}/api/admin/knowledge/citation-metadata/${docId}`, {
         method: 'DELETE', credentials: 'include',
       });
-      if (!r.ok) throw new Error('فشل الحذف');
-      setMetaMsgs(prev => ({ ...prev, [docId]: '✓ حُذفت البيانات' }));
+      if (!r.ok) throw new Error(t('فشل الحذف', 'Deletion failed'));
+      setMetaMsgs(prev => ({ ...prev, [docId]: t('✓ حُذفت البيانات', '✓ Metadata deleted') }));
       await loadCitStats();
     } catch (e: any) {
       setMetaMsgs(prev => ({ ...prev, [docId]: e.message }));
@@ -342,8 +350,8 @@ export default function KnowledgeQuality() {
         credentials: 'include',
         body: JSON.stringify(editDraft),
       });
-      if (!r.ok) throw new Error('فشل الحفظ');
-      setMetaMsgs(prev => ({ ...prev, [docId]: '✓ حُفظت التعديلات' }));
+      if (!r.ok) throw new Error(t('فشل الحفظ', 'Save failed'));
+      setMetaMsgs(prev => ({ ...prev, [docId]: t('✓ حُفظت التعديلات', '✓ Changes saved') }));
       setEditingCit(null);
       await loadCitStats();
     } catch (e: any) {
@@ -355,13 +363,14 @@ export default function KnowledgeQuality() {
 
   return (
     <AdminSidebar>
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <BarChart3 className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-bold text-primary">جودة قاعدة المعرفة</h1>
+           <h1 className="text-2xl font-bold text-primary">{t('جودة قاعدة المعرفة', 'Knowledge base quality')}</h1>
         </div>
         <p className="text-muted-foreground text-sm">
-          فحص شامل لجميع مقاطع النص المخزّنة — يكشف النصوص المعكوسة والأحرف التالفة وكل ما يُلوّث نتائج البحث
+           {t('فحص شامل لجميع مقاطع النص المخزّنة — يكشف النصوص المعكوسة والأحرف التالفة وكل ما يُلوّث نتائج البحث', 'A comprehensive scan of stored text chunks that detects reversed text, damaged characters, and anything that contaminates search results')}
         </p>
       </div>
 
@@ -372,7 +381,7 @@ export default function KnowledgeQuality() {
           disabled={loading}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 disabled:opacity-60"
         >
-          {loading ? <><RefreshCw className="w-4 h-4 animate-spin" /> جارٍ الفحص…</> : <><RefreshCw className="w-4 h-4" /> تشغيل فحص الجودة</>}
+           {loading ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('جارٍ الفحص…', 'Scanning…')}</> : <><RefreshCw className="w-4 h-4" /> {t('تشغيل فحص الجودة', 'Run quality scan')}</>}
         </button>
         <button
           onClick={startReindex}
@@ -380,8 +389,8 @@ export default function KnowledgeQuality() {
           className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl font-bold text-sm hover:bg-amber-700 disabled:opacity-60"
         >
           {reindexLoading || reindexJob?.running
-            ? <><RefreshCw className="w-4 h-4 animate-spin" /> جارٍ إعادة الفهرسة…</>
-            : <><RefreshCw className="w-4 h-4" /> إعادة فهرسة كل الملفات</>}
+            ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('جارٍ إعادة الفهرسة…', 'Reindexing…')}</>
+             : <><RefreshCw className="w-4 h-4" /> {t('إعادة فهرسة كل الملفات', 'Reindex all files')}</>}
         </button>
         <button
           onClick={startPagesReindex}
@@ -389,8 +398,8 @@ export default function KnowledgeQuality() {
           className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-xl font-bold text-sm hover:bg-sky-700 disabled:opacity-60"
         >
           {pagesLoading || pagesJob?.running
-            ? <><RefreshCw className="w-4 h-4 animate-spin" /> جارٍ استخراج الصفحات…</>
-            : <><RefreshCw className="w-4 h-4" /> إعادة فهرسة أرقام الصفحات</>}
+            ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('جارٍ استخراج الصفحات…', 'Extracting pages…')}</>
+             : <><RefreshCw className="w-4 h-4" /> {t('إعادة فهرسة أرقام الصفحات', 'Reindex page numbers')}</>}
         </button>
         <button
           onClick={startExtractAllMeta}
@@ -398,8 +407,8 @@ export default function KnowledgeQuality() {
           className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-xl font-bold text-sm hover:bg-violet-700 disabled:opacity-60"
         >
           {metaAllLoading || metaJob?.running
-            ? <><RefreshCw className="w-4 h-4 animate-spin" /> جارٍ استخراج البيانات…</>
-            : <><BookMarked className="w-4 h-4" /> استخراج بيانات الاستشهاد للكل</>}
+            ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('جارٍ استخراج البيانات…', 'Extracting metadata…')}</>
+             : <><BookMarked className="w-4 h-4" /> {t('استخراج بيانات الاستشهاد للكل', 'Extract citation metadata for all')}</>}
         </button>
       </div>
 
@@ -408,11 +417,11 @@ export default function KnowledgeQuality() {
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-amber-900">
-              {reindexJob.running ? '⏳ إعادة الفهرسة جارية…' : '✅ اكتملت إعادة الفهرسة'}
+              {reindexJob.running ? t('⏳ إعادة الفهرسة جارية…', '⏳ Reindexing in progress…') : t('✅ اكتملت إعادة الفهرسة', '✅ Reindexing complete')}
             </h3>
             <span className="text-xs text-amber-700 font-medium">
-              {reindexJob.done}/{reindexJob.total} وثيقة
-              {reindexJob.failed > 0 && <span className="text-red-600 mr-2">({reindexJob.failed} فشل)</span>}
+              {formatNumber(reindexJob.done)}/{formatNumber(reindexJob.total)} {t('وثيقة', 'documents')}
+              {reindexJob.failed > 0 && <span className="text-red-600 mr-2">({formatNumber(reindexJob.failed)} {t('فشل', 'failed')})</span>}
             </span>
           </div>
           {/* Progress bar */}
@@ -426,14 +435,14 @@ export default function KnowledgeQuality() {
           {reindexJob.log.length > 0 && (
             <div className="bg-amber-900/10 rounded-lg p-2 max-h-32 overflow-y-auto">
               {reindexJob.log.slice(-8).map((line, i) => (
-                <p key={i} className="text-xs text-amber-900 font-mono leading-relaxed">{line}</p>
+                <p key={i} dir="auto" className="text-xs text-amber-900 font-mono leading-relaxed">{line}</p>
               ))}
             </div>
           )}
           {!reindexJob.running && (
             <p className="text-xs text-amber-800">
-              ✓ نجح {reindexJob.done} — فشل {reindexJob.failed}
-              {reindexJob.failed === 0 && ' — الملفات التي لا تحتوي fileData (روابط URL) تُعاد فهرستها من النص المخزّن'}
+              {t(`✓ نجح ${formatNumber(reindexJob.done)} — فشل ${formatNumber(reindexJob.failed)}`, `✓ Succeeded ${formatNumber(reindexJob.done)} — failed ${formatNumber(reindexJob.failed)}`)}
+              {reindexJob.failed === 0 && t(' — الملفات التي لا تحتوي fileData (روابط URL) تُعاد فهرستها من النص المخزّن', ' — files without fileData (URL links) are reindexed from stored text')}
             </p>
           )}
         </div>
@@ -444,11 +453,11 @@ export default function KnowledgeQuality() {
         <div className="mb-6 p-4 bg-sky-50 border border-sky-200 rounded-xl space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-sky-900">
-              {pagesJob.running ? '⏳ استخراج أرقام الصفحات جارٍ…' : '✅ اكتمل استخراج أرقام الصفحات'}
+              {pagesJob.running ? t('⏳ استخراج أرقام الصفحات جارٍ…', '⏳ Page-number extraction in progress…') : t('✅ اكتمل استخراج أرقام الصفحات', '✅ Page-number extraction complete')}
             </h3>
             <span className="text-xs text-sky-700 font-medium">
-              {pagesJob.done}/{pagesJob.total} وثيقة
-              {pagesJob.failed > 0 && <span className="text-red-600 mr-2">({pagesJob.failed} فشل)</span>}
+              {formatNumber(pagesJob.done)}/{formatNumber(pagesJob.total)} {t('وثيقة', 'documents')}
+              {pagesJob.failed > 0 && <span className="text-red-600 mr-2">({formatNumber(pagesJob.failed)} {t('فشل', 'failed')})</span>}
             </span>
           </div>
           <div className="w-full h-2 bg-sky-100 rounded-full overflow-hidden">
@@ -460,14 +469,14 @@ export default function KnowledgeQuality() {
           {pagesJob.log.length > 0 && (
             <div className="bg-sky-900/10 rounded-lg p-2 max-h-28 overflow-y-auto">
               {pagesJob.log.slice(-6).map((line, i) => (
-                <p key={i} className="text-xs text-sky-900 font-mono leading-relaxed">{line}</p>
+                <p key={i} dir="auto" className="text-xs text-sky-900 font-mono leading-relaxed">{line}</p>
               ))}
             </div>
           )}
           {!pagesJob.running && (
             <p className="text-xs text-sky-800">
-              ✓ نجح {pagesJob.done} — فشل {pagesJob.failed}
-              {(pagesJob as any).chunksUpdated != null && ` — مقاطع حصلت على أرقام صفحات: ${(pagesJob as any).chunksUpdated}`}
+              {t(`✓ نجح ${formatNumber(pagesJob.done)} — فشل ${formatNumber(pagesJob.failed)}`, `✓ Succeeded ${formatNumber(pagesJob.done)} — failed ${formatNumber(pagesJob.failed)}`)}
+              {(pagesJob as any).chunksUpdated != null && t(` — مقاطع حصلت على أرقام صفحات: ${formatNumber((pagesJob as any).chunksUpdated)}`, ` — chunks assigned page numbers: ${formatNumber((pagesJob as any).chunksUpdated)}`)}
             </p>
           )}
         </div>
@@ -478,11 +487,11 @@ export default function KnowledgeQuality() {
         <div className="mb-6 p-4 bg-violet-50 border border-violet-200 rounded-xl space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-violet-900">
-              {metaJob.running ? '⏳ استخراج بيانات الاستشهاد جارٍ…' : '✅ اكتمل استخراج بيانات الاستشهاد'}
+              {metaJob.running ? t('⏳ استخراج بيانات الاستشهاد جارٍ…', '⏳ Citation metadata extraction in progress…') : t('✅ اكتمل استخراج بيانات الاستشهاد', '✅ Citation metadata extraction complete')}
             </h3>
             <span className="text-xs text-violet-700 font-medium">
-              {metaJob.done}/{metaJob.total} وثيقة
-              {metaJob.failed > 0 && <span className="text-red-600 mr-2">({metaJob.failed} فشل)</span>}
+              {formatNumber(metaJob.done)}/{formatNumber(metaJob.total)} {t('وثيقة', 'documents')}
+              {metaJob.failed > 0 && <span className="text-red-600 mr-2">({formatNumber(metaJob.failed)} {t('فشل', 'failed')})</span>}
             </span>
           </div>
           <div className="w-full h-2 bg-violet-100 rounded-full overflow-hidden">
@@ -494,16 +503,16 @@ export default function KnowledgeQuality() {
           {metaJob.log.length > 0 && (
             <div className="bg-violet-900/10 rounded-lg p-2 max-h-28 overflow-y-auto">
               {metaJob.log.slice(-6).map((line, i) => (
-                <p key={i} className="text-xs text-violet-900 font-mono leading-relaxed">{line}</p>
+                <p key={i} dir="auto" className="text-xs text-violet-900 font-mono leading-relaxed">{line}</p>
               ))}
             </div>
           )}
           {!metaJob.running && (
             <p className="text-xs text-violet-800">
-              ✓ فُحص {metaJob.done} — استُخرجت بيانات: {(metaJob as any).extracted ?? '—'} — فشل {metaJob.failed}
+              {t(`✓ فُحص ${formatNumber(metaJob.done)} — استُخرجت بيانات: ${(metaJob as any).extracted ?? '—'} — فشل ${formatNumber(metaJob.failed)}`, `✓ Checked ${formatNumber(metaJob.done)} — metadata extracted: ${(metaJob as any).extracted ?? '—'} — failed ${formatNumber(metaJob.failed)}`)}
               {(metaJob as any).rejectedFields > 0 && (
                 <span className="mr-2 text-amber-700 font-semibold">
-                  — ⚠️ حقول مرفوضة بالتحقق: {(metaJob as any).rejectedFields}
+                  {t(`— ⚠️ حقول مرفوضة بالتحقق: ${(metaJob as any).rejectedFields}`, `— ⚠️ Fields rejected by validation: ${(metaJob as any).rejectedFields}`)}
                 </span>
               )}
             </p>
@@ -512,7 +521,7 @@ export default function KnowledgeQuality() {
       )}
 
       {!result && !loading && !reindexJob && !pagesJob && !metaJob && (
-        <p className="text-xs text-muted-foreground mb-6">اضغط "فحص الجودة" للكشف عن المقاطع التالفة، أو "إعادة الفهرسة" لإعادة بناء كل القاعدة من الملفات الأصلية.</p>
+        <p className="text-xs text-muted-foreground mb-6">{t('اضغط "فحص الجودة" للكشف عن المقاطع التالفة، أو "إعادة الفهرسة" لإعادة بناء كل القاعدة من الملفات الأصلية.', 'Click “Quality scan” to detect damaged chunks, or “Reindex all files” to rebuild the entire base from the original files.')}</p>
       )}
 
       {result && (
@@ -521,28 +530,28 @@ export default function KnowledgeQuality() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4 text-center">
-                <p className="text-3xl font-bold text-foreground">{result.summary.total.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">إجمالي المقاطع</p>
+                <p className="text-3xl font-bold text-foreground">{formatNumber(result.summary.total)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('إجمالي المقاطع', 'Total chunks')}</p>
               </CardContent>
             </Card>
             <Card className="border-green-200">
               <CardContent className="p-4 text-center">
-                <p className="text-3xl font-bold text-green-600">{result.summary.clean.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">مقاطع سليمة</p>
+                <p className="text-3xl font-bold text-green-600">{formatNumber(result.summary.clean)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('مقاطع سليمة', 'Clean chunks')}</p>
               </CardContent>
             </Card>
             <Card className="border-red-200">
               <CardContent className="p-4 text-center">
-                <p className="text-3xl font-bold text-red-600">{result.summary.blocked.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">مقاطع محجوبة</p>
+                <p className="text-3xl font-bold text-red-600">{formatNumber(result.summary.blocked)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('مقاطع محجوبة', 'Blocked chunks')}</p>
               </CardContent>
             </Card>
             <Card className={cn('border-2', result.summary.healthPercent >= 80 ? 'border-green-300' : result.summary.healthPercent >= 50 ? 'border-amber-300' : 'border-red-300')}>
               <CardContent className="p-4 text-center">
                 <p className={cn('text-3xl font-bold', result.summary.healthPercent >= 80 ? 'text-green-600' : result.summary.healthPercent >= 50 ? 'text-amber-600' : 'text-red-600')}>
-                  {result.summary.healthPercent}%
+                  {formatNumber(result.summary.healthPercent)}%
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">نسبة الصحة</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('نسبة الصحة', 'Health score')}</p>
               </CardContent>
             </Card>
           </div>
@@ -551,7 +560,7 @@ export default function KnowledgeQuality() {
           {Object.keys(result.summary.byCategory).length > 0 && (
             <Card>
               <CardContent className="p-5">
-                <h2 className="font-bold text-primary mb-3 text-sm">أسباب الحجب</h2>
+                <h2 className="font-bold text-primary mb-3 text-sm">{t('أسباب الحجب', 'Blocking reasons')}</h2>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(result.summary.byCategory).map(([cat, count]) => (
                     <button
@@ -563,12 +572,12 @@ export default function KnowledgeQuality() {
                         filterCat === cat && 'ring-2 ring-primary ring-offset-1'
                       )}
                     >
-                      {CATEGORY_LABELS[cat] ?? cat}: {count}
+                      {categoryLabel(cat)}: {formatNumber(count)}
                     </button>
                   ))}
                   {filterCat && (
                     <button onClick={() => setFilterCat('')} className="px-3 py-1.5 rounded-xl text-xs border border-border text-muted-foreground">
-                      ✕ إلغاء الفلتر
+                      {t('✕ إلغاء الفلتر', '✕ Clear filter')}
                     </button>
                   )}
                 </div>
@@ -581,7 +590,7 @@ export default function KnowledgeQuality() {
             <CardContent className="p-5">
               <h2 className="font-bold text-primary mb-4 text-sm flex items-center gap-2">
                 <FileWarning className="w-4 h-4" />
-                جودة كل وثيقة ({result.documentBreakdown.length} وثيقة)
+                {t(`جودة كل وثيقة (${formatNumber(result.documentBreakdown.length)} وثيقة)`, `Quality by document (${formatNumber(result.documentBreakdown.length)} documents)`)}
               </h2>
               <div className="space-y-3">
                 {result.documentBreakdown.map(doc => (
@@ -598,17 +607,17 @@ export default function KnowledgeQuality() {
                         : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                       }
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{doc.filename}</p>
+                        <p className="text-sm font-medium text-foreground truncate" dir="auto">{doc.filename}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <ScoreBar pct={doc.healthPercent} />
                           <span className="text-xs text-muted-foreground shrink-0">
-                            {doc.clean}/{doc.total} سليم
+                            {formatNumber(doc.clean)}/{formatNumber(doc.total)} {t('سليم', 'clean')}
                           </span>
                         </div>
                       </div>
                       {doc.blocked > 0 && (
                         <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-lg px-2 py-0.5 shrink-0">
-                          {doc.blocked} تالف
+                          {formatNumber(doc.blocked)} {t('تالف', 'damaged')}
                         </span>
                       )}
                       {expandedDoc === doc.documentId
@@ -627,16 +636,16 @@ export default function KnowledgeQuality() {
                             className="flex items-center gap-1.5 text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-red-700 disabled:opacity-60"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            {deletingDoc === doc.documentId ? 'جارٍ الحذف…' : `حذف ${doc.blocked} مقطع تالف`}
+                            {deletingDoc === doc.documentId ? t('جارٍ الحذف…', 'Deleting…') : t(`حذف ${formatNumber(doc.blocked)} مقطع تالف`, `Delete ${formatNumber(doc.blocked)} damaged chunks`)}
                           </button>
                           <a
                             href={`/admin/knowledge-base`}
                             className="text-xs text-primary underline"
                           >
-                            ← إعادة فهرسة الوثيقة
+                            {t('← إعادة فهرسة الوثيقة', 'Reindex document →')}
                           </a>
                           {deleteMsg[doc.documentId] && (
-                            <span className="text-xs text-green-700 font-medium">{deleteMsg[doc.documentId]}</span>
+                            <span dir="auto" className="text-xs text-green-700 font-medium">{deleteMsg[doc.documentId]}</span>
                           )}
                         </div>
 
@@ -645,13 +654,13 @@ export default function KnowledgeQuality() {
                           {result.blockedChunks.filter(c => c.documentId === doc.documentId).map(chunk => (
                             <div key={chunk.id} className={cn('rounded-lg border p-2.5 text-xs', CATEGORY_COLORS[chunk.category] ?? 'bg-muted border-border')}>
                               <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className="font-bold">مقطع #{chunk.chunkIndex}</span>
-                                <span className="opacity-70">درجة: {chunk.score}/100</span>
+                                <span className="font-bold">{t(`مقطع #${formatNumber(chunk.chunkIndex)}`, `Chunk #${formatNumber(chunk.chunkIndex)}`)}</span>
+                                <span className="opacity-70">{t(`درجة: ${formatNumber(chunk.score)}/100`, `Score: ${formatNumber(chunk.score)}/100`)}</span>
                                 {chunk.reasons.map((r, i) => (
-                                  <span key={i} className="bg-white/60 px-1.5 py-0.5 rounded border">{r}</span>
+                                  <span key={i} dir="auto" className="bg-white/60 px-1.5 py-0.5 rounded border">{r}</span>
                                 ))}
                               </div>
-                              <p className="opacity-70 font-mono text-[10px] break-all line-clamp-2">{chunk.snippet}</p>
+                              <p dir="auto" className="opacity-70 font-mono text-[10px] break-all line-clamp-2">{chunk.snippet}</p>
                             </div>
                           ))}
                         </div>
@@ -669,25 +678,25 @@ export default function KnowledgeQuality() {
               <CardContent className="p-5">
                 <h2 className="font-bold text-red-700 mb-4 text-sm flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4" />
-                  المقاطع المحجوبة {filterCat ? `— ${CATEGORY_LABELS[filterCat] ?? filterCat}` : ''} ({filteredBlocked.length})
+                  {t('المقاطع المحجوبة', 'Blocked chunks')} {filterCat ? `— ${categoryLabel(filterCat)}` : ''} ({formatNumber(filteredBlocked.length)})
                 </h2>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {filteredBlocked.map(chunk => (
                     <div key={chunk.id} className="border border-red-100 rounded-xl p-3 bg-red-50/30">
                       <div className="flex items-start gap-2 flex-wrap mb-1">
                         <span className={cn('text-[10px] font-bold border px-1.5 py-0.5 rounded-full', CATEGORY_COLORS[chunk.category] ?? 'bg-muted border-border')}>
-                          {CATEGORY_LABELS[chunk.category] ?? chunk.category}
+                          {categoryLabel(chunk.category)}
                         </span>
-                        <span className="text-xs text-muted-foreground">{chunk.filename}</span>
-                        <span className="text-xs text-muted-foreground">مقطع #{chunk.chunkIndex}</span>
-                        <span className="text-xs font-bold text-red-600">درجة: {chunk.score}</span>
+                        <span className="text-xs text-muted-foreground" dir="auto">{chunk.filename}</span>
+                        <span className="text-xs text-muted-foreground">{t(`مقطع #${formatNumber(chunk.chunkIndex)}`, `Chunk #${formatNumber(chunk.chunkIndex)}`)}</span>
+                        <span className="text-xs font-bold text-red-600">{t(`درجة: ${formatNumber(chunk.score)}`, `Score: ${formatNumber(chunk.score)}`)}</span>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-1.5">
                         {chunk.reasons.map((r, i) => (
-                          <span key={i} className="text-[10px] bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded">{r}</span>
+                          <span key={i} dir="auto" className="text-[10px] bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded">{r}</span>
                         ))}
                       </div>
-                      <p className="text-[10px] text-muted-foreground font-mono bg-muted/30 rounded-lg p-2 break-all line-clamp-3 border-r-2 border-red-300">
+                      <p dir="auto" className="text-[10px] text-muted-foreground font-mono bg-muted/30 rounded-lg p-2 break-all line-clamp-3 border-r-2 border-red-300">
                         {chunk.snippet}
                       </p>
                     </div>
@@ -701,8 +710,8 @@ export default function KnowledgeQuality() {
             <div className="flex items-center gap-3 p-5 bg-green-50 border border-green-200 rounded-2xl">
               <ShieldCheck className="w-8 h-8 text-green-500 shrink-0" />
               <div>
-                <p className="font-bold text-green-800">قاعدة المعرفة سليمة بالكامل ✓</p>
-                <p className="text-sm text-green-700 mt-0.5">جميع المقاطع ({result.summary.total}) اجتازت فحص الجودة</p>
+                <p className="font-bold text-green-800">{t('قاعدة المعرفة سليمة بالكامل ✓', 'Knowledge base is completely healthy ✓')}</p>
+                <p className="text-sm text-green-700 mt-0.5">{t(`جميع المقاطع (${formatNumber(result.summary.total)}) اجتازت فحص الجودة`, `All ${formatNumber(result.summary.total)} chunks passed the quality scan`)}</p>
               </div>
             </div>
           )}
@@ -714,7 +723,7 @@ export default function KnowledgeQuality() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-primary">تغطية أرقام الصفحات</h2>
+            <h2 className="text-lg font-bold text-primary">{t('تغطية أرقام الصفحات', 'Page-number coverage')}</h2>
           </div>
           <button
             onClick={loadPagesCoverage}
@@ -722,22 +731,22 @@ export default function KnowledgeQuality() {
             className="flex items-center gap-1.5 text-xs px-4 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 disabled:opacity-60"
           >
             {coverageLoading
-              ? <><Loader2 className="w-3 h-3 animate-spin" />جارٍ التحميل…</>
-              : <><RefreshCw className="w-3 h-3" />تحديث</>}
+              ? <><Loader2 className="w-3 h-3 animate-spin" />{t('جارٍ التحميل…', 'Loading…')}</>
+              : <><RefreshCw className="w-3 h-3" />{t('تحديث', 'Refresh')}</>}
           </button>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          نسبة المقاطع التي تحمل أرقام صفحات من الـ PDF الأصلي — تعكس مدى اكتمال عملية استخراج الصفحات.
+          {t('نسبة المقاطع التي تحمل أرقام صفحات من الـ PDF الأصلي — تعكس مدى اكتمال عملية استخراج الصفحات.', 'The share of chunks with page numbers from the original PDF, reflecting how complete page extraction is.')}
         </p>
 
         {pagesCoverage ? (
           <div className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'إجمالي المقاطع',     value: pagesCoverage.totalChunks,  color: 'text-foreground' },
-                { label: 'تحمل أرقام صفحات', value: pagesCoverage.withPages,    color: 'text-green-700' },
-                { label: 'بدون أرقام صفحات', value: pagesCoverage.withoutPages, color: 'text-amber-700' },
-                { label: 'نسبة التغطية',       value: `${pagesCoverage.coveragePercent}%`, color: pagesCoverage.coveragePercent >= 80 ? 'text-green-700' : pagesCoverage.coveragePercent >= 40 ? 'text-amber-600' : 'text-red-600' },
+                { label: t('إجمالي المقاطع', 'Total chunks'), value: formatNumber(pagesCoverage.totalChunks), color: 'text-foreground' },
+                { label: t('تحمل أرقام صفحات', 'With page numbers'), value: formatNumber(pagesCoverage.withPages), color: 'text-green-700' },
+                { label: t('بدون أرقام صفحات', 'Without page numbers'), value: formatNumber(pagesCoverage.withoutPages), color: 'text-amber-700' },
+                { label: t('نسبة التغطية', 'Coverage'), value: `${formatNumber(pagesCoverage.coveragePercent)}%`, color: pagesCoverage.coveragePercent >= 80 ? 'text-green-700' : pagesCoverage.coveragePercent >= 40 ? 'text-amber-600' : 'text-red-600' },
               ].map(({ label, value, color }) => (
                 <Card key={label}>
                   <CardContent className="p-3 text-center">
@@ -750,8 +759,8 @@ export default function KnowledgeQuality() {
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>نسبة تغطية أرقام الصفحات</span>
-                <span>{pagesCoverage.coveragePercent}%</span>
+                 <span>{t('نسبة تغطية أرقام الصفحات', 'Page-number coverage')}</span>
+                 <span>{formatNumber(pagesCoverage.coveragePercent)}%</span>
               </div>
               <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
                 <div
@@ -766,13 +775,13 @@ export default function KnowledgeQuality() {
               </div>
               {pagesCoverage.withoutPages > 0 && (
                 <p className="text-xs text-muted-foreground pt-1">
-                  يمكنك تحسين التغطية بالنقر على زر <span className="font-semibold text-sky-700">إعادة فهرسة أرقام الصفحات</span> أعلاه.
+                  {t('يمكنك تحسين التغطية بالنقر على زر ', 'You can improve coverage by clicking ')}<span className="font-semibold text-sky-700">{t('إعادة فهرسة أرقام الصفحات', 'Reindex page numbers')}</span>{t(' أعلاه.', ' above.')}
                 </p>
               )}
             </div>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">اضغط "تحديث" لعرض إحصاءات تغطية أرقام الصفحات.</p>
+          <p className="text-xs text-muted-foreground">{t('اضغط "تحديث" لعرض إحصاءات تغطية أرقام الصفحات.', 'Click “Refresh” to view page-number coverage statistics.')}</p>
         )}
       </div>
 
@@ -781,7 +790,7 @@ export default function KnowledgeQuality() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <BookMarked className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-primary">بيانات الاستشهاد القضائي</h2>
+            <h2 className="text-lg font-bold text-primary">{t('بيانات الاستشهاد القضائي', 'Judicial citation metadata')}</h2>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -790,8 +799,8 @@ export default function KnowledgeQuality() {
               className="flex items-center gap-1.5 text-xs px-4 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-60"
             >
               {sanitizeLoading
-                ? <><Loader2 className="w-3 h-3 animate-spin" />جارٍ الفحص…</>
-                : <><ShieldCheck className="w-3 h-3" />فحص وتنظيف البيانات الفاسدة</>}
+                ? <><Loader2 className="w-3 h-3 animate-spin" />{t('جارٍ الفحص…', 'Scanning…')}</>
+                : <><ShieldCheck className="w-3 h-3" />{t('فحص وتنظيف البيانات الفاسدة', 'Scan and clean corrupt metadata')}</>}
             </button>
             <a
               href={`${BASE}/api/admin/knowledge/citation-export.csv`}
@@ -799,19 +808,19 @@ export default function KnowledgeQuality() {
               className="flex items-center gap-1.5 text-xs px-4 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold"
             >
               <Download className="w-3 h-3" />
-              تصدير CSV
+              {t('تصدير CSV', 'Export CSV')}
             </a>
             <button
               onClick={loadCitStats}
               disabled={citLoading}
               className="flex items-center gap-1.5 text-xs px-4 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 disabled:opacity-60"
             >
-              {citLoading ? <><Loader2 className="w-3 h-3 animate-spin" />جارٍ التحميل…</> : <><RefreshCw className="w-3 h-3" />فحص بيانات الاستشهاد</>}
+              {citLoading ? <><Loader2 className="w-3 h-3 animate-spin" />{t('جارٍ التحميل…', 'Loading…')}</> : <><RefreshCw className="w-3 h-3" />{t('فحص بيانات الاستشهاد', 'Check citation metadata')}</>}
             </button>
           </div>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          يتحقق من اكتمال بيانات الاستشهاد (رقم القضية، المحكمة، التاريخ) للوثائق القضائية، ويتيح مراجعتها وتصحيحها يدوياً أو إعادة استخراجها.
+          {t('يتحقق من اكتمال بيانات الاستشهاد (رقم القضية، المحكمة، التاريخ) للوثائق القضائية، ويتيح مراجعتها وتصحيحها يدوياً أو إعادة استخراجها.', 'Checks judicial documents for complete citation metadata (case number, court, date), and lets you review, correct, or re-extract it.')}
         </p>
 
         {/* Sanitize results */}
@@ -826,30 +835,32 @@ export default function KnowledgeQuality() {
               {sanitizeResult.corrected > 0
                 ? <ShieldAlert className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                 : <ShieldCheck className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />}
-              <p className={cn('text-sm font-semibold', sanitizeResult.corrected > 0 ? 'text-amber-900' : 'text-green-900')}>
-                {sanitizeResult.message}
+                <p dir="auto" className={cn('text-sm font-semibold', sanitizeResult.corrected > 0 ? 'text-amber-900' : 'text-green-900')}>
+                {sanitizeResult.corrected > 0
+                  ? t('اكتمل الفحص وتنظيف البيانات الفاسدة', 'Scan complete and corrupt metadata cleaned')
+                  : t('اكتمل الفحص ولم يُعثر على بيانات فاسدة', 'Scan complete; no corrupt metadata found')}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-lg border border-border p-3 text-center">
-                <p className="text-2xl font-black text-foreground">{sanitizeResult.scanned}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">سجلات مفحوصة</p>
+                <p className="text-2xl font-black text-foreground">{formatNumber(sanitizeResult.scanned)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('سجلات مفحوصة', 'Records checked')}</p>
               </div>
               <div className="bg-white rounded-lg border border-border p-3 text-center">
                 <p className={cn('text-2xl font-black', sanitizeResult.corrected > 0 ? 'text-amber-700' : 'text-green-700')}>
-                  {sanitizeResult.corrected}
+                  {formatNumber(sanitizeResult.corrected)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">سجلات مُصحَّحة</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('سجلات مُصحَّحة', 'Records corrected')}</p>
               </div>
             </div>
             {sanitizeResult.corrections.length > 0 && (
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                <p className="text-xs font-semibold text-amber-800">الحقول التي أُزيلت:</p>
+                <p className="text-xs font-semibold text-amber-800">{t('الحقول التي أُزيلت:', 'Fields removed:')}</p>
                 {sanitizeResult.corrections.map(c => (
                   <div key={c.id} className="flex items-start gap-2 text-xs bg-white rounded-lg border border-amber-100 px-3 py-2">
                     <FileWarning className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
-                    <span className="font-medium text-foreground truncate flex-1">{c.filename}</span>
-                    <span className="text-amber-700 shrink-0">{c.nulledFields.join('، ')}</span>
+                    <span className="font-medium text-foreground truncate flex-1" dir="auto">{c.filename}</span>
+                    <span className="text-amber-700 shrink-0" dir="auto">{c.nulledFields.join(lang === 'ar' ? '، ' : ', ')}</span>
                   </div>
                 ))}
               </div>
@@ -862,11 +873,11 @@ export default function KnowledgeQuality() {
             {/* Summary cards */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
-                { label: 'إجمالي الوثائق',   value: citStats.total,            color: 'text-foreground' },
-                { label: 'وثائق قضائية',     value: citStats.judicial,         color: 'text-primary' },
-                { label: 'مكتملة البيانات',  value: citStats.withMetadata,     color: 'text-green-700' },
-                { label: 'غير مستخرجة',      value: citStats.withoutMetadata,  color: 'text-amber-700' },
-                { label: 'تحتاج مراجعة',     value: citStats.needsReview ?? 0, color: 'text-red-600' },
+                { label: t('إجمالي الوثائق', 'Total documents'), value: formatNumber(citStats.total), color: 'text-foreground' },
+                { label: t('وثائق قضائية', 'Judicial documents'), value: formatNumber(citStats.judicial), color: 'text-primary' },
+                { label: t('مكتملة البيانات', 'Metadata complete'), value: formatNumber(citStats.withMetadata), color: 'text-green-700' },
+                { label: t('غير مستخرجة', 'Not extracted'), value: formatNumber(citStats.withoutMetadata), color: 'text-amber-700' },
+                { label: t('تحتاج مراجعة', 'Needs review'), value: formatNumber(citStats.needsReview ?? 0), color: 'text-red-600' },
               ].map(({ label, value, color }) => (
                 <Card key={label}>
                   <CardContent className="p-3 text-center">
@@ -884,9 +895,9 @@ export default function KnowledgeQuality() {
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-amber-900">
-                      ⚠️ نسبة الاستشهادات المشبوهة أو المرفوضة
+                      {t('⚠️ نسبة الاستشهادات المشبوهة أو المرفوضة', '⚠️ Suspicious or rejected citations')}
                     </span>
-                    <span className="font-bold text-amber-700">{rejPct}% ({citStats.needsReview} / {citStats.withMetadata})</span>
+                    <span className="font-bold text-amber-700">{formatNumber(rejPct)}% ({formatNumber(citStats.needsReview ?? 0)} / {formatNumber(citStats.withMetadata)})</span>
                   </div>
                   <div className="w-full h-2 bg-amber-100 rounded-full overflow-hidden">
                     <div
@@ -895,7 +906,7 @@ export default function KnowledgeQuality() {
                     />
                   </div>
                   <p className="text-[11px] text-amber-700">
-                    هذه الوثائق تحمل بيانات استشهاد ناقصة أو مشبوهة — يُنصح بمراجعتها يدوياً أو إعادة استخراجها.
+                    {t('هذه الوثائق تحمل بيانات استشهاد ناقصة أو مشبوهة — يُنصح بمراجعتها يدوياً أو إعادة استخراجها.', 'These documents have incomplete or suspicious citation metadata; manual review or re-extraction is recommended.')}
                   </p>
                 </div>
               );
@@ -905,8 +916,8 @@ export default function KnowledgeQuality() {
             {citStats.judicial > 0 && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>نسبة اكتمال الاستشهاد</span>
-                  <span>{Math.round(citStats.withMetadata / citStats.judicial * 100)}%</span>
+                  <span>{t('نسبة اكتمال الاستشهاد', 'Citation completion')}</span>
+                  <span>{formatNumber(Math.round(citStats.withMetadata / citStats.judicial * 100))}%</span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                   <div
@@ -921,10 +932,10 @@ export default function KnowledgeQuality() {
             {citStats.docs.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {([
-                  { key: 'all',         label: 'الكل',              count: citStats.judicial },
-                  { key: 'extracted',   label: 'مستخرجة',           count: citStats.withMetadata },
-                  { key: 'unextracted', label: 'غير مستخرجة',       count: citStats.withoutMetadata },
-                  { key: 'review',      label: 'تحتاج مراجعة',      count: citStats.needsReview ?? 0 },
+                  { key: 'all',         label: t('الكل', 'All'),                    count: citStats.judicial },
+                  { key: 'extracted',   label: t('مستخرجة', 'Extracted'),           count: citStats.withMetadata },
+                  { key: 'unextracted', label: t('غير مستخرجة', 'Not extracted'),   count: citStats.withoutMetadata },
+                  { key: 'review',      label: t('تحتاج مراجعة', 'Needs review'),   count: citStats.needsReview ?? 0 },
                 ] as const).map(tab => (
                   <button
                     key={tab.key}
@@ -940,7 +951,7 @@ export default function KnowledgeQuality() {
                     <span className={cn(
                       'mr-1.5 px-1.5 py-0.5 rounded-full text-[10px]',
                       citFilter === tab.key ? 'bg-white/20' : 'bg-border'
-                    )}>{tab.count}</span>
+                    )}>{formatNumber(tab.count)}</span>
                   </button>
                 ))}
               </div>
@@ -958,10 +969,10 @@ export default function KnowledgeQuality() {
                 <Card>
                   <CardContent className="p-4">
                     <h3 className="text-sm font-bold text-foreground mb-3">
-                      الوثائق القضائية ({filtered.length})
+                      {t(`الوثائق القضائية (${formatNumber(filtered.length)})`, `Judicial documents (${formatNumber(filtered.length)})`)}
                     </h3>
                     {filtered.length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-4">لا توجد وثائق في هذا التصنيف</p>
+                      <p className="text-xs text-muted-foreground text-center py-4">{t('لا توجد وثائق في هذا التصنيف', 'No documents in this category')}</p>
                     )}
                     <div className="space-y-2 max-h-[32rem] overflow-y-auto">
                       {filtered.map(doc => (
@@ -982,14 +993,14 @@ export default function KnowledgeQuality() {
                                 : <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                             }
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-foreground truncate">{doc.filename}</p>
+                              <p className="text-xs font-medium text-foreground truncate" dir="auto">{doc.filename}</p>
                               {doc.hasCaseMetadata ? (
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  {[doc.court, doc.caseNumber || doc.rulingNumber, doc.hijriDate && `${doc.hijriDate}هـ`].filter(Boolean).join(' · ')}
-                                  {doc.needsReview && <span className="text-red-600 font-medium mr-2">— بيانات منقوصة</span>}
+                                  <span dir="auto">{[doc.court, doc.caseNumber || doc.rulingNumber, doc.hijriDate && `${doc.hijriDate}${t('هـ', ' AH')}`].filter(Boolean).join(' · ')}</span>
+                                  {doc.needsReview && <span className="text-red-600 font-medium mr-2">{t('— بيانات منقوصة', '— Incomplete metadata')}</span>}
                                 </p>
                               ) : (
-                                <p className="text-xs text-amber-700 mt-0.5">لم تُستخرج بيانات الاستشهاد بعد</p>
+                                <p className="text-xs text-amber-700 mt-0.5">{t('لم تُستخرج بيانات الاستشهاد بعد', 'Citation metadata has not been extracted yet')}</p>
                               )}
                             </div>
                             {/* Action buttons */}
@@ -1000,7 +1011,7 @@ export default function KnowledgeQuality() {
                                   disabled={extractingMeta === doc.id}
                                   className="text-xs px-2.5 py-1 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-60"
                                 >
-                                  {extractingMeta === doc.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'استخراج'}
+                                  {extractingMeta === doc.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('استخراج', 'Extract')}
                                 </button>
                               )}
                               {doc.hasCaseMetadata && (
@@ -1008,7 +1019,7 @@ export default function KnowledgeQuality() {
                                   <button
                                     onClick={() => editingCit === doc.id ? setEditingCit(null) : startEditCit(doc)}
                                     className="p-1.5 rounded-lg border border-border hover:bg-muted/60 text-muted-foreground hover:text-foreground"
-                                    title="تعديل يدوي"
+                                     title={t('تعديل يدوي', 'Edit manually')}
                                   >
                                     {editingCit === doc.id ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                                   </button>
@@ -1016,7 +1027,7 @@ export default function KnowledgeQuality() {
                                     onClick={() => extractMeta(doc.id, doc.filename)}
                                     disabled={extractingMeta === doc.id}
                                     className="p-1.5 rounded-lg border border-border hover:bg-muted/60 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                                    title="إعادة الاستخراج"
+                                     title={t('إعادة الاستخراج', 'Re-extract')}
                                   >
                                     {extractingMeta === doc.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                                   </button>
@@ -1024,7 +1035,7 @@ export default function KnowledgeQuality() {
                                     onClick={() => deleteCitMeta(doc.id, doc.filename)}
                                     disabled={deletingCit === doc.id}
                                     className="p-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-500 hover:text-red-700 disabled:opacity-50"
-                                    title="حذف البيانات"
+                                     title={t('حذف البيانات', 'Delete metadata')}
                                   >
                                     {deletingCit === doc.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                                   </button>
@@ -1036,24 +1047,24 @@ export default function KnowledgeQuality() {
                           {/* Status message */}
                           {metaMsgs[doc.id] && (
                             <div className="px-3 pb-2">
-                              <span className="text-xs text-green-700 font-medium">{metaMsgs[doc.id]}</span>
+                              <span dir="auto" className="text-xs text-green-700 font-medium">{metaMsgs[doc.id]}</span>
                             </div>
                           )}
 
                           {/* Inline edit form */}
                           {editingCit === doc.id && (
                             <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-3">
-                              <p className="text-xs font-bold text-foreground mb-2">تعديل بيانات الاستشهاد</p>
+                              <p className="text-xs font-bold text-foreground mb-2">{t('تعديل بيانات الاستشهاد', 'Edit citation metadata')}</p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {([
-                                  { key: 'caseNumber',      label: 'رقم القضية' },
-                                  { key: 'rulingNumber',    label: 'رقم الحكم' },
-                                  { key: 'court',           label: 'المحكمة / الدائرة' },
-                                  { key: 'hijriDate',       label: 'التاريخ الهجري' },
-                                  { key: 'gregorianDate',   label: 'التاريخ الميلادي' },
-                                  { key: 'litigationStage', label: 'مرحلة التقاضي' },
-                                  { key: 'disputeSubject',  label: 'موضوع النزاع' },
-                                  { key: 'deedNumber',      label: 'رقم الصك / السند' },
+                                  { key: 'caseNumber',      label: t('رقم القضية', 'Case number') },
+                                  { key: 'rulingNumber',    label: t('رقم الحكم', 'Ruling number') },
+                                  { key: 'court',           label: t('المحكمة / الدائرة', 'Court / circuit') },
+                                  { key: 'hijriDate',       label: t('التاريخ الهجري', 'Hijri date') },
+                                  { key: 'gregorianDate',   label: t('التاريخ الميلادي', 'Gregorian date') },
+                                  { key: 'litigationStage', label: t('مرحلة التقاضي', 'Litigation stage') },
+                                  { key: 'disputeSubject',  label: t('موضوع النزاع', 'Dispute subject') },
+                                  { key: 'deedNumber',      label: t('رقم الصك / السند', 'Deed / instrument number') },
                                 ] as const).map(({ key, label }) => (
                                   <div key={key}>
                                     <label className="text-[10px] text-muted-foreground font-medium block mb-1">{label}</label>
@@ -1063,7 +1074,7 @@ export default function KnowledgeQuality() {
                                       onChange={e => setEditDraft(prev => ({ ...prev, [key]: e.target.value }))}
                                       dir="auto"
                                       className="w-full text-xs border border-border rounded-lg px-2.5 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-                                      placeholder={`أدخل ${label}…`}
+                                      placeholder={t(`أدخل ${label}…`, `Enter ${label}…`)}
                                     />
                                   </div>
                                 ))}
@@ -1074,13 +1085,13 @@ export default function KnowledgeQuality() {
                                   disabled={savingCit === doc.id}
                                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 font-bold"
                                 >
-                                  {savingCit === doc.id ? <><Loader2 className="w-3 h-3 animate-spin" />جارٍ الحفظ…</> : <><Save className="w-3 h-3" />حفظ التعديلات</>}
+                                  {savingCit === doc.id ? <><Loader2 className="w-3 h-3 animate-spin" />{t('جارٍ الحفظ…', 'Saving…')}</> : <><Save className="w-3 h-3" />{t('حفظ التعديلات', 'Save changes')}</>}
                                 </button>
                                 <button
                                   onClick={() => setEditingCit(null)}
                                   className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-muted/60 text-muted-foreground"
                                 >
-                                  إلغاء
+                                  {t('إلغاء', 'Cancel')}
                                 </button>
                               </div>
                             </div>
@@ -1095,11 +1106,12 @@ export default function KnowledgeQuality() {
 
             {citStats.judicial === 0 && (
               <p className="text-sm text-muted-foreground text-center py-6">
-                لا توجد وثائق قضائية في قاعدة المعرفة بعد.
+                 {t('لا توجد وثائق قضائية في قاعدة المعرفة بعد.', 'There are no judicial documents in the knowledge base yet.')}
               </p>
             )}
           </div>
         )}
+      </div>
       </div>
     </AdminSidebar>
   );

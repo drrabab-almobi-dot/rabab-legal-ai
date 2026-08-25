@@ -19,7 +19,10 @@ function parsePreviousExpiry() {
 
 export function assertTokenConfiguration() {
   if (!process.env.MCP_FILES_TOKEN || process.env.MCP_FILES_TOKEN.length < 32) {
-    throw new Error("MCP_FILES_TOKEN must be set to a random value of at least 32 characters.");
+    // Keep the process alive so the artifact can report health and the main
+    // platform can publish. authorizeBearerHeader() remains fail-closed when
+    // the token is absent, so the bridge cannot serve files until configured.
+    console.warn("MCP_FILES_TOKEN is not configured; MCP requests remain disabled.");
   }
 }
 

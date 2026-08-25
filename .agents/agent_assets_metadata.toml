@@ -1,0 +1,254 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Qux4wpp5LekP4z7Unv4Tk"
+uri = "file://attached_assets/RABAB-LEGAL-Project-and-Incident-Report-AR.docx"
+type = "word_document"
+title = "ملف مشروع RABAB LEGAL AI وتقرير الوقائع التقنية"
+description = "نسخة Word قابلة للتعديل، تتضمن تعريف المشروع والبنية التقنية والوقائع والأثر المالي المحتمل وقائمة المرفقات ونصاً جاهزاً لتذكرة الدعم."
+
+[[outputs]]
+id = "6a8z1EawRT4QQlMQK0PPD"
+uri = "file://attached_assets/rabab-legal-project-report-ar.html"
+type = "text"
+title = "نسخة للطباعة أو الحفظ PDF"
+description = "نسخة عربية منسقة يمكن فتحها في المتصفح ثم طباعتها أو حفظها كـ PDF."
+
+[[outputs]]
+id = "zsuD2GJuH32VVRWbj6No0"
+uri = "file://attached_assets/RABAB-LEGAL-source-migration-package.zip"
+type = "unspecified"
+title = "حزمة نقل مشروع RABAB LEGAL AI"
+description = "أرشيف ZIP كامل للشيفرة والأصول وتعليمات النقل، مع استبعاد الأسرار وnode_modules وملفات البناء والجلسات الحساسة."
+
+[[outputs]]
+id = "g0B1ZurK9hDVENC8dP1vi"
+uri = "file://attached_assets/RABAB-LEGAL-Migration-Guide.md"
+type = "text"
+title = "دليل نقل المشروع"
+description = "خطوات التشغيل، الأسرار المطلوبة دون قيمها، نقل قاعدة البيانات، ترتيب الإطلاق، وقائمة التحقق قبل تحويل النطاق."
+
+[[outputs]]
+id = "4QZs2qiB1Upe-YRswItYE"
+uri = "file://attached_assets/RABAB-LEGAL-source-migration-package.sha256"
+type = "unspecified"
+title = "بصمة سلامة حزمة النقل"
+description = "ملف SHA-256 اختياري للتحقق من أن تنزيل ملف ZIP اكتمل دون تلف أو تعديل."
+
+[[outputs]]
+id = "7BeH-NTug08aH7AxgyD7Z"
+uri = "file://attached_assets/RABAB-LEGAL-current-status-report-AR.docx"
+type = "word_document"
+title = "تقرير الحالة الفعلية لمشروع RABAB LEGAL AI"
+description = "نسخة Word قابلة للتعديل تفرّق بين المنجز، وما يحتاج تحققاً إنتاجياً، والمهام المتبقية، وخطوات النقل الآمن."
+
+[[outputs]]
+id = "SGQpyp10HGZc2hUHsC2l6"
+uri = "file://attached_assets/RABAB-LEGAL-current-status-report-AR.md"
+type = "text"
+title = "نسخة نصية من تقرير الحالة"
+description = "نسخة Markdown سهلة التحديث والمشاركة مع GPT أو أي فريق تقني قبل تنفيذ التغييرات."
+
+[[outputs]]
+id = "TBOnR_FgNdWD2_otYD1Ry"
+uri = "file://docs/RABAB_LEGAL_AI_Project_Plan_AR_EN.zip"
+type = "unspecified"
+title = "RABAB LEGAL AI — Project Plan (AR/EN)"
+description = "A downloadable folder containing the complete Arabic/English project plan, including the web and mobile roadmaps."
+
+[[outputs]]
+id = "UMiwAZ4ZsBkbzge1VlAyH"
+uri = "file://docs/RABAB_LEGAL_AI_Project_Full_Plan_AR_EN_With_All_Attachments.zip"
+type = "unspecified"
+title = "RABAB LEGAL AI — الخطة والملحقات كاملة"
+description = "Archive containing the full Arabic/English project plan plus all 181 files from attached_assets, without omission."
+
+[[outputs]]
+id = "Na5Fd2HJ-NWwg8vFycLY_"
+uri = "file://migration_export/backup.sql.gz"
+type = "unspecified"
+title = "تحميل نسخة قاعدة البيانات المضغوطة"
+description = "ملف backup.sql.gz — الحجم 280,427,621 بايت"
+
+[[outputs]]
+id = "wWlEYnBfknjUeB0KZDAs1"
+uri = "file://migration_export/backup.sql.gz.part-aa"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 1 من 11"
+description = "backup.sql.gz.part-aa — 26214400 bytes"
+
+[[outputs]]
+id = "fWHuJhJP2aoSJ5Qz6FAmt"
+uri = "file://migration_export/backup.sql.gz.part-ab"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 2 من 11"
+description = "backup.sql.gz.part-ab — 26214400 bytes"
+
+[[outputs]]
+id = "ltuNb7CVTvTLg5oQFgQBg"
+uri = "file://migration_export/backup.sql.gz.part-ac"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 3 من 11"
+description = "backup.sql.gz.part-ac — 26214400 bytes"
+
+[[outputs]]
+id = "UpSjpaP_XeOr4xZLBEEQn"
+uri = "file://migration_export/backup.sql.gz.part-ad"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 4 من 11"
+description = "backup.sql.gz.part-ad — 26214400 bytes"
+
+[[outputs]]
+id = "m2Cn36XnAgzcL9Z9GjSj7"
+uri = "file://migration_export/backup.sql.gz.part-ae"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 5 من 11"
+description = "backup.sql.gz.part-ae — 26214400 bytes"
+
+[[outputs]]
+id = "GqO_C40XY9PyJXyzCuo9V"
+uri = "file://migration_export/backup.sql.gz.part-af"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 6 من 11"
+description = "backup.sql.gz.part-af — 26214400 bytes"
+
+[[outputs]]
+id = "X1n4IAff9d1AlOkHTqHcC"
+uri = "file://migration_export/backup.sql.gz.part-ag"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 7 من 11"
+description = "backup.sql.gz.part-ag — 26214400 bytes"
+
+[[outputs]]
+id = "_g915B74jzcO27CO3sZRl"
+uri = "file://migration_export/backup.sql.gz.part-ah"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 8 من 11"
+description = "backup.sql.gz.part-ah — 26214400 bytes"
+
+[[outputs]]
+id = "2Ht-GyGjny1fUfaWqXCuN"
+uri = "file://migration_export/backup.sql.gz.part-ai"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 9 من 11"
+description = "backup.sql.gz.part-ai — 26214400 bytes"
+
+[[outputs]]
+id = "23GU9jlNotDCxztC658d0"
+uri = "file://migration_export/backup.sql.gz.part-aj"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 10 من 11"
+description = "backup.sql.gz.part-aj — 26214400 bytes"
+
+[[outputs]]
+id = "OlJ6IU1VkvGTrhiRKagWC"
+uri = "file://migration_export/backup.sql.gz.part-ak"
+type = "unspecified"
+title = "نسخة قاعدة البيانات — الجزء 11 من 11"
+description = "backup.sql.gz.part-ak — 18283621 bytes"
+
+[[outputs]]
+id = "sYE1QjTpmi6JxH41_Dngs"
+uri = "file://migration_export/backup.sql.gz.zip"
+type = "unspecified"
+title = "تحميل نسخة قاعدة البيانات — ZIP"
+description = "افتح/نزّل هذا الملف، ثم فك ZIP للحصول على backup.sql.gz، وبعدها فك GZIP. الحجم 280,427,831 بايت."
+
+[[outputs]]
+id = "NgbM1YD7-CuD22O9YN7pH"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-001.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 1/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "G3Ga7hDkQVu9oDs8SyD77"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-002.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 2/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "BOWFqC9EyDcrnVFGC5iIM"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-003.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 3/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "-o96kBOi1lSUhqmTc4oH6"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-004.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 4/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "d-HQ5cPQxPBo3H9yfcg3u"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-005.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 5/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "s_YlXtu5jDI4Ntf6AQ6um"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-006.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 6/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "CnM7i08n3s6B_um0Sbc4I"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-007.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 7/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "pbt3NPFwyulWaAnNa6uCY"
+uri = "file://exports/rabab-legal-full-project/rabab-legal-project-part-008.zip"
+type = "unspecified"
+title = "RABAB LEGAL — project files part 8/8"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "tS0G5Smq821jSo5cKek6f"
+uri = "file://exports/rabab-legal-full-project/TRANSFER_MANIFEST.tsv"
+type = "unspecified"
+title = "RABAB LEGAL — transfer manifest"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "koaCJXrl5QRjXY7a6F15j"
+uri = "file://exports/rabab-legal-full-project/RESTORE_INSTRUCTIONS.txt"
+type = "text"
+title = "RABAB LEGAL — restore instructions"
+description = "Non-secret project transfer file. Upload all eight ZIP parts in order, then use the manifest and restore instructions."
+
+[[outputs]]
+id = "vTSWKgzp0Z59zy4O1oHM8"
+uri = "file://exports/rabab-legal-full-project.zip"
+type = "unspecified"
+title = "RABAB LEGAL — full project ZIP"
+description = "Single ZIP containing the current 802 permitted non-secret project files, preserving their original paths. Secrets and database backup are intentionally excluded."
+
+[[outputs]]
+id = "jCSgJyo_89rw-TXpdUTq_"
+uri = "file://exports/rabab-legal-ai-transfer.zip"
+type = "unspecified"
+title = "حزمة نقل RABAB LEGAL AI إلى GitHub"
+description = "حزمة مصدر خفيفة وجاهزة للرفع: الكود، إعدادات التشغيل، CI، وClaude Code workflow، مع تعليمات الإكمال."
+
+[[outputs]]
+id = "wWpHeY6ASG6Le1eM24hYS"
+uri = "file://exports/rabab-legal-ai-complete-source.zip"
+type = "unspecified"
+title = "RABAB LEGAL AI — Complete Source Archive"
+description = "Unified backup containing 636 runnable source and configuration files, including web, API, libraries, migrations, settings, and CI/Claude workflows. Database dumps, secrets, node_modules, caches, and historical exports are intentionally excluded."
+
+[[outputs]]
+id = "jE1U3p0I40z2zUUPMU3Lh"
+uri = "file://exports/rabab-legal-ai-complete-source.sha256"
+type = "unspecified"
+title = "Complete Source Archive Checksum"
+description = "SHA-256 checksum for verifying the downloaded project archive."

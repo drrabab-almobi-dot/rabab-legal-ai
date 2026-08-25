@@ -5,7 +5,9 @@
 import { useState, useEffect } from "react";
 import { Navbar, Footer } from "@/components/layout";
 import { setPageSEO } from "@/lib/seo";
-import { Loader2, ExternalLink, Heart } from "lucide-react";
+import { Loader2, ExternalLink, Heart, AlertTriangle } from "lucide-react";
+import { useLang } from "@/hooks/use-language";
+import { FramedState } from "@/components/ui";
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -19,20 +21,22 @@ interface Initiative {
 }
 
 export default function InitiativesPage() {
+  const { lang, t } = useLang();
   setPageSEO({
-    title: "مبادرات مجتمعية — RABAB LEGAL AI",
-    description: "مبادرات مجتمعية في المجال القانوني من RABAB LEGAL AI: التواصل العدلي، مبادرة وصل وغيرها.",
+    title: t("مبادرات مجتمعية", "Community Initiatives"),
+    description: t("مبادرات مجتمعية في المجال القانوني من RABAB LEGAL AI: التواصل العدلي، مبادرة وصل وغيرها.", "Community legal initiatives from RABAB LEGAL AI, including justice communication and Wasl."),
     canonical: "https://rabablegal.com/initiatives",
   });
 
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/initiatives`)
+    fetch(`${API_BASE}/api/initiatives`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setInitiatives(d.initiatives ?? []))
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,31 +45,43 @@ export default function InitiativesPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="bg-primary py-12 px-4" dir="rtl">
+      <section className="bg-primary py-12 px-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="container mx-auto max-w-3xl text-center">
           <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
             <Heart className="w-7 h-7 text-secondary" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">مبادرات مجتمعية</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">{t('مبادرات مجتمعية', 'Community Initiatives')}</h1>
           <p className="text-white/70 text-sm leading-relaxed max-w-xl mx-auto">
-            RABAB LEGAL AI تُطلق مبادرات مجتمعية في المجال القانوني لنشر الوعي القانوني
-            وتمكين المجتمع من الوصول للخدمات العدلية.
+            {t('RABAB LEGAL AI تُطلق مبادرات مجتمعية في المجال القانوني لنشر الوعي القانوني وتمكين المجتمع من الوصول للخدمات العدلية.', 'RABAB LEGAL AI launches community initiatives to raise legal awareness and help people access justice services.')}
           </p>
         </div>
       </section>
 
       {/* Initiatives grid */}
-      <section className="flex-1 py-12 px-4" dir="rtl">
+      <section className="flex-1 py-12 px-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="container mx-auto max-w-4xl">
           {loading ? (
-            <div className="flex items-center justify-center py-20 gap-3 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">جارٍ التحميل...</span>
-            </div>
+            <FramedState
+              tone="loading"
+              icon={<Loader2 className="h-5 w-5 animate-spin text-secondary" />}
+              title={t('جارٍ التحميل...', 'Loading…')}
+              className="min-h-52"
+            />
+          ) : error ? (
+            <FramedState
+              tone="error"
+              icon={<AlertTriangle className="h-6 w-6" />}
+              title={t('تعذر تحميل المبادرات حالياً.', 'Unable to load initiatives right now.')}
+              description={t('يرجى المحاولة مرة أخرى لاحقاً.', 'Please try again later.')}
+              className="min-h-52"
+            />
           ) : initiatives.length === 0 ? (
-            <div className="text-center py-20 text-muted-foreground">
-              <p className="text-sm">لا توجد مبادرات متاحة حالياً — تابعونا قريباً.</p>
-            </div>
+            <FramedState
+              icon={<Heart className="h-6 w-6 text-secondary/70" />}
+              title={t('لا توجد مبادرات متاحة حالياً.', 'No initiatives are available right now.')}
+              description={t('تابعونا قريباً.', 'Please check back soon.')}
+              className="min-h-52"
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {initiatives.map(init => (
@@ -74,7 +90,7 @@ export default function InitiativesPage() {
                   href={init.url !== "#" ? init.url : undefined}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative bg-card border border-border/60 rounded-2xl p-6 hover:border-primary/60 hover:shadow-lg transition-all duration-300 flex flex-col gap-4"
+                  className="group relative bg-card border-2 border-secondary/60 rounded-2xl p-6 shadow-sm shadow-secondary/10 hover:border-secondary hover:shadow-lg hover:shadow-secondary/15 transition-all duration-300 flex flex-col gap-4"
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl shrink-0 group-hover:bg-primary/20 transition-colors">
@@ -88,7 +104,7 @@ export default function InitiativesPage() {
                         )}
                       </div>
                       {init.url === "#" && (
-                        <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">قريباً</span>
+                         <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{t('قريباً', 'Coming soon')}</span>
                       )}
                     </div>
                   </div>
@@ -99,7 +115,7 @@ export default function InitiativesPage() {
                     <div className="mt-auto">
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:underline">
                         <ExternalLink className="w-3.5 h-3.5" />
-                        افتح المبادرة
+                         {t('افتح المبادرة', 'Open initiative')}
                       </span>
                     </div>
                   )}

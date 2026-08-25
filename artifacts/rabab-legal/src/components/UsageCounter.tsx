@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronUp, ChevronDown, X, BarChart2, TrendingUp, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+import { useLang } from '@/hooks/use-language';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -40,14 +41,15 @@ function bgRing(remaining: number, total: number): string {
   return 'border-red-500/70';
 }
 
-const SERVICE_LABELS: Record<string, string> = {
-  consultation: 'استشارة',
-  contract_draft: 'صياغة عقد',
-  contract_review: 'مراجعة عقد',
+const SERVICE_LABELS: Record<string, [string, string]> = {
+  consultation: ['استشارة', 'Consultation'],
+  contract_draft: ['صياغة عقد', 'Contract drafting'],
+  contract_review: ['مراجعة عقد', 'Contract review'],
 };
 
 export function UsageCounter() {
   const { isAuthenticated, user } = useAuth();
+  const { lang, t } = useLang();
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -117,7 +119,7 @@ export function UsageCounter() {
           'bg-background/90 backdrop-blur-sm shadow-lg transition-all hover:scale-110',
           mainRing
         )}
-        title="عدّاد الاستهلاك"
+        title={t('عدّاد الاستهلاك', 'Usage counter')}
       >
         <BarChart2 className={cn('w-4 h-4', mainColor)} />
       </button>
@@ -127,6 +129,7 @@ export function UsageCounter() {
   return (
     <div
       ref={panelRef}
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
       className="fixed bottom-5 left-5 z-50 select-none"
     >
       {/* ── Expanded Panel ── */}
@@ -136,7 +139,7 @@ export function UsageCounter() {
           <div className="flex items-center justify-between mb-3">
             <span className="font-bold text-foreground flex items-center gap-1.5">
               <BarChart2 className="w-3.5 h-3.5 text-primary" />
-              استهلاك الخدمات
+               {t('استهلاك الخدمات', 'Service usage')}
             </span>
             <div className="flex items-center gap-1">
               <button onClick={fetchQuota} disabled={loading} className="p-1 rounded hover:bg-muted transition-colors">
@@ -151,8 +154,8 @@ export function UsageCounter() {
           {isTrial ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">التجربة المجانية</span>
-                <span className={cn('font-bold', mainColor)}>{quota.trialRemaining} / 3 متبقٍ</span>
+                <span className="text-muted-foreground">{t('التجربة المجانية', 'Free trial')}</span>
+                <span className={cn('font-bold', mainColor)}>{t(`${quota.trialRemaining} / 3 متبقٍ`, `${quota.trialRemaining} / 3 remaining`)}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-1.5">
                 <div
@@ -162,7 +165,7 @@ export function UsageCounter() {
               </div>
               {quota.needsUpgrade && (
                 <a href="/pricing" className="block text-center text-xs text-secondary hover:underline font-bold mt-2">
-                  اشترك للحصول على المزيد ←
+                  {t('اشترك للحصول على المزيد ←', 'Subscribe for more →')}
                 </a>
               )}
             </div>
@@ -177,7 +180,7 @@ export function UsageCounter() {
                 return (
                   <div key={svc}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-muted-foreground text-xs">{SERVICE_LABELS[svc]}</span>
+                       <span className="text-muted-foreground text-xs">{t(...SERVICE_LABELS[svc])}</span>
                       <span className={cn('text-xs font-bold', c)}>{rem} / {total}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-1">
@@ -187,7 +190,7 @@ export function UsageCounter() {
                       />
                     </div>
                     <div className="text-[10px] text-muted-foreground mt-0.5">
-                      مستهلك: {used} ({p}%)
+                       {t(`مستهلك: ${used} (${p}%)`, `Used: ${used} (${p}%)`)}
                     </div>
                   </div>
                 );
@@ -196,7 +199,7 @@ export function UsageCounter() {
               <div className="border-t border-border pt-2 mt-2">
                 <a href="/usage-log" className="text-xs text-primary hover:underline flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" />
-                  سجل الاستهلاك التفصيلي
+                   {t('سجل الاستهلاك التفصيلي', 'Detailed usage log')}
                 </a>
               </div>
             </div>
@@ -209,7 +212,7 @@ export function UsageCounter() {
         <button
           onClick={() => setCollapsed(true)}
           className="p-1 rounded-lg hover:bg-muted/80 transition-colors"
-          title="طيّ"
+           title={t('طيّ', 'Collapse')}
         >
           <ChevronDown className="w-3 h-3 text-muted-foreground" />
         </button>
@@ -227,7 +230,7 @@ export function UsageCounter() {
             {isTrial ? `${quota.trialRemaining}/3` : mainRemaining}
           </span>
           <span className="text-[10px] text-muted-foreground">
-            {isTrial ? 'تجربة' : 'متبقٍ'}
+             {isTrial ? t('تجربة', 'Trial') : t('متبقٍ', 'Remaining')}
           </span>
           {open ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronUp className="w-3 h-3 text-muted-foreground" />}
         </button>

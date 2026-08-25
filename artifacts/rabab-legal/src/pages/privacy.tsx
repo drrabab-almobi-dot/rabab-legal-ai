@@ -2,6 +2,8 @@ import React from 'react';
 import { setPageSEO } from '@/lib/seo';
 import { Navbar, Footer } from '@/components/layout';
 import { Shield } from 'lucide-react';
+import { useLang } from '@/hooks/use-language';
+import { translateArabicText } from '@/lib/translations';
 
 const sections = [
   {
@@ -47,9 +49,10 @@ const sections = [
 ];
 
 export default function Privacy() {
-  setPageSEO({ title: 'سياسة الخصوصية', canonical: 'https://rabablegal.com/privacy' });
+  const { lang, t } = useLang();
+  setPageSEO({ title: t('سياسة الخصوصية', 'Privacy Policy'), canonical: 'https://rabablegal.com/privacy' });
   return (
-    <div className="min-h-screen flex flex-col font-sans" dir="rtl">
+    <div className="min-h-screen flex flex-col font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <section className="bg-primary py-16">
@@ -57,8 +60,8 @@ export default function Privacy() {
           <div className="w-14 h-14 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center mx-auto mb-4">
             <Shield className="w-7 h-7 text-secondary" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">سياسة الخصوصية</h1>
-          <p className="text-white/70">آخر تحديث: يوليو 2026</p>
+          <h1 className="text-4xl font-bold text-white mb-2">{t('سياسة الخصوصية', 'Privacy Policy')}</h1>
+          <p className="text-white/70">{t('آخر تحديث: يوليو 2026', 'Last updated: July 2026')}</p>
         </div>
       </section>
 
@@ -66,15 +69,15 @@ export default function Privacy() {
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-10">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              نحن في <strong className="text-secondary">RABAB LEGAL AI</strong> نلتزم بحماية خصوصيتك وبياناتك الشخصية. توضح هذه السياسة كيفية جمع بياناتك واستخدامها وحمايتها وفق أفضل الممارسات الدولية والأنظمة المعمول بها في المملكة العربية السعودية.
+               {t('نحن في RABAB LEGAL AI نلتزم بحماية خصوصيتك وبياناتك الشخصية. توضح هذه السياسة كيفية جمع بياناتك واستخدامها وحمايتها وفق أفضل الممارسات الدولية والأنظمة المعمول بها في المملكة العربية السعودية.', 'At RABAB LEGAL AI, we are committed to protecting your privacy and personal data. This policy explains how we collect, use, and protect your data in accordance with international best practices and applicable Saudi laws.')}
             </p>
           </div>
 
           <div className="space-y-8">
             {sections.map((s, i) => (
               <div key={i}>
-                <h2 className="text-xl font-bold text-foreground mb-3">{s.title}</h2>
-                <p className="text-muted-foreground leading-loose whitespace-pre-line">{s.content}</p>
+                <h2 className="text-xl font-bold text-foreground mb-3">{lang === 'ar' ? s.title : translateArabicText(s.title)}</h2>
+                <p className="text-muted-foreground leading-loose whitespace-pre-line">{lang === 'ar' ? s.content : translateArabicText(s.content)}</p>
                 {i < sections.length - 1 && <div className="border-b border-border/40 mt-8" />}
               </div>
             ))}
