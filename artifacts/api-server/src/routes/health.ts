@@ -6,6 +6,12 @@ import { getTavilyStats } from "../lib/legal-search";
 const router: IRouter = Router();
 
 // ── Basic liveness probe (used by artifact health check) ─────────────────
+// Keep the API root healthy as well as /healthz. Older deployment probes used
+// /api, while the current artifact configuration uses /api/healthz.
+router.get("/", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 router.get("/healthz", (_req, res) => {
   res.json({ status: "ok" });
 });
