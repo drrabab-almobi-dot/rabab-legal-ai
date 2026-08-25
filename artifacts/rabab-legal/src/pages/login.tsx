@@ -171,6 +171,7 @@ export default function Login() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        signal: AbortSignal.timeout(12000),
       });
       // Normal success
       contextLogin(res.user);
@@ -188,7 +189,9 @@ export default function Login() {
         toast({
           variant: "destructive",
           title: "فشل تسجيل الدخول",
-          description: errBody?.error || "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+          description: err?.name === "TimeoutError" || err?.name === "AbortError"
+            ? "الخادم لا يستجيب حاليًا. تحققي من اتصال الخدمة وحاولي بعد قليل."
+            : errBody?.error || "البريد الإلكتروني أو كلمة المرور غير صحيحة"
         });
       }
     } finally {
