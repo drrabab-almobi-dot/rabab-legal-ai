@@ -1,6 +1,19 @@
 {
   "buildCommand": "pnpm run build && test -f artifacts/api-server/dist/app.mjs",
   "outputDirectory": "artifacts/rabab-legal/dist/public",
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "rabab-legal-ai\\.vercel\\.app"
+        }
+      ],
+      "destination": "https://rabablegal.com/$1",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
