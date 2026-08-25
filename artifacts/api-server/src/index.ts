@@ -1,4 +1,4 @@
-import app from "./app";
+import app, { markAppReady } from "./app";
 import { logger } from "./lib/logger";
 // بوت تلجرام — في بيئة التطوير يعمل بـ polling، في الإنتاج يعمل بوضع الإرسال فقط (بدون polling)
 // لتجنب خطأ 409 Conflict عند تشغيل بيئتين في آنٍ واحد. انظر startTelegramBot() في telegram-bot.ts.
@@ -29,7 +29,17 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-// ── Startup sequence (async so we can probe the DB before accepting traffic) ─
+// Open the port before database checks. This lets Render distinguish a live
+// process from a startup dependency failure instead of waiting indefinitely.
+app.listen(port, (err) => {
+  if (err) {
+    logger.error({ err }, "Error listening on port");
+    process.exit(1);
+  }
+  logger.info({ port }, "Server listening (startup checks running)");
+});
+
+// ── Startup sequence (async; real API traffic is gated until checks pass) ─
 (async () => {
   // ── Schema readiness checks — apply pending migrations idempotently ──────
   // Each block probes for a feature's schema; if missing it applies the
@@ -269,13 +279,8 @@ if (Number.isNaN(port) || port <= 0) {
     process.exit(1);
   }
 
-  app.listen(port, (err) => {
-    if (err) {
-      logger.error({ err }, "Error listening on port");
-      process.exit(1);
-    }
-
-    logger.info({ port }, "Server listening");
+  markAppReady();
+  logger.info("✅ Startup checks completed; API is ready");
 
     // البوت: polling في التطوير فقط، إرسال-فقط في الإنتاج — لا 409 بعد الآن.
     startTelegramBot();
@@ -436,7 +441,6 @@ if (Number.isNaN(port) || port <= 0) {
       );
     }, 30_000).unref(); // 30-second delay to let the server warm up
     logger.info("⏰ جدولة إشعارات انتهاء الاشتراك اليومية نشطة");
-  });
 })();
 
     const runBlocklistPurge = async (label: string) => {
