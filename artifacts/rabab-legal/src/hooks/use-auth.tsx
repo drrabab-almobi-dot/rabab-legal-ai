@@ -15,6 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [sessionCheckTimedOut, setSessionCheckTimedOut] = useState(false);
   const [location, setLocation] = useLocation();
   const { data, isLoading, isError } = useGetMe({
     query: {
@@ -22,6 +23,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       retry: false,
     }
   });
+
+  useEffect(() => {
+    if (!isLoading) {
+      setSessionCheckTimedOut(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setSessionCheckTimedOut(true), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [isLoading]);
 
   useEffect(() => {
     if (data) {
@@ -42,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
-    isLoading,
+    isLoading: isLoading && !sessionCheckTimedOut,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
     login,
