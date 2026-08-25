@@ -13,6 +13,19 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROMPT_ROOTS = [
+  join(__dirname, "../prompts"),
+  join(__dirname, "../../prompts"),
+  join(process.cwd(), "artifacts/api-server/prompts"),
+];
+
+function resolvePromptFile(...parts: string[]): string {
+  for (const root of PROMPT_ROOTS) {
+    const filePath = join(root, ...parts);
+    if (existsSync(filePath)) return filePath;
+  }
+  throw new Error(`Required legal prompt file is missing: ${parts.join("/")}`);
+}
 
 // ── خريطة أنواع المهام إلى ملفات الملحقات ──────────────────────────────────
 const SERVICE_MODULE_MAP: Record<string, string> = {
@@ -40,7 +53,7 @@ export function loadServiceModule(taskType: string | null): string | null {
   if (_moduleCache.has(taskType)) return _moduleCache.get(taskType) ?? null;
 
   try {
-    const filePath = join(__dirname, "../../prompts/modules", fileName);
+    const filePath = resolvePromptFile("modules", fileName);
     if (!existsSync(filePath)) { _moduleCache.set(taskType, null); return null; }
     const content = readFileSync(filePath, "utf-8").trim();
     // لا تُضف محتوى placeholder فارغاً — فقط الملحقات المؤلَّفة فعلاً
@@ -59,7 +72,7 @@ let _charter: string | null = null;
 /** يُعيد نص الميثاق من الذاكرة (يُحمَّل من الملف عند أول طلب). */
 export function getLegalCharter(): string {
   if (!_charter) {
-    const filePath = join(__dirname, "../../prompts/legal_system_prompt.md");
+    const filePath = resolvePromptFile("legal_system_prompt.md");
     _charter = readFileSync(filePath, "utf-8").trim();
   }
   return _charter;
