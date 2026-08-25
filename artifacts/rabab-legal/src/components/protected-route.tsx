@@ -37,22 +37,14 @@ export function ProtectedRoute({ children, adminOnly = false }: { children: Reac
 }
 
 export function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (isAuthenticated) {
       setLocation('/dashboard');
     }
-  }, [isAuthenticated, isLoading, setLocation]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  }, [isAuthenticated, setLocation]);
 
   if (isAuthenticated) {
     return null; // Will redirect
