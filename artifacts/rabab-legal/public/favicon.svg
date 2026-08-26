@@ -1,3 +1,15 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <rect width="180" height="180" rx="42" fill="#071126"/>
+  <circle cx="90" cy="90" r="64" fill="#F5C400"/>
+  <g stroke="#071126" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M90 47V132"/>
+    <path d="M49 66H131"/>
+    <path d="M90 47L49 66"/>
+    <path d="M90 47L131 66"/>
+    <path d="M29 116L43 75L57 116"/>
+    <path d="M123 116L137 75L151 116"/>
+    <path d="M29 116C36 124 50 124 57 116"/>
+    <path d="M123 116C130 124 144 124 151 116"/>
+    <path d="M68 136H112"/>
+  </g>
 </svg>
