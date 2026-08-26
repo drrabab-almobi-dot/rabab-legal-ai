@@ -50,3 +50,4 @@
 - [GitHub Actions OAuth scope](github-workflows-scope.md) — كتابة ملفات ‎.github/workflows‎ تحتاج نطاق workflow منفصلًا عن repo في اتصال GitHub
 - [Repository Backup Boundary](repository-backup-boundary.md) — مستودع GitHub يحفظ المصدر والترحيلات فقط؛ نسخ قواعد البيانات وبيانات المستخدمين والأرشيفات الكبيرة تبقى خارج المستودع
 - [Multi-Artifact Publishing](multi-artifact-publishing.md) — Replit ينشر كل الـArtifacts معًا؛ الخدمات الاختيارية يجب أن تكون آمنة وقابلة للتشغيل في الإنتاج
+- [Safe GitHub Sync](github-sync-git-data-api.md) — عند غياب upstream محلي، ارفع التغييرات فوق شجرة GitHub الحالية عبر Git Data API دون حذف الملفات البعيدة
