@@ -91,7 +91,7 @@ export default function ContractsPage() {
   const hasAccess = isAuthenticated && !shouldShowPaywall;
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden font-sans bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       {/* ── Header ── */}
@@ -571,7 +571,16 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="w-full px-3 sm:px-5 lg:px-7 py-6">
       <GateWrap hasAccess={hasAccess}>
-        <div className="flex min-w-0 flex-col rounded-2xl border-2 border-secondary/60 bg-card overflow-hidden shadow-[0_0_30px_hsl(191_100%_50%_/_0.12)]" style={{ height: '70vh', minHeight: 'min(520px, calc(100dvh - 190px))' }}>
+        <div
+          className="flex min-w-0 flex-col rounded-2xl border-2 border-secondary/60 bg-card overflow-hidden shadow-[0_0_30px_hsl(191_100%_50%_/_0.12)]"
+          style={{
+            // The expanded settings panel must be part of the page flow so the
+            // input remains reachable on short screens. Once collapsed, keep
+            // the compact chat viewport with its own scrollable messages area.
+            height: settingsOpen ? 'auto' : '70vh',
+            minHeight: 'min(520px, calc(100dvh - 190px))',
+          }}
+        >
 
           {/* ── رباب opening message (fixed at top) ── */}
           <div className="shrink-0 px-6 pt-5 pb-3 border-b border-primary-foreground/20 text-center relative" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -863,7 +872,7 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
           </div>
 
           {/* ── Messages area ── */}
-          <div className="flex-1 overflow-y-auto">
+          <div className={`flex-1 overflow-y-auto ${settingsOpen ? 'min-h-[10rem]' : 'min-h-0'}`}>
           <div className="p-6 sm:p-8 space-y-6">
 
             {/* Chat history */}

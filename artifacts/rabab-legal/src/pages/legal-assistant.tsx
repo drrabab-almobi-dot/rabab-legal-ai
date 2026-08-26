@@ -39,10 +39,10 @@ const SERVICE_LABELS_EN: Record<string, string> = {
 };
 
 const SERVICE_FRAME_STYLES = [
-  { idle: 'border-secondary/70 hover:border-secondary hover:shadow-secondary/15', active: 'border-secondary bg-secondary/10', panel: 'border-secondary/60' },
-  { idle: 'border-accent/70 hover:border-accent hover:shadow-accent/15', active: 'border-accent bg-accent/10', panel: 'border-accent/60' },
-  { idle: 'border-blue-400/70 hover:border-blue-400 hover:shadow-blue-400/15', active: 'border-blue-400 bg-blue-400/10', panel: 'border-blue-400/60' },
-  { idle: 'border-emerald-400/70 hover:border-emerald-400 hover:shadow-emerald-400/15', active: 'border-emerald-400 bg-emerald-400/10', panel: 'border-emerald-400/60' },
+  { idle: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15', active: 'border-primary-foreground bg-primary-foreground/10', panel: 'border-primary-foreground/60' },
+  { idle: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15', active: 'border-primary-foreground bg-primary-foreground/10', panel: 'border-primary-foreground/60' },
+  { idle: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15', active: 'border-primary-foreground bg-primary-foreground/10', panel: 'border-primary-foreground/60' },
+  { idle: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15', active: 'border-primary-foreground bg-primary-foreground/10', panel: 'border-primary-foreground/60' },
 ];
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -302,7 +302,7 @@ export default function LegalAssistant() {
     : null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background flex flex-col overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <section className="bg-primary py-12 px-3 sm:px-5 lg:px-7 text-white">
@@ -374,7 +374,7 @@ export default function LegalAssistant() {
           {/* ── «اعرض موضوعك» — مدخل التوجيه الذكي ── */}
           {!isPleadingsOnly && (
             <div className="mb-8">
-              <div className="bg-card border-2 border-secondary/55 rounded-2xl p-5 shadow-sm shadow-secondary/10">
+              <div className="bg-card border-2 border-primary-foreground/70 rounded-2xl p-5 shadow-sm shadow-primary-foreground/10">
                 <h2 className="text-lg font-bold text-foreground mb-1">{t('اعرض موضوعك', 'Describe Your Matter')}</h2>
                 <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
                   {t('اكتب موضوعك بلغتك — عقداً تريد مراجعته، أو نزاعاً قائماً، أو استفساراً نظامياً. نحدّد الخدمة المناسبة ونجهّز ملفك.', 'Describe your matter in your own words — a contract to review, an ongoing dispute, or a legal question. We will identify the right service and prepare your case.') }
@@ -385,7 +385,7 @@ export default function LegalAssistant() {
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && topicInput.trim().length >= 10) { e.preventDefault(); handleTopicSubmit(); } }}
                   placeholder={t('مثال: لدينا عقد توريد مع مورّد خارجي ونرغب في مراجعته قبل التوقيع…', 'Example: We have a supply contract with an overseas vendor and would like it reviewed before signing…')}
                   rows={3}
-                  className="w-full bg-transparent resize-none rounded-xl border-2 border-secondary/45 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary transition-all mb-3"
+                  className="w-full bg-transparent resize-none rounded-xl border-2 border-primary-foreground/65 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-foreground/40 focus:border-primary-foreground transition-all mb-3"
                   dir={lang === 'ar' ? 'rtl' : 'ltr'}
                 />
                 <div className="flex items-center justify-between">
@@ -413,7 +413,7 @@ export default function LegalAssistant() {
           )}
 
           <div className={`w-full ${
-            isPleadingsOnly ? 'grid grid-cols-1 gap-5' : 'grid grid-cols-1 sm:grid-cols-2 gap-5'
+            isPleadingsOnly ? 'grid grid-cols-1 gap-5' : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5'
           }`}>
             {SERVICES
               .slice()

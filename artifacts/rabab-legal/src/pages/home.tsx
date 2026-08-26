@@ -256,7 +256,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col overflow-x-hidden font-sans">
       <Navbar />
       
       {/* Hero Section */}

@@ -400,7 +400,7 @@ export default function LegalSearchPage() {
   const hasFilters = !!(codexFilter || courtFilter || stageFilter || yearFilter || cityFilter || disputeFilter);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background flex flex-col overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       {/* ── Hero header ── */}
@@ -418,8 +418,8 @@ export default function LegalSearchPage() {
 
           {/* Search form */}
           <form onSubmit={e => { e.preventDefault(); doSearch(); }} className="space-y-3 rounded-2xl border-2 border-secondary/65 bg-white/5 p-3 shadow-lg shadow-black/10">
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="relative min-w-0 flex-1">
                 <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                 <input
                   value={query}
@@ -432,7 +432,7 @@ export default function LegalSearchPage() {
               <button
                 type="submit"
                 disabled={loading || !query.trim()}
-                className="px-6 h-14 bg-secondary text-primary rounded-2xl font-bold text-base hover:bg-secondary/90 disabled:opacity-40 flex items-center gap-2 shrink-0 transition-colors"
+                className="h-14 w-full shrink-0 rounded-2xl bg-secondary px-6 text-base font-bold text-primary transition-colors hover:bg-secondary/90 disabled:opacity-40 sm:w-auto"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                  {loading ? t("جارٍ...", 'Searching…') : t("ابحث", 'Search')}

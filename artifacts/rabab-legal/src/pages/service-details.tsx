@@ -9,20 +9,20 @@ import { translateArabicText } from '@/lib/translations';
 
 const branchFrameStyles = [
   {
-    card: 'border-secondary/70 hover:border-secondary hover:shadow-secondary/15',
-    icon: 'border-2 border-secondary/80 bg-secondary/30 text-secondary group-hover:bg-secondary group-hover:text-primary',
+    card: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15',
+    icon: 'border-2 border-primary-foreground/80 bg-primary-foreground/20 text-primary-foreground group-hover:bg-primary-foreground group-hover:text-primary',
   },
   {
-    card: 'border-accent/70 hover:border-accent hover:shadow-accent/15',
-    icon: 'border-2 border-accent/80 bg-accent/30 text-accent group-hover:bg-accent group-hover:text-primary',
+    card: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15',
+    icon: 'border-2 border-primary-foreground/80 bg-primary-foreground/20 text-primary-foreground group-hover:bg-primary-foreground group-hover:text-primary',
   },
   {
-    card: 'border-blue-400/70 hover:border-blue-400 hover:shadow-blue-400/15',
-    icon: 'border-2 border-blue-400/80 bg-blue-400/30 text-blue-300 group-hover:bg-blue-400 group-hover:text-primary',
+    card: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15',
+    icon: 'border-2 border-primary-foreground/80 bg-primary-foreground/20 text-primary-foreground group-hover:bg-primary-foreground group-hover:text-primary',
   },
   {
-    card: 'border-emerald-400/70 hover:border-emerald-400 hover:shadow-emerald-400/15',
-    icon: 'border-2 border-emerald-400/80 bg-emerald-400/30 text-emerald-300 group-hover:bg-emerald-400 group-hover:text-primary',
+    card: 'border-primary-foreground/70 hover:border-primary-foreground hover:shadow-primary-foreground/15',
+    icon: 'border-2 border-primary-foreground/80 bg-primary-foreground/20 text-primary-foreground group-hover:bg-primary-foreground group-hover:text-primary',
   },
 ];
 
@@ -46,7 +46,7 @@ export default function ServiceDetails() {
       <div className="min-h-screen bg-background flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <main className="flex-1 flex items-center justify-center px-4 py-20">
-          <div className="max-w-lg w-full text-center rounded-3xl border-2 border-secondary/75 bg-card p-8 shadow-md shadow-secondary/15">
+          <div className="max-w-lg w-full text-center rounded-3xl border-2 border-primary-foreground/75 bg-card p-8 shadow-md shadow-primary-foreground/15">
             <h1 className="text-2xl font-bold text-secondary mb-3">{t('الخدمة غير موجودة', 'Service not found')}</h1>
             <p className="text-muted-foreground leading-relaxed mb-6">{t('ربما تغيّر رابط الخدمة أو لم يعد متاحاً.', 'The service link may have changed or it is no longer available.')}</p>
             <Link href="/#services" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90">
@@ -83,7 +83,7 @@ export default function ServiceDetails() {
             </Link>
 
             <div className="mt-8 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-secondary/40 bg-secondary/15 text-secondary">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary-foreground/50 bg-primary-foreground/15 text-primary-foreground">
                 <ServiceIcon className="h-8 w-8" />
               </div>
               <div>

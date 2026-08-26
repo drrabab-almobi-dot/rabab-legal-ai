@@ -96,7 +96,7 @@ export default function Appointment() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex flex-col font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <div className="flex-1 flex items-center justify-center p-8">
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md rounded-2xl border-2 border-secondary/70 bg-card p-8 text-center shadow-lg shadow-secondary/10">
@@ -123,7 +123,7 @@ export default function Appointment() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       {/* Hero */}
@@ -138,7 +138,7 @@ export default function Appointment() {
       </section>
 
       <section className="py-16 bg-muted/20">
-        <div className="w-full mx-auto px-3 sm:px-5 lg:px-7 max-w-5xl">
+        <div className="w-full mx-auto max-w-7xl px-3 sm:px-5 lg:px-7">
 
           {/* Progress */}
           <div className="flex items-center gap-2 mb-10">

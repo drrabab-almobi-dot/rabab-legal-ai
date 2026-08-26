@@ -211,7 +211,7 @@ function ConsultationAttachmentPicker({
         onChange={handleFileSelect}
       />
 
-      <div className="rounded-xl border border-dashed border-primary/35 bg-primary/5 p-4 space-y-3">
+      <div className="rounded-xl border border-dashed border-primary-foreground/45 bg-primary/5 p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2">
             <Paperclip className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -224,14 +224,14 @@ function ConsultationAttachmentPicker({
             type="button"
             onClick={openFilePicker}
             disabled={disabled || extracting}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-secondary/50 bg-secondary/15 px-3 py-2 text-xs font-bold text-secondary hover:bg-secondary/25 transition-colors disabled:opacity-50"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-primary-foreground/65 bg-primary-foreground/10 px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-foreground/20 hover:border-primary-foreground transition-colors disabled:opacity-50"
           >
             {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
             {extracting ? t('جارٍ القراءة...', 'Reading...') : attachment ? t('استبدال المرفق', 'Replace attachment') : t('إضافة مرفق', 'Add attachment')}
           </button>
         </div>
         {attachment && (
-          <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-background px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-primary-foreground/35 bg-background px-3 py-2">
             <FileText className="w-4 h-4 text-primary shrink-0" />
             <span className="text-xs font-medium text-foreground flex-1 truncate">{attachment.fileName}</span>
             <button
@@ -731,7 +731,7 @@ function SetupScreen({
   // ── Phase 0: نوع الاستشارة ─────────────────────────────────────────────────
   if (phase === 'type-select') {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <ServiceContextHeader title={currentServiceTitle} />
         <main className="flex-1 w-full px-3 sm:px-5 lg:px-7 py-12 max-w-none">
@@ -748,14 +748,14 @@ function SetupScreen({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* استشارة قانونية */}
             <button
               onClick={() => {
                 setConsultationMode('legal');
                 setPhase('country-select');
               }}
-              className="group flex flex-col items-center text-center gap-4 p-8 rounded-2xl border-2 border-secondary/75 bg-card shadow-sm shadow-secondary/10 hover:border-secondary hover:shadow-xl transition-all focus:outline-none focus:ring-2 focus:ring-secondary/50"
+              className="group flex flex-col items-center text-center gap-4 p-8 rounded-2xl border-2 border-primary-foreground/75 bg-card shadow-sm shadow-primary-foreground/10 hover:border-primary-foreground hover:shadow-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-foreground/50"
             >
               <span className="text-5xl">📋</span>
               <div>
@@ -764,7 +764,7 @@ function SetupScreen({
                   {t('استفسارات قانونية عامة، حقوق وواجبات، عقود، أنظمة — تحدّث بحرية ورباب تُرشدك', 'General legal questions, rights, obligations, contracts, and regulations — discuss your matter freely.')}
                 </p>
               </div>
-              <span className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-xs font-semibold border border-secondary/20 group-hover:bg-secondary group-hover:text-primary transition-colors">
+              <span className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-foreground/10 text-primary-foreground text-xs font-semibold border border-primary-foreground/30 group-hover:bg-primary-foreground group-hover:text-primary transition-colors">
                 {t('ابدأ الدردشة', 'Start chat')}
               </span>
             </button>
@@ -775,7 +775,7 @@ function SetupScreen({
                 setConsultationMode('judicial');
                 setPhase('country-select');
               }}
-              className="group flex flex-col items-center text-center gap-4 p-8 rounded-2xl border-2 border-blue-400/75 bg-card shadow-sm shadow-blue-400/10 hover:border-blue-400 hover:shadow-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+              className="group flex flex-col items-center text-center gap-4 p-8 rounded-2xl border-2 border-primary-foreground/75 bg-card shadow-sm shadow-primary-foreground/10 hover:border-primary-foreground hover:shadow-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-foreground/50"
             >
               <span className="text-5xl">🏛️</span>
               <div>
@@ -784,7 +784,7 @@ function SetupScreen({
                   {t('قضايا أمام المحاكم، دفوع، مذكرات، تكييف قانوني، تحليل متخصص بحسب نوع النزاع', 'Court cases, defenses, pleadings, legal classification, and specialized dispute analysis.')}
                 </p>
               </div>
-              <span className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-xs font-semibold border border-secondary/20 group-hover:bg-secondary group-hover:text-primary transition-colors">
+              <span className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-foreground/10 text-primary-foreground text-xs font-semibold border border-primary-foreground/30 group-hover:bg-primary-foreground group-hover:text-primary transition-colors">
                 {t('اختر نوع المهمة', 'Choose task type')}
               </span>
             </button>
@@ -798,7 +798,7 @@ function SetupScreen({
   if (phase === 'country-select') {
     const isLegal = consultationMode === 'legal';
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <ServiceContextHeader title={currentServiceTitle} />
         <main className="flex-1 w-full px-3 sm:px-5 lg:px-7 py-12 max-w-none">
@@ -810,7 +810,7 @@ function SetupScreen({
             <ChevronRight className="w-4 h-4" />
             {t('تغيير نوع الاستشارة', 'Change consultation type')}
           </button>
-          <div className="bg-card border-2 border-secondary/75 rounded-2xl shadow-md shadow-secondary/10 p-6 sm:p-8 text-center">
+          <div className="bg-card border-2 border-primary-foreground/75 rounded-2xl shadow-md shadow-primary-foreground/10 p-6 sm:p-8 text-center">
             <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-secondary mx-auto mb-4 shadow-lg">
               <Globe className="w-7 h-7" />
             </div>
@@ -822,13 +822,13 @@ function SetupScreen({
               {t('لأن النصوص والاختصاص والإجراءات تختلف بين الدول، سنبني التحليل والمراجع على الدولة التي تختارها.', 'Laws, jurisdiction, and procedures vary by country, so your analysis and references will be based on your selection.')}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {COUNTRIES.map((c, index) => (
+              {COUNTRIES.map(c => (
                 <button
                   key={c.code}
                   type="button"
                   onClick={() => handleCountrySelect(c.code)}
                   disabled={isStarting}
-                  className={`flex flex-col items-center gap-2 rounded-xl border-2 bg-muted/30 hover:bg-primary/5 transition-all py-4 px-3 group disabled:opacity-50 ${['border-secondary/70 hover:border-secondary', 'border-blue-400/70 hover:border-blue-400', 'border-emerald-400/70 hover:border-emerald-400', 'border-amber-400/70 hover:border-amber-400', 'border-purple-400/70 hover:border-purple-400', 'border-accent/70 hover:border-accent'][index % 6]}`}
+                  className="flex flex-col items-center gap-2 rounded-xl border-2 border-primary-foreground/70 bg-muted/30 hover:bg-primary-foreground/5 hover:border-primary-foreground transition-all py-4 px-3 group disabled:opacity-50"
                 >
                   <span className="text-4xl leading-none">{c.flag}</span>
                   <span className="text-sm font-bold text-foreground group-hover:text-primary leading-tight text-center">{countryName(c.code, lang)}</span>
@@ -857,7 +857,7 @@ function SetupScreen({
       );
     };
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <ServiceContextHeader title={currentServiceTitle} />
         <main className="flex-1 w-full px-3 sm:px-5 lg:px-7 py-8 max-w-none">
@@ -873,8 +873,8 @@ function SetupScreen({
             <h1 className="text-2xl font-bold text-secondary mb-2">{t('اعرض موضوعك أو أرفق مستنداً', 'Describe your matter or attach a document')}</h1>
             <p className="text-sm text-foreground/80">{t('سنبدأ الحوار بتحليل المعلومات المتاحة، ثم نسأل فقط عن البيانات المؤثرة قبل الإجابة الختامية.', 'We will analyze the available information, then ask only about details that affect the final answer.')}</p>
           </div>
-          <div className="bg-card border-2 border-blue-400/75 rounded-2xl shadow-sm shadow-blue-400/10 p-6 space-y-5">
-            <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-bold text-primary">
+          <div className="bg-card border-2 border-primary-foreground/75 rounded-2xl shadow-sm shadow-primary-foreground/10 p-6 space-y-5">
+            <div className="flex items-center gap-2 rounded-xl border border-primary-foreground/35 bg-primary-foreground/5 px-3 py-2 text-xs font-bold text-primary">
               <span>{countryInfo?.flag}</span>
                <span>{countryInfo ? countryName(countryInfo.code, lang) : ''}</span>
             </div>
@@ -890,7 +890,7 @@ function SetupScreen({
                 onChange={event => setParam('direct_query', event.target.value)}
                 placeholder={t('اكتب ما لديك من وقائع أو سؤالك، وسنستخرج المعلومات من كتابتك أو من المرفق...', 'Write the facts or your question; we will extract information from your text or attachment...')}
                 rows={5}
-                className="w-full rounded-xl border-2 border-blue-400/55 bg-background px-3 py-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+                className="w-full rounded-xl border-2 border-primary-foreground/70 bg-background px-3 py-3 text-sm leading-relaxed focus:outline-none focus:border-primary-foreground focus:ring-2 focus:ring-primary-foreground/40"
                 dir="auto"
               />
             </div>
@@ -912,7 +912,7 @@ function SetupScreen({
   if (phase === 'task-select') {
     const visibleTasks = taskTypes.filter(t => t.group === activeGroup);
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <ServiceContextHeader title={currentServiceTitle} />
         <main className="flex-1 w-full px-3 sm:px-5 lg:px-7 py-8 max-w-none">
@@ -951,7 +951,7 @@ function SetupScreen({
 
           {/* حقل الكتابة المباشر */}
           <div className="mb-8">
-            <div className="relative bg-card border-2 border-secondary/30 rounded-2xl shadow-sm focus-within:border-secondary transition-colors">
+            <div className="relative bg-card border-2 border-primary-foreground/45 rounded-2xl shadow-sm focus-within:border-primary-foreground transition-colors">
               <textarea
                 value={params['direct_query'] ?? ''}
                 onChange={e => setParam('direct_query', e.target.value)}
@@ -1008,8 +1008,8 @@ function SetupScreen({
                 className={cn(
                   "px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors",
                   activeGroup === g
-                    ? "bg-secondary text-primary border-secondary"
-                    : "bg-card text-muted-foreground border-secondary/50 hover:border-secondary hover:text-secondary"
+                    ? "bg-primary-foreground text-primary border-primary-foreground"
+                    : "bg-card text-muted-foreground border-primary-foreground/50 hover:border-primary-foreground hover:text-primary-foreground"
                 )}
               >
                 {g}
@@ -1018,12 +1018,12 @@ function SetupScreen({
           </div>
 
           {/* Task Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {visibleTasks.map(task => (
               <button
                 key={task.id}
                 onClick={() => handleTaskSelect(task)}
-                className="group text-start bg-card border-2 border-blue-400/55 rounded-xl p-4 hover:border-primary/70 hover:shadow-md hover:shadow-primary/10 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="group text-start bg-card border-2 border-primary-foreground/70 rounded-xl p-4 hover:border-primary-foreground hover:shadow-md hover:shadow-primary-foreground/10 transition-all focus:outline-none focus:ring-2 focus:ring-primary-foreground/50"
               >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl shrink-0 mt-0.5">{task.icon}</span>
@@ -1042,7 +1042,7 @@ function SetupScreen({
 
   // ── Phase 2: Task Form ─────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-gradient-to-b from-muted/30 to-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
       <ServiceContextHeader title={currentServiceTitle} />
         <main className="flex-1 w-full px-3 sm:px-5 lg:px-7 py-8 max-w-none">
@@ -1104,7 +1104,7 @@ function SetupScreen({
 
         {/* Country Gate — must pick before the form appears */}
         {!country && (
-          <div className="bg-card border-2 border-secondary/75 rounded-2xl shadow-md shadow-secondary/10 p-6 mb-4 text-center space-y-4">
+          <div className="bg-card border-2 border-primary-foreground/75 rounded-2xl shadow-md shadow-primary-foreground/10 p-6 mb-4 text-center space-y-4">
             <div className="flex items-center justify-center gap-2 text-secondary">
               <Globe className="w-5 h-5" />
               <h2 className="text-lg font-bold">{t('اختاري دولة الإقامة / النزاع أولاً', 'Choose the country of residence / dispute first')}</h2>
@@ -1113,11 +1113,11 @@ function SetupScreen({
               {t('تختلف الأنظمة القانونية بين دول الخليج — الاختيار يضمن دقة الرأي القانوني وصحة المراجع', 'Legal systems differ across Gulf states; your selection helps ensure accurate analysis and sources.')}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-              {COUNTRIES.map((c, index) => (
+              {COUNTRIES.map(c => (
                 <button
                   key={c.code}
                   onClick={() => setCountry(c.code)}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border-2 bg-muted/30 hover:bg-primary/5 transition-all py-3 px-2 group ${['border-secondary/70 hover:border-secondary', 'border-blue-400/70 hover:border-blue-400', 'border-emerald-400/70 hover:border-emerald-400', 'border-amber-400/70 hover:border-amber-400', 'border-purple-400/70 hover:border-purple-400', 'border-accent/70 hover:border-accent'][index % 6]}`}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border-2 border-primary-foreground/70 bg-muted/30 hover:bg-primary-foreground/5 hover:border-primary-foreground transition-all py-3 px-2 group"
                 >
                   <span className="text-3xl leading-none">{c.flag}</span>
                   <span className="text-sm font-bold text-foreground group-hover:text-primary leading-tight text-center">{countryName(c.code, lang)}</span>
@@ -1128,12 +1128,12 @@ function SetupScreen({
         )}
 
         {/* Form — shown only after country is selected */}
-        <div className={cn("bg-card border-2 border-blue-400/70 rounded-xl shadow-sm shadow-blue-400/10 p-6 space-y-5", !country && "opacity-40 pointer-events-none select-none")}>
+        <div className={cn("bg-card border-2 border-primary-foreground/75 rounded-xl shadow-sm shadow-primary-foreground/10 p-6 space-y-5", !country && "opacity-40 pointer-events-none select-none")}>
           {/* Country — shown as selected chip once chosen */}
           <div className="space-y-1.5">
             <label className="text-base font-bold text-foreground">{t('دولة الإقامة / النزاع', 'Country of residence / dispute')}</label>
             {country ? (
-              <div className="flex items-center justify-between rounded-xl border-2 border-primary/50 bg-primary/5 px-4 py-2.5">
+              <div className="flex items-center justify-between rounded-xl border-2 border-primary-foreground/60 bg-primary-foreground/5 px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{COUNTRIES.find(c => c.code === country)?.flag}</span>
                   <span className="font-bold text-base text-foreground">{countryName(country, lang)}</span>
@@ -1146,7 +1146,7 @@ function SetupScreen({
                 </button>
               </div>
             ) : (
-              <div className="h-11 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-11 rounded-xl border-2 border-dashed border-primary-foreground/40 bg-primary-foreground/5 flex items-center justify-center text-sm text-muted-foreground">
                 {t('← اختاري الدولة من الأعلى أولاً', '← Choose a country above first')}
               </div>
             )}
@@ -1158,7 +1158,7 @@ function SetupScreen({
             disabled={isStarting}
           />
 
-          <div className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+          <div className="rounded-xl border border-primary-foreground/30 bg-primary-foreground/5 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
             {t('يمكنك الاكتفاء بالمرفق أو كتابة استشارتك أدناه. جميع الحقول التالية اختيارية وتساعد على تنظيم التحليل فقط.', 'You may use only an attachment or write your consultation below. All following fields are optional and only help organize the analysis.')}
           </div>
 
@@ -1174,7 +1174,7 @@ function SetupScreen({
               onChange={event => setParam('client_request', event.target.value)}
               placeholder={t('مثال: أريد معرفة موقفي القانوني والخطوة المناسبة في هذه الحالة...', 'Example: I want to know my legal position and the appropriate next step...')}
               rows={4}
-              className="w-full rounded-xl border-2 border-blue-400/55 bg-background px-4 py-3 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+              className="w-full rounded-xl border-2 border-primary-foreground/70 bg-background px-4 py-3 text-base leading-relaxed focus:outline-none focus:border-primary-foreground focus:ring-2 focus:ring-primary-foreground/40"
               dir="auto"
             />
             {errors.client_request && <p className="text-xs text-destructive">{errors.client_request}</p>}
@@ -1195,13 +1195,13 @@ function SetupScreen({
                   rows={field.rows ?? 3}
                   dir="auto"
                   style={{ resize: 'vertical' }}
-                  className="w-full rounded-lg border-2 border-secondary/55 bg-background px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                  className="w-full rounded-lg border-2 border-primary-foreground/70 bg-background px-4 py-3 text-base focus:outline-none focus:border-primary-foreground focus:ring-2 focus:ring-primary-foreground/40"
                 />
               ) : field.type === 'select' ? (
                 <select
                   value={params[field.key] ?? ''}
                   onChange={e => setParam(field.key, e.target.value)}
-                  className="w-full h-12 rounded-lg border-2 border-secondary/55 bg-background px-4 text-base focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                   className="w-full h-12 rounded-lg border-2 border-primary-foreground/70 bg-background px-4 text-base focus:outline-none focus:border-primary-foreground focus:ring-2 focus:ring-primary-foreground/40"
                   dir="auto"
                 >
                   {field.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -1211,7 +1211,7 @@ function SetupScreen({
                   value={params[field.key] ?? ''}
                   onChange={e => setParam(field.key, e.target.value)}
                   placeholder={field.placeholder}
-                  className="w-full h-12 rounded-lg border-2 border-secondary/55 bg-background px-4 text-base focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                   className="w-full h-12 rounded-lg border-2 border-primary-foreground/70 bg-background px-4 text-base focus:outline-none focus:border-primary-foreground focus:ring-2 focus:ring-primary-foreground/40"
                 />
               )}
               {errors[field.key] && <p className="text-xs text-destructive">{errors[field.key]}</p>}
@@ -2035,7 +2035,7 @@ function ChatScreen({
   const showTotal = questionsAllowed !== null && questionsAllowed < 999;
 
   return (
-    <div className="h-[100svh] flex flex-col bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="h-[100svh] flex flex-col overflow-x-hidden bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Quota exhausted full modal */}
       {quotaExhausted && (
         <QuotaExhaustedModal onGoToPricing={() => setLocation('/pricing')} />
@@ -2604,7 +2604,7 @@ export default function Consultation() {
 
   if (subLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-muted/20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden bg-muted/20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -2629,7 +2629,7 @@ export default function Consultation() {
       );
     }
     return (
-      <div className="min-h-screen flex flex-col bg-muted/20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden bg-muted/20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Navbar />
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="text-center max-w-sm space-y-4">

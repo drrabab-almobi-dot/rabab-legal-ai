@@ -618,18 +618,18 @@ function MojCircularBrowser() {
     <div className="space-y-4" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Search form */}
       <form onSubmit={handleSearch} className="space-y-2">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={t('ابحث في التعاميم... رقم التعميم أو الموضوع أو النص', 'Search circulars by number, subject, or text')}
-            className="flex-1 h-11 rounded-2xl border-2 border-secondary/40 bg-background px-4 text-sm focus:outline-none focus:border-secondary transition-colors shadow-sm"
+            className="min-w-0 flex-1 h-11 rounded-2xl border-2 border-secondary/40 bg-background px-4 text-sm focus:outline-none focus:border-secondary transition-colors shadow-sm"
             disabled={loading}
           />
           <button
             type="submit"
             disabled={loading}
-            className="h-11 px-4 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
+            className="h-11 w-full px-4 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 sm:w-auto"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             {t('بحث', 'Search')}
@@ -1119,16 +1119,16 @@ function CircularAgent() {
     return (
       <div className="space-y-5">
         {/* Search form */}
-        <form onSubmit={handleSearch} className="flex gap-2">
+        <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
           <input
             value={topic}
             onChange={e => setTopic(e.target.value)}
             placeholder={t('أدخل موضوع التعميم... مثال: إجازة الأمومة، الحضور والانصراف، العمل عن بُعد', 'Enter a circular topic... e.g., maternity leave, attendance, remote work')}
-            className="flex-1 h-12 rounded-2xl border-2 border-secondary/55 bg-background px-4 text-sm focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/15 transition-colors shadow-sm"
+            className="min-w-0 flex-1 h-12 rounded-2xl border-2 border-secondary/55 bg-background px-4 text-sm focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/15 transition-colors shadow-sm"
             disabled={searchLoading}
           />
           <button type="submit" disabled={!topic.trim() || searchLoading}
-            className="h-12 px-5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+            className="h-12 w-full px-5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap sm:w-auto">
             {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             {searchLoading ? t('جارٍ البحث...', 'Searching...') : t('ابحث', 'Search')}
           </button>
@@ -1174,16 +1174,16 @@ function CircularAgent() {
   return (
     <div className="space-y-5">
       {/* Search form */}
-      <form onSubmit={handleSearch} className="flex gap-2">
+      <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
         <input
           value={topic}
           onChange={e => setTopic(e.target.value)}
           placeholder={t('أدخل موضوع التعميم... مثال: إجازة الأمومة، الحضور والانصراف، العمل عن بُعد', 'Enter a circular topic... e.g., maternity leave, attendance, remote work')}
-          className="flex-1 h-12 rounded-2xl border-2 border-secondary/40 bg-background px-4 text-sm focus:outline-none focus:border-secondary transition-colors shadow-sm"
+          className="min-w-0 flex-1 h-12 rounded-2xl border-2 border-secondary/40 bg-background px-4 text-sm focus:outline-none focus:border-secondary transition-colors shadow-sm"
           disabled={searchLoading}
         />
         <button type="submit" disabled={!topic.trim() || searchLoading}
-          className="h-12 px-5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+          className="h-12 w-full px-5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap sm:w-auto">
           {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           {searchLoading ? t('جارٍ البحث...', 'Searching...') : t('بحث بموضوع', 'Search by topic')}
         </button>
@@ -3552,7 +3552,7 @@ export default function KnowledgeSearch() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
       <main className="flex-1 w-full px-3 sm:px-5 lg:px-7 py-10 max-w-none">
 
