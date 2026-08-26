@@ -1,79 +1,79 @@
 /*
  * themes.css — متغيرات الثيمات الإضافية
  * الثيم الافتراضي (التقني) يبقى في index.css بلا تغيير.
- * هنا فقط: الزيتوني الذهبي والكحلي الأزرق.
+ * هنا تُحفظ مفاتيح الثيمات القديمة للتوافق، مع توحيدها على هوية الكحلي والذهبي والأوف وايت.
  * كل المتغيرات هنا تُغلّف قيم index.css عند تطبيق data-theme.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   الثيم الزيتوني الذهبي — نهاري فاتح
-   Palette: bg #F5F1E8 · card #FFFDF7 · olive #0F6E56 · gold #C9A227
+   الثيم الفاتح — هوية RABAB LEGAL
+   Palette: off-white · navy · gold
    ══════════════════════════════════════════════════════════════════════════════ */
 [data-theme="olive"] {
   /* ── الخلفيات ─────────────────────────────────────────────────────────── */
   --background:           42 38% 93%;   /* #F5F1E8 */
   --card:                 45 100% 98%;  /* #FFFDF7 */
-  --card-foreground:      155 38% 11%;
+  --card-foreground:      220 60% 7%;
   --card-border:          52 24% 82%;   /* #DCD9C6 */
   --popover:              45 100% 98%;
-  --popover-foreground:   155 38% 11%;
+  --popover-foreground:   220 60% 7%;
   --popover-border:       52 24% 82%;
   --muted:                45 28% 88%;
   --input:                48 40% 94%;
 
   /* ── النصوص ───────────────────────────────────────────────────────────── */
-  --foreground:           155 38% 11%;  /* #12281F */
-  --muted-foreground:     127 9% 39%;   /* #5A6B5C */
+  --foreground:           220 60% 7%;   /* brand navy */
+  --muted-foreground:     220 22% 36%;
 
   /* ── الألوان المميزة ───────────────────────────────────────────────────── */
-  --primary:              165 76% 24%;  /* #0F6E56 زيتوني — أزرار، روابط، footer */
-  --primary-foreground:   0 0% 100%;    /* أبيض على الزيتوني */
-  --secondary:            46 68% 47%;   /* #C9A227 ذهبي */
-  --secondary-foreground: 155 38% 11%;
-  --accent:               46 68% 47%;   /* ذهبي للشارات واللمسات */
-  --accent-foreground:    155 38% 11%;
+  --primary:              220 60% 7%;   /* brand navy */
+  --primary-foreground:   42 38% 96%;   /* off-white */
+  --secondary:            42 93% 41%;   /* brand gold */
+  --secondary-foreground: 220 60% 7%;
+  --accent:               42 93% 41%;   /* brand gold */
+  --accent-foreground:    220 60% 7%;
 
   /* ── الحدود والتركيز ──────────────────────────────────────────────────── */
   --border:               52 24% 82%;   /* #DCD9C6 */
-  --ring:                 165 76% 24%;
+  --ring:                 42 93% 41%;
 
   /* ── التحذيرات ────────────────────────────────────────────────────────── */
   --destructive:          0 78% 45%;
   --destructive-foreground: 0 0% 100%;
 
   /* ── الشريط الجانبي ───────────────────────────────────────────────────── */
-  --sidebar:              165 60% 18%;
+  --sidebar:              220 60% 7%;
   --sidebar-foreground:   0 0% 98%;
-  --sidebar-border:       165 40% 28%;
-  --sidebar-primary:      46 68% 47%;
-  --sidebar-primary-foreground: 155 38% 11%;
-  --sidebar-accent:       165 50% 23%;
+  --sidebar-border:       42 35% 28%;
+  --sidebar-primary:      42 93% 41%;
+  --sidebar-primary-foreground: 220 60% 7%;
+  --sidebar-accent:       220 45% 13%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring:         46 68% 47%;
+  --sidebar-ring:         42 93% 41%;
 
   /* ── متغيرات مخصصة ────────────────────────────────────────────────────── */
-  --navbar-bg:            hsl(165 56% 10%);  /* داكن عميق للبار العلوي */
-  --button-outline:       rgba(15, 110, 86, 0.18);
-  --badge-outline:        rgba(201, 162, 39, 0.14);
-  --elevate-1:            rgba(15, 110, 86, 0.04);
-  --elevate-2:            rgba(15, 110, 86, 0.07);
+  --navbar-bg:            hsl(220 60% 7%);
+  --button-outline:       rgba(200, 144, 10, 0.18);
+  --badge-outline:        rgba(200, 144, 10, 0.14);
+  --elevate-1:            rgba(200, 144, 10, 0.04);
+  --elevate-2:            rgba(200, 144, 10, 0.07);
   --opaque-button-border-intensity: 8;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-    الثيم الكحلي الأزرق — ليلي داكن
-    Palette: bg #081527 · card #101E34 · cyan #00D4FF · violet #8B5CF6
+    الثيم الداكن — هوية RABAB LEGAL
+    Palette: navy · gold · off-white
    ══════════════════════════════════════════════════════════════════════════════ */
 [data-theme="burgundy"] {
   /* ── الخلفيات ─────────────────────────────────────────────────────────── */
   --background:           220 55% 8%;   /* #091426 */
   --card:                 220 47% 13%;  /* #121F31 */
   --card-foreground:      0 0% 96%;
-  --card-border:          205 60% 26%;
+  --card-border:          42 35% 24%;
   --popover:              220 47% 13%;
   --popover-foreground:   0 0% 96%;
-  --popover-border:       205 60% 26%;
+  --popover-border:       42 35% 24%;
   --muted:                220 42% 16%;
   --input:                220 42% 16%;
 
@@ -84,14 +84,14 @@
   /* ── الألوان المميزة ───────────────────────────────────────────────────── */
   --primary:              220 60% 7%;
   --primary-foreground:   47 100% 48%;
-  --secondary:            191 100% 50%;
+  --secondary:            42 93% 41%;
   --secondary-foreground: 220 60% 7%;
-  --accent:               263 87% 65%;
+  --accent:               42 93% 41%;
   --accent-foreground:    220 60% 7%;
 
   /* ── الحدود والتركيز ──────────────────────────────────────────────────── */
-  --border:               205 60% 26%;
-  --ring:                 191 100% 50%;
+  --border:               42 35% 24%;
+  --ring:                 42 93% 41%;
 
   /* ── التحذيرات ────────────────────────────────────────────────────────── */
   --destructive:          0 78% 48%;
@@ -100,19 +100,19 @@
   /* ── الشريط الجانبي ───────────────────────────────────────────────────── */
   --sidebar:              220 60% 7%;
   --sidebar-foreground:   0 0% 96%;
-  --sidebar-border:       205 60% 26%;
-  --sidebar-primary:      191 100% 50%;
+  --sidebar-border:       42 35% 24%;
+  --sidebar-primary:      42 93% 41%;
   --sidebar-primary-foreground: 220 60% 7%;
   --sidebar-accent:       220 42% 16%;
   --sidebar-accent-foreground: 0 0% 96%;
-  --sidebar-ring:         191 100% 50%;
+  --sidebar-ring:         42 93% 41%;
 
   /* ── متغيرات مخصصة ────────────────────────────────────────────────────── */
   --navbar-bg:            hsl(220 60% 6%);
-  --button-outline:       rgba(0, 212, 255, 0.15);
-  --badge-outline:        rgba(139, 92, 246, 0.12);
-  --elevate-1:            rgba(0, 212, 255, 0.04);
-  --elevate-2:            rgba(0, 212, 255, 0.08);
+  --button-outline:       rgba(200, 144, 10, 0.16);
+  --badge-outline:        rgba(200, 144, 10, 0.12);
+  --elevate-1:            rgba(200, 144, 10, 0.04);
+  --elevate-2:            rgba(200, 144, 10, 0.08);
   --opaque-button-border-intensity: 9;
 }
 
