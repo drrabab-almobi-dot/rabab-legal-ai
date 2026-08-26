@@ -62,14 +62,14 @@
   /* Gold      #C8900A → hsl(42 93% 41%)                    */
   /* Off-white #F8F5EC → used through foreground surfaces   */
 
-  --background: 220 55% 8%;            /* خلفية داكنة تقنية عميقة */
-  --foreground: 0 0% 96%;              /* أبيض ناصع */
+  --background: 220 55% 8%;
+  --foreground: 0 0% 96%;
 
-  --border: 42 35% 32%;                /* حدود ذهبية هادئة */
+  --border: 42 35% 32%;
   --input: 220 50% 13%;
-  --ring: 42 93% 41%;                 /* ذهبي للتركيز */
+  --ring: 42 93% 41%;
 
-  --card: 220 52% 11%;                 /* كارد داكن */
+  --card: 220 52% 11%;
   --card-foreground: 0 0% 96%;
   --card-border: 42 35% 28%;
 
@@ -77,16 +77,16 @@
   --popover-foreground: 0 0% 96%;
   --popover-border: 42 35% 28%;
 
-  --primary: 220 60% 7%;               /* Deep Space — للـ navbar والهيدر */
-  --primary-foreground: 47 100% 48%;   /* ذهبي على الداكن */
+  --primary: 220 60% 7%;
+  --primary-foreground: 47 100% 48%;
 
-  --secondary: 42 93% 41%;            /* Brand Gold #C8900A */
-  --secondary-foreground: 220 60% 7%;  /* كحلي على الذهبي */
+  --secondary: 42 93% 41%;
+  --secondary-foreground: 220 60% 7%;
 
-  --muted: 220 45% 14%;                /* خلفيات ثانوية */
-  --muted-foreground: 0 0% 96%;        /* أبيض بدل الرصاصي */
+  --muted: 220 45% 14%;
+  --muted-foreground: 0 0% 96%;
 
-  --accent: 42 93% 41%;                /* Brand Gold */
+  --accent: 42 93% 41%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
@@ -170,7 +170,15 @@
   }
 }
 
-/* ── AI Glow Effects ─────────────────────────────────── */
+/* Operational text must remain readable on desktop and mobile. */
+.text-xs,
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 0.875rem !important;
+  line-height: 1.5rem !important;
+}
+
+/* ── AI Glow Effects: legacy class names, RABAB brand colors ── */
 .glow-cyan {
   box-shadow: 0 0 20px rgba(200, 144, 10, 0.22), 0 0 60px rgba(200, 144, 10, 0.08);
 }
