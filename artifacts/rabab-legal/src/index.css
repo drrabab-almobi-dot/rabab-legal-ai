@@ -51,43 +51,42 @@
 }
 
 :root {
-  --button-outline: rgba(0, 212, 255, 0.15);
-  --badge-outline: rgba(0, 212, 255, 0.08);
+  --button-outline: rgba(200, 144, 10, 0.18);
+  --badge-outline: rgba(200, 144, 10, 0.12);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0, 212, 255, 0.04);
-  --elevate-2: rgba(0, 212, 255, 0.08);
+  --elevate-1: rgba(200, 144, 10, 0.04);
+  --elevate-2: rgba(200, 144, 10, 0.08);
 
-  /* ── AI Color Theme ──────────────────────────────────── */
-  /* Deep Space Navy   #050c1a → hsl(220 60% 7%)           */
-  /* Electric Cyan     #00D4FF → hsl(191 100% 50%)         */
-  /* Neon Violet       #8B5CF6 → hsl(263 87% 65%)          */
-  /* Gold (brand)      #C8900A → hsl(42  93% 41%)          */
+  /* ── RABAB LEGAL brand palette ───────────────────────── */
+  /* Navy      #050c1a → hsl(220 60% 7%)                    */
+  /* Gold      #C8900A → hsl(42 93% 41%)                    */
+  /* Off-white #F8F5EC → used through foreground surfaces   */
 
   --background: 220 55% 8%;            /* خلفية داكنة تقنية عميقة */
   --foreground: 0 0% 96%;              /* أبيض ناصع */
 
-  --border: 191 60% 22%;               /* حدود سيان داكنة */
+  --border: 42 35% 32%;                /* حدود ذهبية هادئة */
   --input: 220 50% 13%;
-  --ring: 191 100% 50%;                /* سيان للتركيز */
+  --ring: 42 93% 41%;                 /* ذهبي للتركيز */
 
   --card: 220 52% 11%;                 /* كارد داكن */
   --card-foreground: 0 0% 96%;
-  --card-border: 191 50% 22%;
+  --card-border: 42 35% 28%;
 
   --popover: 220 52% 11%;
   --popover-foreground: 0 0% 96%;
-  --popover-border: 191 50% 22%;
+  --popover-border: 42 35% 28%;
 
   --primary: 220 60% 7%;               /* Deep Space — للـ navbar والهيدر */
   --primary-foreground: 47 100% 48%;   /* ذهبي على الداكن */
 
-  --secondary: 191 100% 50%;           /* Electric Cyan #00D4FF */
-  --secondary-foreground: 220 60% 7%;  /* داكن على السيان */
+  --secondary: 42 93% 41%;            /* Brand Gold #C8900A */
+  --secondary-foreground: 220 60% 7%;  /* كحلي على الذهبي */
 
   --muted: 220 45% 14%;                /* خلفيات ثانوية */
   --muted-foreground: 0 0% 96%;        /* أبيض بدل الرصاصي */
 
-  --accent: 263 87% 65%;               /* Neon Violet #8B5CF6 */
+  --accent: 42 93% 41%;                /* Brand Gold */
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
@@ -95,12 +94,12 @@
 
   --sidebar: 220 60% 7%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 191 40% 18%;
-  --sidebar-primary: 191 100% 50%;
+  --sidebar-border: 42 35% 24%;
+  --sidebar-primary: 42 93% 41%;
   --sidebar-primary-foreground: 220 60% 7%;
   --sidebar-accent: 220 45% 14%;
-  --sidebar-accent-foreground: 191 100% 50%;
-  --sidebar-ring: 191 100% 50%;
+  --sidebar-accent-foreground: 42 93% 41%;
+  --sidebar-ring: 42 93% 41%;
 
   --radius: 0.5rem;
   --app-font-serif: Georgia, serif;
@@ -108,36 +107,36 @@
 }
 
 .dark {
-  --button-outline: rgba(0, 212, 255, 0.15);
-  --badge-outline: rgba(0, 212, 255, 0.08);
+  --button-outline: rgba(200, 144, 10, 0.18);
+  --badge-outline: rgba(200, 144, 10, 0.12);
   --opaque-button-border-intensity: 9;
-  --elevate-1: rgba(0, 212, 255, 0.04);
-  --elevate-2: rgba(0, 212, 255, 0.09);
+  --elevate-1: rgba(200, 144, 10, 0.04);
+  --elevate-2: rgba(200, 144, 10, 0.09);
 
   --background: 220 60% 6%;
   --foreground: 0 0% 100%;
-  --border: 191 40% 18%;
+  --border: 42 35% 24%;
   --input: 220 50% 12%;
-  --ring: 191 100% 50%;
+  --ring: 42 93% 41%;
 
   --card: 220 55% 9%;
   --card-foreground: 0 0% 100%;
-  --card-border: 191 40% 18%;
+  --card-border: 42 35% 24%;
 
   --popover: 220 55% 9%;
   --popover-foreground: 0 0% 100%;
-  --popover-border: 191 40% 18%;
+  --popover-border: 42 35% 24%;
 
   --primary: 220 60% 6%;
   --primary-foreground: 47 100% 48%;
 
-  --secondary: 191 100% 50%;
+  --secondary: 42 93% 41%;
   --secondary-foreground: 220 60% 6%;
 
   --muted: 220 45% 13%;
-  --muted-foreground: 210 20% 60%;
+  --muted-foreground: 42 20% 82%;
 
-  --accent: 263 87% 65%;
+  --accent: 42 93% 41%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
@@ -145,12 +144,12 @@
 
   --sidebar: 220 60% 6%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 191 40% 18%;
-  --sidebar-primary: 191 100% 50%;
+  --sidebar-border: 42 35% 24%;
+  --sidebar-primary: 42 93% 41%;
   --sidebar-primary-foreground: 220 60% 6%;
   --sidebar-accent: 220 45% 13%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 191 100% 50%;
+  --sidebar-ring: 42 93% 41%;
 }
 
 @layer base {
@@ -173,17 +172,17 @@
 
 /* ── AI Glow Effects ─────────────────────────────────── */
 .glow-cyan {
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.25), 0 0 60px rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 20px rgba(200, 144, 10, 0.22), 0 0 60px rgba(200, 144, 10, 0.08);
 }
 .glow-violet {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 60px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 20px rgba(200, 144, 10, 0.2), 0 0 60px rgba(200, 144, 10, 0.07);
 }
 .text-glow-cyan {
-  text-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+  text-shadow: 0 0 12px rgba(200, 144, 10, 0.45);
 }
 .ai-gradient {
-  background: linear-gradient(135deg, hsl(191 100% 50% / 0.15), hsl(263 87% 65% / 0.1));
+  background: linear-gradient(135deg, hsl(42 93% 41% / 0.14), hsl(220 60% 7% / 0.12));
 }
 .ai-border {
-  border: 1px solid hsl(191 100% 50% / 0.3);
+  border: 1px solid hsl(42 93% 41% / 0.32);
 }
