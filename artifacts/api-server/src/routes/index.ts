@@ -25,8 +25,19 @@ import communityInitiativesRouter from "./community-initiatives";
 import whatsappAdminRouter from "./whatsapp-admin";
 import { topicRouterRouter } from "./topic-router";
 import organizationsRouter from "./organizations";
+import { requireAuth } from "../middlewares/auth";
+import { requireConsultationQuota } from "../middlewares/service-quota";
 
 const router: IRouter = Router();
+
+// Cost-control guard for AI-assisted legal search endpoints.
+// These run before the feature routers so every expensive search is authenticated
+// and reserves one consultation unit. Failed/aborted requests release the reservation.
+router.get("/knowledge/search", requireAuth, requireConsultationQuota);
+router.post("/knowledge/search-circular", requireAuth, requireConsultationQuota);
+router.post("/knowledge/legal-research", requireAuth, requireConsultationQuota);
+router.post("/knowledge/regulatory-research", requireAuth, requireConsultationQuota);
+router.post("/codex/smart-search", requireAuth, requireConsultationQuota);
 
 router.use(healthRouter);
 router.use(authRouter);
