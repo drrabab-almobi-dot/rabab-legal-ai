@@ -8,9 +8,6 @@ import { logger } from "./lib/logger";
 const PgStore = connectPgSimple(session);
 
 const app: Express = express();
-// Serverless Vercel functions do not execute src/index.ts, so they are ready
-// immediately after module initialization. Long-running hosts still call
-// markAppReady() after their startup checks and migrations finish.
 let appReady = process.env.VERCEL === "1";
 
 export function markAppReady(): void {
@@ -24,27 +21,16 @@ app.use(
     logger,
     serializers: {
       req(req) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
+        return { id: req.id, method: req.method, url: req.url?.split("?")[0] };
       },
       res(res) {
-        return {
-          statusCode: res.statusCode,
-        };
+        return { statusCode: res.statusCode };
       },
     },
   }),
 );
 
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
-);
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -55,9 +41,6 @@ const missingCoreConfig = [
   !databaseUrl ? "DATABASE_URL" : null,
 ].filter((value): value is string => Boolean(value));
 
-// Health is intentionally available before session/database middleware so a
-// deployment with incomplete environment configuration reports the exact
-// missing variable names instead of crashing as FUNCTION_INVOCATION_FAILED.
 app.get("/api/healthz", (_req: Request, res: Response): void => {
   if (missingCoreConfig.length > 0) {
     res.status(503).json({
@@ -85,8 +68,6 @@ function classifyDatabaseError(err: unknown): string {
   return "DATABASE_UNAVAILABLE";
 }
 
-// Database connectivity probe. It never returns credentials, hostnames, or raw
-// SQL errors. It exposes only a coarse failure category for operational diagnosis.
 app.get("/api/db-health", async (req: Request, res: Response): Promise<void> => {
   if (!databaseUrl) {
     res.status(503).json({ ok: false, code: "DATABASE_CONFIG_MISSING" });
@@ -107,10 +88,23 @@ app.get("/api/db-health", async (req: Request, res: Response): Promise<void> => 
 
 if (sessionSecret && databaseUrl) {
   const isHostedHttps = process.env.VERCEL === "1" || !!process.env.REPL_ID || process.env.NODE_ENV === "production";
+  const sessionConnectionString = (() => {
+    try {
+      const url = new URL(databaseUrl);
+      if (url.hostname === "base") {
+        url.hostname = "aws-0-ap-south-1.pooler.supabase.com";
+        url.port = "5432";
+      }
+      return url.toString();
+    } catch {
+      return databaseUrl;
+    }
+  })();
+
   app.use(
     session({
       store: new PgStore({
-        conString: databaseUrl,
+        conString: sessionConnectionString,
         tableName: "session",
         createTableIfMissing: true,
         pruneSessionInterval: 60 * 60,
@@ -130,27 +124,18 @@ if (sessionSecret && databaseUrl) {
 
 let routerPromise: Promise<Router> | undefined;
 async function getRouter(): Promise<Router> {
-  if (!routerPromise) {
-    routerPromise = import("./routes").then((mod) => mod.default as Router);
-  }
+  if (!routerPromise) routerPromise = import("./routes").then((mod) => mod.default as Router);
   return routerPromise;
 }
 
 app.use("/api", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   if (missingCoreConfig.length > 0) {
-    res.status(503).json({
-      error: "إعدادات تشغيل الخادم غير مكتملة",
-      code: "CONFIG_INCOMPLETE",
-      missing: missingCoreConfig,
-    });
+    res.status(503).json({ error: "إعدادات تشغيل الخادم غير مكتملة", code: "CONFIG_INCOMPLETE", missing: missingCoreConfig });
     return;
   }
 
   if (!appReady) {
-    res.status(503).json({
-      error: "الخادم قيد التجهيز. يرجى المحاولة بعد لحظات.",
-      code: "SERVICE_STARTING",
-    });
+    res.status(503).json({ error: "الخادم قيد التجهيز. يرجى المحاولة بعد لحظات.", code: "SERVICE_STARTING" });
     return;
   }
 
@@ -160,11 +145,7 @@ app.use("/api", async (req: Request, res: Response, next: NextFunction): Promise
   } catch (err) {
     (req as any).log?.error({ err }, "Failed to initialize API router");
     logger.error({ err }, "Failed to initialize API router");
-    res.status(500).json({
-      error: "تعذر تشغيل خدمات الخادم",
-      code: "API_ROUTER_INIT_FAILED",
-      detail: err instanceof Error ? err.message : String(err),
-    });
+    res.status(500).json({ error: "تعذر تشغيل خدمات الخادم", code: "API_ROUTER_INIT_FAILED", detail: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -175,10 +156,7 @@ app.use("/api", (_req: Request, res: Response): void => {
 app.use((err: Error, req: Request, res: Response, _next: NextFunction): void => {
   (req as any).log?.error({ err }, "Unhandled route error");
   logger.error({ err, url: req.url, method: req.method }, "Unhandled route error");
-  res.status(500).json({
-    error: "حدث خطأ داخلي في الخادم. يرجى المحاولة مرة أخرى.",
-    code: "INTERNAL_ERROR",
-  });
+  res.status(500).json({ error: "حدث خطأ داخلي في الخادم. يرجى المحاولة مرة أخرى.", code: "INTERNAL_ERROR" });
 });
 
 export default app;
