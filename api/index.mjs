@@ -1,12 +1,33 @@
 import express from "express";
-import app, { markAppReady } from "../artifacts/api-server/dist/app.mjs";
 
-// Keep an explicit Express import in the Vercel function entrypoint so Vercel
-// detects this file as the server entry instead of rejecting the built app.
-void express;
+const proxy = express();
+let appPromise;
 
-// Vercel functions do not execute the long-running src/index.ts startup loop.
-// Mark the app ready here so authenticated API routes are not permanently 503.
-markAppReady();
+async function loadApp() {
+  if (!appPromise) {
+    appPromise = import("../artifacts/api-server/dist/app.mjs").then((mod) => {
+      mod.markAppReady();
+      return mod.default;
+    });
+  }
+  return appPromise;
+}
 
-export default app;
+proxy.use(async (req, res, next) => {
+  try {
+    const app = await loadApp();
+    return app(req, res, next);
+  } catch (err) {
+    console.error("RABAB API bootstrap failed", err);
+    if (!res.headersSent) {
+      return res.status(500).json({
+        error: "تعذر تشغيل الخادم الخلفي",
+        code: "API_BOOTSTRAP_FAILED",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return next(err);
+  }
+});
+
+export default proxy;
