@@ -1,5 +1,8 @@
 /**
  * Platform Settings API
+ * (This router is mounted under /api by ../routes/index.ts — paths below
+ * must NOT repeat the /api prefix, or Express will register them at
+ * /api/api/... instead of /api/...)
  * GET  /api/platform-settings          — public read (frontend)
  * GET  /api/admin/platform-settings    — admin read with quality stats
  * PUT  /api/admin/platform-settings    — admin write
@@ -40,7 +43,7 @@ function invalidateCache() {
 }
 
 // ── Public: frontend reads visibility flags ────────────────────────────────────
-router.get("/api/platform-settings", async (_req, res): Promise<void> => {
+router.get("/platform-settings", async (_req, res): Promise<void> => {
   try {
     const settings = await getSectionVisibility();
     res.json({ sectionVisibility: settings });
@@ -50,13 +53,13 @@ router.get("/api/platform-settings", async (_req, res): Promise<void> => {
 });
 
 // ── Admin: read ───────────────────────────────────────────────────────────────
-router.get("/api/admin/platform-settings", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/platform-settings", requireAdmin, async (_req, res): Promise<void> => {
   const settings = await getSectionVisibility();
   res.json({ sectionVisibility: settings });
 });
 
 // ── Admin: write ──────────────────────────────────────────────────────────────
-router.put("/api/admin/platform-settings", requireAdmin, async (req, res): Promise<void> => {
+router.put("/admin/platform-settings", requireAdmin, async (req, res): Promise<void> => {
   const body = req.body?.sectionVisibility;
   if (!body || typeof body !== "object") {
     res.status(400).json({ error: "البيانات غير صالحة" });
@@ -84,7 +87,7 @@ router.put("/api/admin/platform-settings", requireAdmin, async (req, res): Promi
 });
 
 // ── Admin: per-category quality metrics ──────────────────────────────────────
-router.get("/api/admin/section-quality", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/section-quality", requireAdmin, async (_req, res): Promise<void> => {
   try {
     // For each category count total chunks and "blocked" chunks (very short or empty content)
     const rows = await db.execute(sql`
@@ -145,12 +148,12 @@ export async function getTelegramImportEnabled(): Promise<boolean> {
   return _tgCache!;
 }
 
-router.get("/api/admin/telegram-import", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/telegram-import", requireAdmin, async (_req, res): Promise<void> => {
   const enabled = await getTelegramImportEnabled();
   res.json({ enabled });
 });
 
-router.put("/api/admin/telegram-import", requireAdmin, async (req, res): Promise<void> => {
+router.put("/admin/telegram-import", requireAdmin, async (req, res): Promise<void> => {
   const enabled = req.body?.enabled === true;
   await db
     .insert(platformSettingsTable)
@@ -165,7 +168,7 @@ router.put("/api/admin/telegram-import", requireAdmin, async (req, res): Promise
 });
 
 // ── Source status overview ─────────────────────────────────────────────────────
-router.get("/api/admin/source-status", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/source-status", requireAdmin, async (_req, res): Promise<void> => {
   try {
     // Stats per source_type
     const sourceStats = await db.execute(sql`
