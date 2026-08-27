@@ -1,23 +1,22 @@
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
+import express, { type Express, type Request, type Response, type NextFunction, type Router } from "express";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import pinoHttp from "pino-http";
-import router from "./routes";
 import { logger } from "./lib/logger";
 
 const PgStore = connectPgSimple(session);
 
 const app: Express = express();
-let appReady = false;
+// Serverless Vercel functions do not execute src/index.ts, so they are ready
+// immediately after module initialization. Long-running hosts still call
+// markAppReady() after their startup checks and migrations finish.
+let appReady = process.env.VERCEL === "1";
 
 export function markAppReady(): void {
   appReady = true;
 }
 
-// ── Trust Replit's HTTPS reverse-proxy so session cookies and IP detection ──
-// work correctly. Without this, Express sees every request as HTTP even though
-// the browser is on HTTPS, and sameSite/secure cookie logic breaks.
 app.set("trust proxy", 1);
 
 app.use(
@@ -50,62 +49,95 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const sessionSecret = process.env.SESSION_SECRET;
-if (!sessionSecret) {
-  throw new Error("SESSION_SECRET environment variable is required");
-}
+const databaseUrl = process.env.DATABASE_URL;
+const missingCoreConfig = [
+  !sessionSecret ? "SESSION_SECRET" : null,
+  !databaseUrl ? "DATABASE_URL" : null,
+].filter((value): value is string => Boolean(value));
 
-// ── Cookie security: always use sameSite='none' + secure=true inside Replit ──
-// Replit serves the app over HTTPS through a reverse proxy even in development.
-// sameSite='lax' blocks cookies in cross-origin sub-requests (e.g. the iframe
-// preview), which silently breaks auth. REPL_ID is set in all Replit envs.
-const isReplitOrProd = !!process.env.REPL_ID || process.env.NODE_ENV === "production";
-
-app.use(
-  session({
-    store: new PgStore({
-      conString: process.env.DATABASE_URL,
-      tableName: "session",
-      createTableIfMissing: true,     // يُنشئ الجدول تلقائياً إن لم يكن موجوداً
-      pruneSessionInterval: 60 * 60,
-    }),
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: isReplitOrProd,          // require HTTPS when behind proxy
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: isReplitOrProd ? "none" : "lax",
-    },
-  }),
-);
-
-// Render must be able to see that the process is alive while database
-// migrations/checks are still running. All real API traffic remains gated
-// until those checks complete, so requests cannot use a half-initialized app.
-app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
-  if (req.path === "/healthz" || appReady) {
-    next();
+// Health is intentionally available before session/database middleware so a
+// deployment with incomplete environment configuration reports the exact
+// missing variable names instead of crashing as FUNCTION_INVOCATION_FAILED.
+app.get("/api/healthz", (_req: Request, res: Response): void => {
+  if (missingCoreConfig.length > 0) {
+    res.status(503).json({
+      ok: false,
+      code: "CONFIG_INCOMPLETE",
+      missing: missingCoreConfig,
+      environment: process.env.VERCEL === "1" ? "vercel" : "server",
+    });
     return;
   }
-  res.status(503).json({
-    error: "الخادم قيد التجهيز. يرجى المحاولة بعد لحظات.",
-    code: "SERVICE_STARTING",
-  });
+  res.status(200).json({ ok: true, environment: process.env.VERCEL === "1" ? "vercel" : "server" });
 });
 
-app.use("/api", router);
+if (sessionSecret && databaseUrl) {
+  const isHostedHttps = process.env.VERCEL === "1" || !!process.env.REPL_ID || process.env.NODE_ENV === "production";
+  app.use(
+    session({
+      store: new PgStore({
+        conString: databaseUrl,
+        tableName: "session",
+        createTableIfMissing: true,
+        pruneSessionInterval: 60 * 60,
+      }),
+      secret: sessionSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: isHostedHttps,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: isHostedHttps ? "none" : "lax",
+      },
+    }),
+  );
+}
 
-// ── 404 handler for unmatched /api/* routes ────────────────────────────────
-// Must come AFTER router registration so it only fires when no route matched.
+let routerPromise: Promise<Router> | undefined;
+async function getRouter(): Promise<Router> {
+  if (!routerPromise) {
+    routerPromise = import("./routes").then((mod) => mod.default as Router);
+  }
+  return routerPromise;
+}
+
+app.use("/api", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  if (missingCoreConfig.length > 0) {
+    res.status(503).json({
+      error: "إعدادات تشغيل الخادم غير مكتملة",
+      code: "CONFIG_INCOMPLETE",
+      missing: missingCoreConfig,
+    });
+    return;
+  }
+
+  if (!appReady) {
+    res.status(503).json({
+      error: "الخادم قيد التجهيز. يرجى المحاولة بعد لحظات.",
+      code: "SERVICE_STARTING",
+    });
+    return;
+  }
+
+  try {
+    const router = await getRouter();
+    router(req, res, next);
+  } catch (err) {
+    (req as any).log?.error({ err }, "Failed to initialize API router");
+    logger.error({ err }, "Failed to initialize API router");
+    res.status(500).json({
+      error: "تعذر تشغيل خدمات الخادم",
+      code: "API_ROUTER_INIT_FAILED",
+      detail: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
 app.use("/api", (_req: Request, res: Response): void => {
   res.status(404).json({ error: "المسار غير موجود", code: "NOT_FOUND" });
 });
 
-// ── Global JSON error handler ──────────────────────────────────────────────
-// Catches any unhandled error thrown in route handlers and returns a safe
-// JSON response instead of Express's default HTML error page.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, _next: NextFunction): void => {
   (req as any).log?.error({ err }, "Unhandled route error");
   logger.error({ err, url: req.url, method: req.method }, "Unhandled route error");
