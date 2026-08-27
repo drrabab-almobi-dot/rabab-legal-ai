@@ -71,8 +71,22 @@ app.get("/api/healthz", (_req: Request, res: Response): void => {
   res.status(200).json({ ok: true, environment: process.env.VERCEL === "1" ? "vercel" : "server" });
 });
 
-// Database connectivity probe. It never returns credentials, hostnames, or SQL
-// errors to the client; detailed failure information is written only to logs.
+function classifyDatabaseError(err: unknown): string {
+  const e = err as { code?: string; message?: string } | undefined;
+  const code = String(e?.code ?? "").toUpperCase();
+  const message = String(e?.message ?? "").toLowerCase();
+
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN" || message.includes("getaddrinfo")) return "DATABASE_DNS_FAILED";
+  if (code === "ETIMEDOUT" || message.includes("timeout")) return "DATABASE_TIMEOUT";
+  if (code === "ECONNREFUSED") return "DATABASE_REFUSED";
+  if (code === "28P01" || message.includes("password authentication failed")) return "DATABASE_AUTH_FAILED";
+  if (code === "3D000") return "DATABASE_NAME_INVALID";
+  if (message.includes("certificate") || message.includes("ssl") || message.includes("tls")) return "DATABASE_TLS_FAILED";
+  return "DATABASE_UNAVAILABLE";
+}
+
+// Database connectivity probe. It never returns credentials, hostnames, or raw
+// SQL errors. It exposes only a coarse failure category for operational diagnosis.
 app.get("/api/db-health", async (req: Request, res: Response): Promise<void> => {
   if (!databaseUrl) {
     res.status(503).json({ ok: false, code: "DATABASE_CONFIG_MISSING" });
@@ -84,9 +98,10 @@ app.get("/api/db-health", async (req: Request, res: Response): Promise<void> => 
     await pool.query("select 1");
     res.status(200).json({ ok: true, database: "reachable" });
   } catch (err) {
-    (req as any).log?.error({ err }, "Database health check failed");
-    logger.error({ err }, "Database health check failed");
-    res.status(503).json({ ok: false, code: "DATABASE_UNAVAILABLE" });
+    const code = classifyDatabaseError(err);
+    (req as any).log?.error({ err, databaseErrorCode: code }, "Database health check failed");
+    logger.error({ err, databaseErrorCode: code }, "Database health check failed");
+    res.status(503).json({ ok: false, code });
   }
 });
 
