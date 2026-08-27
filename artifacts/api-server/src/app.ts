@@ -7,6 +7,25 @@ import { logger } from "./lib/logger";
 
 const PgStore = connectPgSimple(session);
 
+function normalizeDatabaseUrl(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  try {
+    const url = new URL(raw);
+    if (url.hostname === "base") {
+      url.hostname = "aws-0-ap-south-1.pooler.supabase.com";
+      url.port = "5432";
+    }
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
+
+// Normalize the known-bad Vercel DATABASE_URL before any lazy-loaded route or
+// workspace database module reads process.env.DATABASE_URL.
+const normalizedDatabaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
+if (normalizedDatabaseUrl) process.env.DATABASE_URL = normalizedDatabaseUrl;
+
 const app: Express = express();
 let appReady = process.env.VERCEL === "1";
 
@@ -88,23 +107,11 @@ app.get("/api/db-health", async (req: Request, res: Response): Promise<void> => 
 
 if (sessionSecret && databaseUrl) {
   const isHostedHttps = process.env.VERCEL === "1" || !!process.env.REPL_ID || process.env.NODE_ENV === "production";
-  const sessionConnectionString = (() => {
-    try {
-      const url = new URL(databaseUrl);
-      if (url.hostname === "base") {
-        url.hostname = "aws-0-ap-south-1.pooler.supabase.com";
-        url.port = "5432";
-      }
-      return url.toString();
-    } catch {
-      return databaseUrl;
-    }
-  })();
 
   app.use(
     session({
       store: new PgStore({
-        conString: sessionConnectionString,
+        conString: databaseUrl,
         tableName: "session",
         createTableIfMissing: true,
         pruneSessionInterval: 60 * 60,
