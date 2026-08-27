@@ -71,6 +71,25 @@ app.get("/api/healthz", (_req: Request, res: Response): void => {
   res.status(200).json({ ok: true, environment: process.env.VERCEL === "1" ? "vercel" : "server" });
 });
 
+// Database connectivity probe. It never returns credentials, hostnames, or SQL
+// errors to the client; detailed failure information is written only to logs.
+app.get("/api/db-health", async (req: Request, res: Response): Promise<void> => {
+  if (!databaseUrl) {
+    res.status(503).json({ ok: false, code: "DATABASE_CONFIG_MISSING" });
+    return;
+  }
+
+  try {
+    const { pool } = await import("@workspace/db");
+    await pool.query("select 1");
+    res.status(200).json({ ok: true, database: "reachable" });
+  } catch (err) {
+    (req as any).log?.error({ err }, "Database health check failed");
+    logger.error({ err }, "Database health check failed");
+    res.status(503).json({ ok: false, code: "DATABASE_UNAVAILABLE" });
+  }
+});
+
 if (sessionSecret && databaseUrl) {
   const isHostedHttps = process.env.VERCEL === "1" || !!process.env.REPL_ID || process.env.NODE_ENV === "production";
   app.use(
