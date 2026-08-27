@@ -17,7 +17,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://rabab-legal-ai.onrender.com/api/:path*"
+      "destination": "https://rabab-legal-ai-api-git-aud-9c5664-drrabab-almobi-2417s-projects.vercel.app/api/:path*"
     }
   ]
 }
