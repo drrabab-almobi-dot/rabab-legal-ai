@@ -1,12 +1,4 @@
+# المنصة قيد التطوير حاليًا — مخفية مؤقتًا عن محركات البحث.
+# الرابط يبقى يعمل بشكل طبيعي لأي شخص يملكه مباشرة.
 User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /consultation/
-Disallow: /payment/
-Disallow: /payment-callback
-Disallow: /payment-status
-Disallow: /reset-password
-Disallow: /forgot-password
-
-Sitemap: https://rabablegal.com/sitemap.xml
+Disallow: /
