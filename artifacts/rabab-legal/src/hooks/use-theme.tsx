@@ -28,9 +28,9 @@ export const THEMES: ThemeDef[] = [
   },
   {
     id:       'olive',
-    labelAr:  'زيتوني وذهبي',
-    labelEn:  'Olive & Gold',
-    swatches: ['#F5F1E8', '#0F6E56', '#C9A227'],
+    labelAr:  'فاتح وذهبي',
+    labelEn:  'Light & Gold',
+    swatches: ['#F5F1E8', '#1E4FA6', '#C9A227'],
     dark:     false,
   },
   {
@@ -49,9 +49,11 @@ interface ThemeContextType {
   themes: ThemeDef[];
 }
 
+const DEFAULT_THEME: ThemeId = 'olive';
+
 const ThemeContext = createContext<ThemeContextType>({
-  theme:    'tech',
-  themeDef: THEMES[0],
+  theme:    DEFAULT_THEME,
+  themeDef: THEMES.find(t => t.id === DEFAULT_THEME) ?? THEMES[0],
   setTheme: () => {},
   themes:   THEMES,
 });
@@ -68,10 +70,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>(() => {
     try {
       const saved = localStorage.getItem('rabab-theme') as ThemeId | null;
-      if (saved === 'burgundy') return 'tech';
+      if (saved === 'burgundy') return DEFAULT_THEME;
       if (saved && THEMES.some(t => t.id === saved)) return saved;
     } catch {}
-    return 'tech';
+    return DEFAULT_THEME;
   });
 
   const setTheme = (t: ThemeId) => {
