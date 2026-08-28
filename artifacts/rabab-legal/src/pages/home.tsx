@@ -360,7 +360,7 @@ export default function Home() {
       </section>
 
       {/* ── CTA التسجيل ── */}
-      <section className="py-14 bg-gradient-to-b from-primary to-[#0a1628]">
+      <section className="py-14 bg-gradient-to-b from-primary to-sidebar">
         <div className="container mx-auto px-4 text-center">
           <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">
@@ -383,7 +383,7 @@ export default function Home() {
       </section>
 
       {/* ── كتالوج الخدمات الرئيسية ── */}
-       <section id="services" className="bg-gradient-to-b from-primary to-[#0f1c3a] py-12 md:py-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+       <section id="services" className="bg-gradient-to-b from-primary to-sidebar py-12 md:py-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="mx-auto mb-10 max-w-2xl text-center">
              <p className="mb-3 text-3xl font-black leading-tight text-secondary md:text-4xl">{t('خدماتنا القانونية', 'Our Legal Services')}</p>
@@ -391,7 +391,7 @@ export default function Home() {
              <p className="mt-3 text-white">{t('اضغط على الخدمة لعرض شرحها وفروعها واختيار المسار المناسب.', 'Select a service to view its description, branches, and the best path for you.')}</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICE_CATALOG.map((service, index) => {
               const ServiceIcon = service.icon;
               // تدوير لوحة الألوان بين الصفوف يمنع تكرار اللون نفسه عمودياً.
@@ -407,19 +407,19 @@ export default function Home() {
                   transition={{ delay: Math.min(index * 0.06, 0.35) }}
                 >
                   <Link href={`/services/${service.id}`} className="group block h-full">
-                    <div className={`flex h-full min-h-52 flex-col rounded-2xl border-2 bg-white/5 p-6 ${lang === 'ar' ? 'text-right' : 'text-left'} transition-all hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl ${frameStyle.card}`}>
-                      <div className="flex items-start gap-3">
-                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors ${frameStyle.icon}`}>
-                          <ServiceIcon className="h-6 w-6" />
+                    <div className={`flex h-full min-h-60 flex-col rounded-2xl border-2 bg-white/5 p-7 ${lang === 'ar' ? 'text-right' : 'text-left'} transition-all hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl ${frameStyle.card}`}>
+                      <div className="flex items-start gap-4">
+                        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border transition-colors ${frameStyle.icon}`}>
+                          <ServiceIcon className="h-7 w-7" />
                         </div>
                         <div className="min-w-0">
-                            <h3 className="min-w-0 break-words text-base font-bold leading-tight text-white">{lang === 'ar' ? service.title : translateArabicText(service.title)}</h3>
-                          <p className="mt-1 text-base leading-relaxed text-white">{lang === 'ar' ? service.summary : translateArabicText(service.summary)}</p>
+                            <h3 className="min-w-0 break-words text-xl font-black leading-snug text-secondary">{lang === 'ar' ? service.title : translateArabicText(service.title)}</h3>
+                          <p className="mt-2 text-base leading-relaxed text-white/90">{lang === 'ar' ? service.summary : translateArabicText(service.summary)}</p>
                         </div>
                       </div>
-                      <div className="mt-auto flex items-center justify-between border-t border-white/15 pt-5 text-sm font-bold text-white">
+                      <div className="mt-auto flex items-center justify-between border-t border-white/15 pt-5 text-base font-bold text-white">
                          <span>{t('عرض الخدمة والفروع', 'View Service & Branches')}</span>
-                        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                        <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
                       </div>
                     </div>
                   </Link>
