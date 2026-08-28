@@ -186,7 +186,6 @@ export function Navbar() {
     { name: t('العقود', 'Contracts'), path: '/contracts' },
     { name: t('الباحثة الذكية', 'Research'), path: '/legal-search' },
     { name: t('الباقات', 'Pricing'), path: '/pricing' },
-    { name: t('مبادرات', 'Initiatives'), path: '/initiatives' },
     { name: t('حجز موعد', 'Appointment'), path: '/appointment' },
     { name: t('تواصل', 'Contact'), path: '/contact' },
   ];
