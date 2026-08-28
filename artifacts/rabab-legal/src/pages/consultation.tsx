@@ -925,20 +925,22 @@ function SetupScreen({
             <p className="text-muted-foreground text-sm mb-3">
                {t('حدّد نوع الاستشارة لتحصل على تحليل متخصص ودقيق', 'Select a consultation type for focused, accurate analysis')}
             </p>
-            {country && (
-              <button
-                type="button"
-                onClick={() => setPhase('country-select')}
-                className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
-              >
-                <span>{COUNTRIES.find(c => c.code === country)?.flag}</span>
-                <span>{countryName(country, lang)}</span>
-                 <span className="text-primary/60 underline">{t('تغيير', 'Change')}</span>
-              </button>
-            )}
-            {remaining !== null && questionsAllowed !== null && (
-              <QuotaBadge remaining={remaining} total={questionsAllowed} />
-            )}
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+              {country && (
+                <button
+                  type="button"
+                  onClick={() => setPhase('country-select')}
+                  className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <span>{COUNTRIES.find(c => c.code === country)?.flag}</span>
+                  <span>{countryName(country, lang)}</span>
+                   <span className="text-primary/60 underline">{t('تغيير', 'Change')}</span>
+                </button>
+              )}
+              {remaining !== null && questionsAllowed !== null && (
+                <QuotaBadge remaining={remaining} total={questionsAllowed} />
+              )}
+            </div>
           </div>
 
           <div className="mb-4">
