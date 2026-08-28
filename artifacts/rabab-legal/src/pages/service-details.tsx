@@ -71,7 +71,7 @@ export default function ServiceDetails() {
     <div className="min-h-screen bg-background flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
       <main className="flex-1">
-        <section className="bg-gradient-to-b from-primary to-[#0f1c3a] px-3 sm:px-5 lg:px-7 py-14 text-white">
+        <section className="bg-gradient-to-b from-primary to-sidebar px-3 sm:px-5 lg:px-7 py-14 text-white">
           <div className="w-full">
             <Link
               href="/#services"
@@ -108,19 +108,19 @@ export default function ServiceDetails() {
               <p className="mt-3 text-lg leading-relaxed text-muted-foreground">{localize(service.description)}</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {service.branches.map((branch, index) => {
                 const BranchIcon = branch.icon;
                 const frameStyle = branchFrameStyles[index % branchFrameStyles.length];
                 const content = (
-                    <div className={`group h-full rounded-2xl border-2 bg-card p-6 ${lang === 'ar' ? 'text-right' : 'text-left'} shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${frameStyle.card}`}>
-                    <div className="flex items-start gap-3">
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${frameStyle.icon}`}>
-                        <BranchIcon className="h-5 w-5" />
+                    <div className={`group h-full rounded-2xl border-2 bg-card p-7 ${lang === 'ar' ? 'text-right' : 'text-left'} shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${frameStyle.card}`}>
+                    <div className="flex items-start gap-4">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors ${frameStyle.icon}`}>
+                        <BranchIcon className="h-6 w-6" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-bold text-secondary">{localize(branch.label)}</h3>
-                        <p className="mt-1.5 text-base leading-relaxed text-foreground/80">{localize(branch.detail)}</p>
+                        <h3 className="text-xl font-black leading-snug text-secondary">{localize(branch.label)}</h3>
+                        <p className="mt-2 text-base leading-relaxed text-foreground/90">{localize(branch.detail)}</p>
                       </div>
                       <ArrowLeft className="mt-1 h-4 w-4 shrink-0 text-primary" />
                     </div>
