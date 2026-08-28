@@ -7,57 +7,57 @@
  */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   الثيم الزيتوني الذهبي — نهاري فاتح
-   Palette: bg #F5F1E8 · card #FFFDF7 · olive #0F6E56 · gold #C9A227
+   الثيم الفاتح — أزرق وذهبي (الافتراضي — خلفية فاتحة مريحة للعين)
+   Palette: bg #F5F1E8 · card #FFFDF7 · navy #1E4FA6 · gold #C9A227
    ══════════════════════════════════════════════════════════════════════════════ */
 [data-theme="olive"] {
   /* ── الخلفيات ─────────────────────────────────────────────────────────── */
   --background:           42 38% 93%;   /* #F5F1E8 */
   --card:                 45 100% 98%;  /* #FFFDF7 */
-  --card-foreground:      155 38% 11%;
+  --card-foreground:      217 42% 15%;
   --card-border:          52 24% 82%;   /* #DCD9C6 */
   --popover:              45 100% 98%;
-  --popover-foreground:   155 38% 11%;
+  --popover-foreground:   217 42% 15%;
   --popover-border:       52 24% 82%;
   --muted:                45 28% 88%;
   --input:                48 40% 94%;
 
   /* ── النصوص ───────────────────────────────────────────────────────────── */
-  --foreground:           155 38% 11%;  /* #12281F */
-  --muted-foreground:     127 9% 39%;   /* #5A6B5C */
+  --foreground:           217 42% 15%;  /* كحلي داكن */
+  --muted-foreground:     217 15% 40%;
 
   /* ── الألوان المميزة ───────────────────────────────────────────────────── */
-  --primary:              165 76% 24%;  /* #0F6E56 زيتوني — أزرار، روابط، footer */
-  --primary-foreground:   0 0% 100%;    /* أبيض على الزيتوني */
+  --primary:              217 55% 28%;  /* كحلي أزرق — أزرار، روابط، footer */
+  --primary-foreground:   0 0% 100%;    /* أبيض على الكحلي */
   --secondary:            46 68% 47%;   /* #C9A227 ذهبي */
-  --secondary-foreground: 155 38% 11%;
+  --secondary-foreground: 217 42% 15%;
   --accent:               46 68% 47%;   /* ذهبي للشارات واللمسات */
-  --accent-foreground:    155 38% 11%;
+  --accent-foreground:    217 42% 15%;
 
   /* ── الحدود والتركيز ──────────────────────────────────────────────────── */
   --border:               52 24% 82%;   /* #DCD9C6 */
-  --ring:                 165 76% 24%;
+  --ring:                 217 55% 28%;
 
   /* ── التحذيرات ────────────────────────────────────────────────────────── */
   --destructive:          0 78% 45%;
   --destructive-foreground: 0 0% 100%;
 
   /* ── الشريط الجانبي ───────────────────────────────────────────────────── */
-  --sidebar:              165 60% 18%;
+  --sidebar:              217 55% 16%;
   --sidebar-foreground:   0 0% 98%;
-  --sidebar-border:       165 40% 28%;
+  --sidebar-border:       217 40% 28%;
   --sidebar-primary:      46 68% 47%;
-  --sidebar-primary-foreground: 155 38% 11%;
-  --sidebar-accent:       165 50% 23%;
+  --sidebar-primary-foreground: 217 42% 15%;
+  --sidebar-accent:       217 50% 22%;
   --sidebar-accent-foreground: 0 0% 98%;
   --sidebar-ring:         46 68% 47%;
 
   /* ── متغيرات مخصصة ────────────────────────────────────────────────────── */
-  --navbar-bg:            hsl(165 56% 10%);  /* داكن عميق للبار العلوي */
-  --button-outline:       rgba(15, 110, 86, 0.18);
+  --navbar-bg:            hsl(217 55% 12%);  /* كحلي داكن للبار العلوي */
+  --button-outline:       rgba(30, 79, 166, 0.18);
   --badge-outline:        rgba(201, 162, 39, 0.14);
-  --elevate-1:            rgba(15, 110, 86, 0.04);
-  --elevate-2:            rgba(15, 110, 86, 0.07);
+  --elevate-1:            rgba(30, 79, 166, 0.04);
+  --elevate-2:            rgba(30, 79, 166, 0.07);
   --opaque-button-border-intensity: 8;
 }
 
