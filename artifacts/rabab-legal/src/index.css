@@ -57,48 +57,48 @@
   --elevate-1: rgba(0, 212, 255, 0.04);
   --elevate-2: rgba(0, 212, 255, 0.08);
 
-  /* ── AI Color Theme ──────────────────────────────────── */
-  /* Deep Space Navy   #050c1a → hsl(220 60% 7%)           */
-  /* Electric Cyan     #00D4FF → hsl(191 100% 50%)         */
-  /* Neon Violet       #8B5CF6 → hsl(263 87% 65%)          */
-  /* Gold (brand)      #C8900A → hsl(42  93% 41%)          */
+  /* ── AI Color Theme — كحلي مريح + أزرق (فاتح وغامق) + ذهبي ──── */
+  /* Comfortable Navy   #16233A → hsl(217 42% 16%)         */
+  /* Electric Blue      #00D4FF → hsl(191 100% 50%)  فاتح  */
+  /* Deep Blue          #1E63D6 → hsl(217 78% 46%)   غامق  */
+  /* Gold (brand)       #C8900A → hsl(42  93% 41%)          */
 
-  --background: 220 55% 8%;            /* خلفية داكنة تقنية عميقة */
+  --background: 217 42% 24%;           /* كحلي أفتح بدرجتين — للراحة البصرية */
   --foreground: 0 0% 96%;              /* أبيض ناصع */
 
-  --border: 191 60% 22%;               /* حدود سيان داكنة */
-  --input: 220 50% 13%;
-  --ring: 191 100% 50%;                /* سيان للتركيز */
+  --border: 191 60% 30%;               /* حدود زرقاء داكنة */
+  --input: 217 38% 29%;
+  --ring: 191 100% 50%;                /* أزرق فاتح للتركيز */
 
-  --card: 220 52% 11%;                 /* كارد داكن */
+  --card: 217 38% 28%;                 /* كارد أفتح قليلاً من الخلفية */
   --card-foreground: 0 0% 96%;
-  --card-border: 191 50% 22%;
+  --card-border: 191 45% 30%;
 
-  --popover: 220 52% 11%;
+  --popover: 217 38% 28%;
   --popover-foreground: 0 0% 96%;
-  --popover-border: 191 50% 22%;
+  --popover-border: 191 45% 30%;
 
-  --primary: 220 60% 7%;               /* Deep Space — للـ navbar والهيدر */
+  --primary: 217 45% 20%;              /* كحلي — للـ navbar والهيدر */
   --primary-foreground: 47 100% 48%;   /* ذهبي على الداكن */
 
-  --secondary: 191 100% 50%;           /* Electric Cyan #00D4FF */
-  --secondary-foreground: 220 60% 7%;  /* داكن على السيان */
+  --secondary: 191 100% 50%;           /* أزرق فاتح — Electric Blue #00D4FF */
+  --secondary-foreground: 220 60% 7%;  /* داكن على الأزرق الفاتح */
 
-  --muted: 220 45% 14%;                /* خلفيات ثانوية */
+  --muted: 217 35% 30%;                /* خلفيات ثانوية */
   --muted-foreground: 0 0% 96%;        /* أبيض بدل الرصاصي */
 
-  --accent: 263 87% 65%;               /* Neon Violet #8B5CF6 */
+  --accent: 217 78% 50%;               /* أزرق غامق — بديل البنفسجي #1E63D6 */
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --sidebar: 220 60% 7%;
+  --sidebar: 217 45% 20%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 191 40% 18%;
+  --sidebar-border: 191 45% 30%;
   --sidebar-primary: 191 100% 50%;
-  --sidebar-primary-foreground: 220 60% 7%;
-  --sidebar-accent: 220 45% 14%;
+  --sidebar-primary-foreground: 217 45% 20%;
+  --sidebar-accent: 217 35% 30%;
   --sidebar-accent-foreground: 191 100% 50%;
   --sidebar-ring: 191 100% 50%;
 
@@ -114,41 +114,41 @@
   --elevate-1: rgba(0, 212, 255, 0.04);
   --elevate-2: rgba(0, 212, 255, 0.09);
 
-  --background: 220 60% 6%;
+  --background: 217 42% 24%;
   --foreground: 0 0% 100%;
-  --border: 191 40% 18%;
-  --input: 220 50% 12%;
+  --border: 191 45% 30%;
+  --input: 217 38% 29%;
   --ring: 191 100% 50%;
 
-  --card: 220 55% 9%;
+  --card: 217 38% 28%;
   --card-foreground: 0 0% 100%;
-  --card-border: 191 40% 18%;
+  --card-border: 191 45% 30%;
 
-  --popover: 220 55% 9%;
+  --popover: 217 38% 28%;
   --popover-foreground: 0 0% 100%;
-  --popover-border: 191 40% 18%;
+  --popover-border: 191 45% 30%;
 
-  --primary: 220 60% 6%;
+  --primary: 217 45% 20%;
   --primary-foreground: 47 100% 48%;
 
   --secondary: 191 100% 50%;
-  --secondary-foreground: 220 60% 6%;
+  --secondary-foreground: 217 45% 20%;
 
-  --muted: 220 45% 13%;
-  --muted-foreground: 210 20% 60%;
+  --muted: 217 35% 30%;
+  --muted-foreground: 210 20% 68%;
 
-  --accent: 263 87% 65%;
+  --accent: 217 78% 50%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --sidebar: 220 60% 6%;
+  --sidebar: 217 45% 20%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 191 40% 18%;
+  --sidebar-border: 191 45% 30%;
   --sidebar-primary: 191 100% 50%;
-  --sidebar-primary-foreground: 220 60% 6%;
-  --sidebar-accent: 220 45% 13%;
+  --sidebar-primary-foreground: 217 45% 20%;
+  --sidebar-accent: 217 35% 30%;
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-ring: 191 100% 50%;
 }
