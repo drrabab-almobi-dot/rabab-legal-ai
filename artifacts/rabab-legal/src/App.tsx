@@ -49,7 +49,6 @@ import AdminLegalCodex from '@/pages/admin/legal-codex';
 import AdminWhatsAppSettings from '@/pages/admin/whatsapp-settings';
 import KnowledgeSearch from '@/pages/knowledge-search';
 import LegalSearchPage from '@/pages/legal-search';
-import InitiativesPage from '@/pages/initiatives';
 import AdminInitiatives from '@/pages/admin/initiatives';
 import { DevPanel } from '@/components/dev-panel';
 import ContractsPage from '@/pages/contracts';
@@ -259,9 +258,6 @@ function Router() {
       <Route path="/legal-search">
         <LegalSearchPage />
       </Route>
-
-      {/* Community initiatives (public) */}
-      <Route path="/initiatives" component={InitiativesPage} />
 
       {/* Contracts */}
       <Route path="/contracts">
