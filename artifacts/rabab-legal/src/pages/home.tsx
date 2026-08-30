@@ -5,7 +5,7 @@ import { Navbar, Footer } from '@/components/layout';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Scale, CheckCircle2, Star, ChevronDown, ChevronUp, MessageSquare, Shield, Clock, Phone, FileText, FileSignature, Handshake, Building, Gavel, Lightbulb, Briefcase, Landmark, Search, Loader2, Lock, PenLine, FileSearch, Bot, ArrowLeft, BookOpen, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import launchHeroImg from '@/assets/launch-hero.png';
+import launchHeroImg from '@/assets/launch-hero.jpg';
 import lawyerHeroImg from '@/assets/lawyer-hero.png';
 import { buildWhatsAppContactLink } from '@/lib/whatsapp-contact';
 import { SERVICE_CATALOG } from '@/lib/service-catalog';
