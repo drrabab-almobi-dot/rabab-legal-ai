@@ -1,0 +1,22 @@
+name: Fix home hero image
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace PNG with JPG
+        run: sed -i "s/launch-hero\.png/launch-hero.jpg/g" artifacts/rabab-legal/src/pages/home.tsx
+      - name: Verify change
+        run: grep 'launch-hero.jpg' artifacts/rabab-legal/src/pages/home.tsx
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add artifacts/rabab-legal/src/pages/home.tsx
+          git diff --cached --quiet && echo 'No changes' || (git commit -m "fix: use launch-hero.jpg instead of heavy PNG in home page" && git push)
