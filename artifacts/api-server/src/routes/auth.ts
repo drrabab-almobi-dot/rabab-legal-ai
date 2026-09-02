@@ -217,14 +217,21 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       });
       return;
     } catch (err) {
-      if (process.env.NODE_ENV === "production") {
-        await db.delete(phoneOtpTokensTable).where(eq(phoneOtpTokensTable.userId, user.id)).catch(() => {});
-        await db.delete(subscriptionsTable).where(eq(subscriptionsTable.userId, user.id)).catch(() => {});
-        await db.delete(usersTable).where(eq(usersTable.id, user.id)).catch(() => {});
-        res.status(503).json({ error: "فشل إرسال رمز التحقق، يرجى المحاولة مرة أخرى" });
-        return;
-      }
-      logger.warn({ err: (err as any)?.message }, "[SMS] Failed to send OTP — proceeding without verification");
+      logger.warn({ err: (err as any)?.message }, "[SMS] Failed to send OTP — falling back to email verification");
+      // Clean up phone OTP tokens since SMS delivery failed
+      await db.delete(phoneOtpTokensTable).where(eq(phoneOtpTokensTable.userId, user.id)).catch(() => {});
+      // Fall back to email OTP verification instead of rejecting registration
+      const emailOtpCode = generateOtp();
+      const emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+      await db.delete(emailVerificationTokensTable)
+        .where(eq(emailVerificationTokensTable.userId, user.id));
+      await db.insert(emailVerificationTokensTable).values({
+        userId: user.id, code: hashOtp(emailOtpCode), expiresAt: emailOtpExpiry,
+      });
+      sendVerificationEmail(user.email, user.name, emailOtpCode).catch(() => {});
+      logAction({ userId: user.id, action: "register", details: { email, smsFallbackToEmail: true }, ip: req.ip, userAgent: req.get("user-agent") });
+      res.status(201).json({ needsVerification: true, email: user.email });
+      return;
     }
 
     logAction({ userId: user.id, action: "register", details: { email }, ip: req.ip, userAgent: req.get("user-agent") });
