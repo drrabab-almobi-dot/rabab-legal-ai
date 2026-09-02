@@ -187,3 +187,12 @@
 .ai-border {
   border: 1px solid hsl(191 100% 50% / 0.3);
 }
+
+/* Keep the floating WhatsApp contact control on the physical left side so it
+   does not cover guest / not-signed-in notices on the right. */
+a[href="https://wa.me/966504647649"][style*="position: fixed"] {
+  left: max(16px, env(safe-area-inset-left)) !important;
+  right: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+}
