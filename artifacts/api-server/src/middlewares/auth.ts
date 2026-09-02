@@ -13,7 +13,17 @@ declare global {
   }
 }
 
-export const JWT_SECRET = process.env.SESSION_SECRET ?? "fallback-dev-secret-change-in-prod";
+// ── Security fix: never fall back to a hardcoded secret ──────────────────────
+// The JWT signing key MUST come from the environment. A hardcoded fallback
+// would allow any attacker who reads the source code to forge valid tokens.
+const _jwtSecret = process.env.SESSION_SECRET;
+if (!_jwtSecret) {
+  throw new Error(
+    "SESSION_SECRET environment variable is required for JWT signing. " +
+    "Set it to a cryptographically random string (≥ 64 characters)."
+  );
+}
+export const JWT_SECRET: string = _jwtSecret;
 
 export interface JwtPayload {
   userId: number;
