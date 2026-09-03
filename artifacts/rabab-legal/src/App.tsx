@@ -1,1 +1,358 @@
-aW1wb3J0IHsgUm91dGUsIFN3aXRjaCwgUm91dGVyIGFzIFdvdXRlclJvdXRlciwgdXNlTG9jYXRpb24sIFJlZGlyZWN0IH0gZnJvbSAnd291dGVyJzsKaW1wb3J0IHsgUXVlcnlDbGllbnQsIFF1ZXJ5Q2xpZW50UHJvdmlkZXIgfSBmcm9tICdAdGFuc3RhY2svcmVhY3QtcXVlcnknOwppbXBvcnQgeyBBcnJvd1JpZ2h0IH0gZnJvbSAnbHVjaWRlLXJlYWN0JzsKaW1wb3J0IHsgdXNlRWZmZWN0LCB1c2VSZWYgfSBmcm9tICdyZWFjdCc7CmltcG9ydCB7IFRvYXN0ZXIgfSBmcm9tICdAL2NvbXBvbmVudHMvdWkvdG9hc3Rlcic7CmltcG9ydCB7IFRvb2x0aXBQcm92aWRlciB9IGZyb20gJ0AvY29tcG9uZW50cy91aS90b29sdGlwJzsKaW1wb3J0IHsgQXV0aFByb3ZpZGVyIH0gZnJvbSAnQC9ob29rcy91c2UtYXV0aCc7CmltcG9ydCB7IExhbmdQcm92aWRlciwgdXNlTGFuZyB9IGZyb20gJ0AvaG9va3MvdXNlLWxhbmd1YWdlJzsKaW1wb3J0IHsgVGhlbWVQcm92aWRlciB9IGZyb20gJ0AvaG9va3MvdXNlLXRoZW1lJzsKaW1wb3J0IHsgUHJvdGVjdGVkUm91dGUsIEd1ZXN0T25seVJvdXRlIH0gZnJvbSAnQC9jb21wb25lbnRzL3Byb3RlY3RlZC1yb3V0ZSc7CgovLyBQYWdlcwppbXBvcnQgSG9tZSBmcm9tICdAL3BhZ2VzL2hvbWUnOwppbXBvcnQgUHJpY2luZyBmcm9tICdAL3BhZ2VzL3ByaWNpbmcnOwppbXBvcnQgTG9naW4gZnJvbSAnQC9wYWdlcy9sb2dpbic7CmltcG9ydCBSZWdpc3RlciBmcm9tICdAL3BhZ2VzL3JlZ2lzdGVyJzsKaW1wb3J0IERhc2hib2FyZCBmcm9tICdAL3BhZ2VzL2Rhc2hib2FyZCc7CmltcG9ydCBDb25zdWx0YXRpb24gZnJvbSAnQC9wYWdlcy9jb25zdWx0YXRpb24nOwppbXBvcnQgUGF5bWVudEZsb3cgZnJvbSAnQC9wYWdlcy9wYXltZW50JzsKaW1wb3J0IFBheW1lbnRDYWxsYmFjayBmcm9tICdAL3BhZ2VzL3BheW1lbnQtY2FsbGJhY2snOwppbXBvcnQgeyBQYXltZW50U3VjY2VzcywgUGF5bWVudEZhaWxlZCB9IGZyb20gJ0AvcGFnZXMvcGF5bWVudC1zdGF0dXMnOwppbXBvcnQgSW52b2ljZURldGFpbCBmcm9tICdAL3BhZ2VzL2ludm9pY2UnOwppbXBvcnQgQ29udGFjdCBmcm9tICdAL3BhZ2VzL2NvbnRhY3QnOwppbXBvcnQgQWJvdXQgZnJvbSAnQC9wYWdlcy9hYm91dCc7CmltcG9ydCBGQVEgZnJvbSAnQC9wYWdlcy9mYXEnOwppbXBvcnQgQXBwb2ludG1lbnQgZnJvbSAnQC9wYWdlcy9hcHBvaW50bWVudCc7CmltcG9ydCBQcml2YWN5IGZyb20gJ0AvcGFnZXMvcHJpdmFjeSc7CmltcG9ydCBUZXJtcyBmcm9tICdAL3BhZ2VzL3Rlcm1zJzsKCi8vIEFkbWluIFBhZ2VzCmltcG9ydCBBZG1pbkRhc2hib2FyZCBmcm9tICdAL3BhZ2VzL2FkbWluL2Rhc2hib2FyZCc7CmltcG9ydCBBZG1pblVzZXJzIGZyb20gJ0AvcGFnZXMvYWRtaW4vdXNlcnMnOwppbXBvcnQgQWRtaW5Lbm93bGVkZ2VCYXNlIGZyb20gJ0AvcGFnZXMvYWRtaW4va25vd2xlZGdlLWJhc2UnOwppbXBvcnQgQWRtaW5QYWNrYWdlcyBmcm9tICdAL3BhZ2VzL2FkbWluL3BhY2thZ2VzJzsKaW1wb3J0IEFkbWluQ291cG9ucyBmcm9tICdAL3BhZ2VzL2FkbWluL2NvdXBvbnMnOwppbXBvcnQgQWRtaW5QYXltZW50cyBmcm9tICdAL3BhZ2VzL2FkbWluL3BheW1lbnRzJzsKaW1wb3J0IEFkbWluQ29uc3VsdGF0aW9ucyBmcm9tICdAL3BhZ2VzL2FkbWluL2NvbnN1bHRhdGlvbnMnOwppbXBvcnQgQWRtaW5BdWRpdExvZyBmcm9tICdAL3BhZ2VzL2FkbWluL2F1ZGl0LWxvZyc7CmltcG9ydCBBZG1pbk5vdGlmaWNhdGlvbnMgZnJvbSAnQC9wYWdlcy9hZG1pbi9ub3RpZmljYXRpb25zJzsKLy8gW0RJU0FCTEVEIEF1Zy0yMDI2XSBpbXBvcnQgQWRtaW5UZWxlZ3JhbVN5bmMgZnJvbSAnQC9wYWdlcy9hZG1pbi90ZWxlZ3JhbS1zeW5jJzsKaW1wb3J0IEFkbWluTW9qQ29udGVudCBmcm9tICdAL3BhZ2VzL2FkbWluL21vai1jb250ZW50JzsKaW1wb3J0IEFkbWluS25vd2xlZGdlUXVhbGl0eSBmcm9tICdAL3BhZ2VzL2FkbWluL2tub3dsZWRnZS1xdWFsaXR5JzsKaW1wb3J0IEFkbWluU2VjdGlvbkNvbnRyb2wgZnJvbSAnQC9wYWdlcy9hZG1pbi9zZWN0aW9uLWNvbnRyb2wnOwppbXBvcnQgQWRtaW5Db252ZXJzaW9uUmVwb3J0IGZyb20gJ0AvcGFnZXMvYWRtaW4vY29udmVyc2lvbi1yZXBvcnQnOwppbXBvcnQgQWRtaW5Tb3VyY2VTdGF0dXMgZnJvbSAnQC9wYWdlcy9hZG1pbi9zb3VyY2Utc3RhdHVzJzsKaW1wb3J0IEFkbWluRW1haWxTZXR0aW5ncyBmcm9tICdAL3BhZ2VzL2FkbWluL2VtYWlsLXNldHRpbmdzJzsKaW1wb3J0IEFkbWluQ29udGFjdE1lc3NhZ2VzIGZyb20gJ0AvcGFnZXMvYWRtaW4vY29udGFjdC1tZXNzYWdlcyc7CmltcG9ydCBBZG1pbkxlZ2FsQ29kZXggZnJvbSAnQC9wYWdlcy9hZG1pbi9sZWdhbC1jb2RleCc7CmltcG9ydCBBZG1pbldoYXRzQXBwU2V0dGluZ3MgZnJvbSAnQC9wYWdlcy9hZG1pbi93aGF0c2FwcC1zZXR0aW5ncyc7CmltcG9ydCBLbm93bGVkZ2VTZWFyY2ggZnJvbSAnQC9wYWdlcy9rbm93bGVkZ2Utc2VhcmNoJzsKaW1wb3J0IExlZ2FsU2VhcmNoUGFnZSBmcm9tICdAL3BhZ2VzL2xlZ2FsLXNlYXJjaCc7CmltcG9ydCBBZG1pbkluaXRpYXRpdmVzIGZyb20gJ0AvcGFnZXMvYWRtaW4vaW5pdGlhdGl2ZXMnOwppbXBvcnQgeyBEZXZQYW5lbCB9IGZyb20gJ0AvY29tcG9uZW50cy9kZXYtcGFuZWwnOwppbXBvcnQgQ29udHJhY3RzUGFnZSBmcm9tICdAL3BhZ2VzL2NvbnRyYWN0cyc7CmltcG9ydCBMZWdhbEFzc2lzdGFudCBmcm9tICdAL3BhZ2VzL2xlZ2FsLWFzc2lzdGFudCc7CmltcG9ydCBTZXJ2aWNlRGV0YWlscyBmcm9tICdAL3BhZ2VzL3NlcnZpY2UtZGV0YWlscyc7CmltcG9ydCBGb3Jnb3RQYXNzd29yZCBmcm9tICdAL3BhZ2VzL2ZvcmdvdC1wYXNzd29yZCc7CmltcG9ydCBSZXNldFBhc3N3b3JkIGZyb20gJ0AvcGFnZXMvcmVzZXQtcGFzc3dvcmQnOwppbXBvcnQgVXNhZ2VMb2dQYWdlIGZyb20gJ0AvcGFnZXMvdXNhZ2UtbG9nJzsKaW1wb3J0IE9yZ2FuaXphdGlvblBhZ2UgZnJvbSAnQC9wYWdlcy9vcmdhbml6YXRpb24nOwppbXBvcnQgeyBVc2FnZUNvdW50ZXIgfSBmcm9tICdAL2NvbXBvbmVudHMvVXNhZ2VDb3VudGVyJzsKaW1wb3J0IHsgUXVvdGFDb25maXJtUHJvdmlkZXIgfSBmcm9tICdAL2NvbXBvbmVudHMvUXVvdGFDb25maXJtTW9kYWwnOwoKY29uc3QgcXVlcnlDbGllbnQgPSBuZXcgUXVlcnlDbGllbnQoKTsKCi8vIFBsYWNlaG9sZGVyIGNvbXBvbmVudHMgZm9yIHN0YXRpYyBwYWdlcwpjb25zdCBTaW1wbGVQYWdlID0gKCkgPT4gewogIGNvbnN0IHsgbGFuZywgdCB9ID0gdXNlTGFuZygpOwogIGNvbnN0IHRpdGxlID0gdCgn2KXYrtmE2KfYoSDYp9mE2YXYs9ik2YjZhNmK2Kkg2KfZhNmC2KfZhtmI2YbZiicsICdMZWdhbCBEaXNjbGFpbWVyJyk7CiAgcmV0dXJuICgKICA8ZGl2IGRpcj17bGFuZyA9PT0gJ2FyJyA/ICdydGwnIDogJ2x0cid9IGNsYXNzTmFtZT0ibWluLWgtc2NyZWVuIGZsZXggZmxleC1jb2wgYmctbXV0ZWQvMjAiPgogICAgPGRpdiBjbGFzc05hbWU9InAtNCBiZy1wcmltYXJ5IHRleHQtd2hpdGUiPjxoMSBjbGFzc05hbWU9InRleHQteGwgZm9udC1ib2xkIj57dGl0bGV9PC9oMT48L2Rpdj4KICAgIDxkaXYgY2xhc3NOYW1lPSJjb250YWluZXIgbXgtYXV0byBwLTEyIG1heC13LTN4bCBwcm9zZSBwcm9zZS1zbGF0ZSBydGw6cHJvc2UtaW52ZXJ0Ij4KICAgICAgPHA+e3QoJ9mF2K3YqtmI2Ykg2LXZgdit2Kkg2KXYrtmE2KfYoSDYp9mE2YXYs9ik2YjZhNmK2Kkg2KfZhNmC2KfZhtmI2YbZiiDYqNin2YTZhNi62Kkg2KfZhNi52LHYqNmK2KkuLi4nLCAnVGhlIExlZ2FsIERpc2NsYWltZXIgcGFnZSBjb250ZW50IGlzIGF2YWlsYWJsZSBpbiBBcmFiaWMuLi4nKX08L3A+CiAgICA8L2Rpdj4KICA8L2Rpdj4KICApOwp9OwoKZnVuY3Rpb24gTm90Rm91bmQoKSB7CiAgY29uc3QgeyBsYW5nLCB0IH0gPSB1c2VMYW5nKCk7CiAgcmV0dXJuICgKICAgIDxkaXYgZGlyPXtsYW5nID09PSAnYXInID8gJ3J0bCcgOiAnbHRyJ30gY2xhc3NOYW1lPSJtaW4taC1zY3JlZW4gZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgYmctbXV0ZWQvMjAgdGV4dC1jZW50ZXIgcHgtNCI+CiAgICAgIDxkaXY+CiAgICAgICAgPGgxIGNsYXNzTmFtZT0idGV4dC02eGwgZm9udC1ib2xkIHRleHQtcHJpbWFyeSBtYi00Ij40MDQ8L2gxPgogICAgICAgIDxwIGNsYXNzTmFtZT0idGV4dC14bCB0ZXh0LW11dGVkLWZvcmVncm91bmQgbWItOCI+e3QoJ9i22LDYsdin2YvYjCDYp9mE2LXZgdit2Kkg2KfZhNiq2Yog2KrYqNit2Ksg2LnZhtmH2Kcg2LrZitixINmF2YjYrNmI2K/YqS4nLCAnU29ycnksIHRoZSBwYWdlIHlvdSBhcmUgbG9va2luZyBmb3IgZG9lcyBub3QgZXhpc3QuJyl9PC9wPgogICAgICAgIDxidXR0b24gb25DbGljaz17KCkgPT4gd2luZG93LmxvY2F0aW9uLmhyZWYgPSAnLyd9IGNsYXNzTmFtZT0iYmctcHJpbWFyeSB0ZXh0LXdoaXRlIHB4LTYgcHktMyByb3VuZGVkLW1kIGZvbnQtYm9sZCI+e3QoJ9in2YTYudmI2K/YqSDZhNmE2LHYptmK2LPZitipJywgJ0JhY2sgdG8gaG9tZScpfTwvYnV0dG9uPgogICAgICA8L2Rpdj4KICAgIDwvZGl2PgogICk7Cn0KCmZ1bmN0aW9uIEJhY2tCdXR0b24oKSB7CiAgY29uc3QgW2xvY2F0aW9uLCBuYXZpZ2F0ZV0gPSB1c2VMb2NhdGlvbigpOwogIGNvbnN0IG5hdmlnYXRpb25TdGFjayA9IHVzZVJlZjxzdHJpbmdbXT4oW2xvY2F0aW9uXSk7CiAgY29uc3QgY3VycmVudExvY2F0aW9uID0gdXNlUmVmKGxvY2F0aW9uKTsKICBjb25zdCBpc1JldHVybmluZyA9IHVzZVJlZihmYWxzZSk7CiAgY29uc3QgeyB0LCBsYW5nIH0gPSB1c2VMYW5nKCk7CgogIHVzZUVmZmVjdCgoKSA9PiB7CiAgICBpZiAobG9jYXRpb24gPT09IGN1cnJlbnRMb2NhdGlvbi5jdXJyZW50KSByZXR1cm47CgogICAgaWYgKGlzUmV0dXJuaW5nLmN1cnJlbnQpIHsKICAgICAgbmF2aWdhdGlvblN0YWNrLmN1cnJlbnQucG9wKCk7CiAgICAgIGlzUmV0dXJuaW5nLmN1cnJlbnQgPSBmYWxzZTsKICAgIH0gZWxzZSB7CiAgICAgIG5hdmlnYXRpb25TdGFjay5jdXJyZW50LnB1c2gobG9jYXRpb24pOwogICAgfQoKICAgIGN1cnJlbnRMb2NhdGlvbi5jdXJyZW50ID0gbG9jYXRpb247CiAgfSwgW2xvY2F0aW9uXSk7CgogIGlmIChsb2NhdGlvbiA9PT0gJy8nKSByZXR1cm4gbnVsbDsKCiAgY29uc3QgaGFuZGxlQmFjayA9ICgpID0+IHsKICAgIGNvbnN0IHByZXZpb3VzTG9jYXRpb24gPSBuYXZpZ2F0aW9uU3RhY2suY3VycmVudC5hdCgtMik7CiAgICBpZiAocHJldmlvdXNMb2NhdGlvbikgewogICAgICBpc1JldHVybmluZy5jdXJyZW50ID0gdHJ1ZTsKICAgICAgbmF2aWdhdGUocHJldmlvdXNMb2NhdGlvbik7CiAgICB9IGVsc2UgewogICAgICBuYXZpZ2F0ZSgnLycpOwogICAgfQogIH07CgogIHJldHVybiAoCiAgICA8YnV0dG9uCiAgICAgIHR5cGU9ImJ1dHRvbiIKICAgICAgb25DbGljaz17aGFuZGxlQmFja30KICAgICAgYXJpYS1sYWJlbD17dCgn2KfZhNi52YjYr9ipINmE2YTYtdmB2K3YqSDYp9mE2LPYp9io2YLYqScsICdHbyBiYWNrJyl9CiAgICAgIHRpdGxlPXt0KCfYp9mE2LnZiNiv2Kkg2YTZhNi12YHYrdipINin2YTYs9in2KjZgtipJywgJ0dvIGJhY2snKX0KICAgICAgY2xhc3NOYW1lPXtgZml4ZWQgdG9wLVs0LjVyZW1dICR7bGFuZyA9PT0gJ2FyJyA/ICdyaWdodC00IG1kOnJpZ2h0LTYnIDogJ2xlZnQtNCBtZDpsZWZ0LTYnfSB6LTQwIGlubGluZS1mbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiByb3VuZGVkLWZ1bGwgYm9yZGVyIGJvcmRlci1ib3JkZXIgYmctYmFja2dyb3VuZC85NSBweC0zIHB5LTIgdGV4dC1zbSBmb250LWJvbGQgdGV4dC1mb3JlZ3JvdW5kIHNoYWRvdy1tZCBiYWNrZHJvcC1ibHVyLXNtIHRyYW5zaXRpb24tY29sb3JzIGhvdmVyOmJnLWFjY2VudCBmb2N1cy12aXNpYmxlOm91dGxpbmUtbm9uZSBmb2N1cy12aXNpYmxlOnJpbmctMiBmb2N1cy12aXNpYmxlOnJpbmctcmluZ2B9CiAgICA+CiAgICAgIDxBcnJvd1JpZ2h0IGNsYXNzTmFtZT0iaC00IHctNCIgYXJpYS1oaWRkZW49InRydWUiIC8+CiAgICAgIDxzcGFuPnt0KCfYsdmq2YjYuScsICdCYWNrJyl9PC9zcGFuPgogICAgPC9idXR0b24+CiAgKTsKfQoKZnVuY3Rpb24gUm91dGVyKCkgewogIHJldHVybiAoCiAgICA8U3dpdGNoPgogICAgICA8Um91dGUgcGF0aD0iLyIgY29tcG9uZW50PXtIb21lfSAvPgogICAgICA8Um91dGUgcGF0aD0iL3ByaWNpbmciIGNvbXBvbmVudD17UHJpY2luZ30gLz4KICAgICAgPFJvdXRlIHBhdGg9Ii9wYWNrYWdlcyI+PFJlZGlyZWN0IHRvPSIvcHJpY2luZyIgLz48L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2NvbnRhY3QiIGNvbXBvbmVudD17Q29udGFjdH0gLz4KICAgICAgPFJvdXRlIHBhdGg9Ii9hYm91dCIgY29tcG9uZW50PXtBYm91dH0gLz4KICAgICAgPFJvdXRlIHBhdGg9Ii9mYXEiIGNvbXBvbmVudD17RkFRfSAvPgogICAgICA8Um91dGUgcGF0aD0iL2FwcG9pbnRtZW50IiBjb21wb25lbnQ9e0FwcG9pbnRtZW50fSAvPgogICAgICA8Um91dGUgcGF0aD0iL3ByaXZhY3kiIGNvbXBvbmVudD17UHJpdmFjeX0gLz4KICAgICAgPFJvdXRlIHBhdGg9Ii90ZXJtcyIgY29tcG9uZW50PXtUZXJtc30gLz4KICAgICAgPFJvdXRlIHBhdGg9Ii9kaXNjbGFpbWVyIj48U2ltcGxlUGFnZSAvPjwvUm91dGU+CgogICAgICA8Um91dGUgcGF0aD0iL2xvZ2luIj4KICAgICAgICA8R3Vlc3RPbmx5Um91dGU+PExvZ2luIC8+PC9HdWVzdE9ubHlSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9yZWdpc3RlciI+CiAgICAgICAgPEd1ZXN0T25seVJvdXRlPjxSZWdpc3RlciAvPjwvR3Vlc3RPbmx5Um91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSb3V0ZSBwYXRoPSIvZm9yZ290LXBhc3N3b3JkIj4KICAgICAgICA8R3Vlc3RPbmx5Um91dGU+PEZvcmdvdFBhc3N3b3JkIC8+PC9HdWVzdE9ubHlSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9yZXNldC1wYXNzd29yZCIgY29tcG9uZW50PXtSZXNldFBhc3N3b3JkfSAvPgoKICAgICAgey8qIFByb3RlY3RlZCBDbGllbnQgUm91dGVzICovfQogICAgICA8Um91dGUgcGF0aD0iL2Rhc2hib2FyZCI+CiAgICAgICAgPFByb3RlY3RlZFJvdXRlPjxEYXNoYm9hcmQgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2NvbnN1bHRhdGlvbiI+CiAgICAgICAgPENvbnN1bHRhdGlvbiAvPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2NvbnN1bHRhdGlvbi86aWQiPgogICAgICAgIDxDb25zdWx0YXRpb24gLz4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9wYXltZW50Ij4KICAgICAgICA8UHJvdGVjdGVkUm91dGU+PFBheW1lbnRGbG93IC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9wYXltZW50L2NhbGxiYWNrIj4KKiAgICAgICA8UHJvdGVjdGVkUm91dGU+PFBheW1lbnRDYWxsYmFjayAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSb3V0ZSBwYXRoPSIvcGF5bWVudC9zdWNjZXNzIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGU+PFBheW1lbnRTdWNjZXNzIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9wYXltZW50L2ZhaWxlZCI+CiAgICAgICAgPFByb3RlY3RlZFJvdXRlPjxQYXltZW50RmFpbGVkIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9pbnZvaWNlcy86aWQiPgogICAgICAgIDxQcm90ZWN0ZWRSb3V0ZT48SW52b2ljZURldGFpbCAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CgogICAgICB7LyogQWRtaW4gUm91dGVzICovfQogICAgICA8Um91dGUgcGF0aD0iL2FkbWluIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbkRhc2hib2FyZCAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSb3V0ZSBwYXRoPSIvYWRtaW4vdXNlcnMiPgogICAgICAgIDxQcm90ZWN0ZWRSb3V0ZSBhZG1pbk9ubHk+PEFkbWluVXNlcnMgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL2tub3dsZWRnZS1iYXNlIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbktub3dsZWRnZUJhc2UgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL3BhY2thZ2VzIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pblBhY2thZ2VzIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9hZG1pbi9jb3Vwb25zIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbkNvdXBvbnMgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL3BheW1lbnRzIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pblBheW1lbnRzIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9hZG1pbi9jb25zdWx0YXRpb25zIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbkNvbnN1bHRhdGlvbnMgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL2F1ZGl0LWxvZyI+CiAgICAgICAgPFByb3RlY3RlZFJvdXRlIGFkbWluT25seT48QWRtaW5BdWRpdExvZyAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSb3V0ZSBwYXRoPSIvYWRtaW4vbm90aWZpY2F0aW9ucyI+CiAgICAgICAgPFByb3RlY3RlZFJvdXRlIGFkbWluT25seT48QWRtaW5Ob3RpZmljYXRpb25zIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgey8qIFtESVNBQkxFRCBBdWctMjAyNl0g2KjZiNiqINiq2YTYrNix2KfZhSDZhdi32YTYrNix2KfZhSDijJQg2KfZhNi12YHYrdipINmF2K3ZgdmI2LjYqSDZgdmKIHRlbGVncmFtLXN5bmMudHN4ICovfQogICAgICB7LyogPFJvdXRlIHBhdGg9Ii9hZG1pbi90ZWxlZ3JhbS1zeW5jIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pblRlbGVncmFtU3luYyAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+ICovfQogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL21vai1jb250ZW50Ij4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbk1vakNvbnRlbnQgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL2tub3dsZWRnZS1xdWFsaXR5Ij4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbktub3dsZWRnZVF1YWxpdHkgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL3NlY3Rpb24tY29udHJvbCI+CiAgICAgICAgPFByb3RlY3RlZFJvdXRlIGFkbWluT25seT48QWRtaW5TZWN0aW9uQ29udHJvbCAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSb3V0ZSBwYXRoPSIvYWRtaW4vY29udmVyc2lvbi1yZXBvcnQiPgogICAgICAgIDxQcm90ZWN0ZWRSb3V0ZSBhZG1pbk9ubHk+PEFkbWluQ29udmVyc2lvblJlcG9ydCAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSbdXRlIHBhdGg9Ii9hZG1pbi9zb3VyY2Utc3RhdHVzIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pblNvdXJjZVN0YXR1cyAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSb3V0ZSBwYXRoPSIvYWRtaW4vZW1haWwtc2V0dGluZ3MiPgogICAgICAgIDxQcm90ZWN0ZWRSb3V0ZSBhZG1pbk9ubHk+PEFkbWluRW1haWxTZXR0aW5ncyAvPjwvUHJvdGVjdGVkUm91dGU+CiAgICAgIDwvUm91dGU+CiAgICAgIDxSb3V0ZSBwYXRoPSIvYWRtaW4vY29udGFjdC1tZXNzYWdlcyI+CiAgICAgICAgPFByb3RlY3RlZFJvdXRlIGFkbWluT25seT48QWRtaW5Db250YWN0TWVzc2FnZXMgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL2xlZ2FsLWNvZGV4Ij4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbkxlZ2FsQ29kZXggLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2FkbWluL2luaXRpYXRpdmVzIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGUgYWRtaW5Pbmx5PjxBZG1pbkluaXRpYXRpdmVzIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KICAgICAgPFJvdXRlIHBhdGg9Ii9hZG1pbi93aGF0c2FwcCI+CiAgICAgICAgPFByb3RlY3RlZFJvdXRlIGFkbWluT25seT48QWRtaW5XaGF0c0FwcFNldHRpbmdzIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KCiAgICAgIHsvKiBQdWJsaWMgc2VydmljZSBkaXNjb3ZlcnkgKi99CiAgICAgIDxSb3V0ZSBwYXRoPSIva25vd2xlZGdlLXNlYXJjaCI+CiAgICAgICAgPEtub3dsZWRnZVNlYXJjaCAvPgogICAgICA8L1JvdXRlPgoKICAgICAgPFJvdXRlIHBhdGg9Ii9sZWdhbC1zZWFyY2giPgogICAgICAgIDxMZWdhbFNlYXJjaFBhZ2UgLz4KICAgICAgPC9Sb3V0ZT4KCiAgICAgIDxSb3V0ZSBwYXRoPSIvY29udHJhY3RzIj4KICAgICAgICA8Q29udHJhY3RzUGFnZSAvPgogICAgICA8L1JvdXRlPgoKICAgICAgPFJvdXRlIHBhdGg9Ii9sZWdhbC1hc3Npc3RhbnQiPgogICAgICAgIDxMZWdhbEFzc2lzdGFudCAvPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL3NlcnZpY2VzLzpzZXJ2aWNlSWQiPgogICAgICAgIDxTZXJ2aWNlRGV0YWlscyAvPgogICAgICA8L1JvdXRlPgoKICAgICAgPFJvdXRlIHBhdGg9Ii91c2FnZS1sb2ciPgogICAgICAgIDxQcm90ZWN0ZWRSb3V0ZT48VXNhZ2VMb2dQYWdlIC8+PC9Qcm90ZWN0ZWRSb3V0ZT4KICAgICAgPC9Sb3V0ZT4KCiAgICAgIDxSb3V0ZSBwYXRoPSIvb3JnYW5pemF0aW9uIj4KICAgICAgICA8UHJvdGVjdGVkUm91dGU+PE9yZ2FuaXphdGlvblBhZ2UgLz48L1Byb3RlY3RlZFJvdXRlPgogICAgICA8L1JvdXRlPgogICAgICA8Um91dGUgcGF0aD0iL2pvaW4tb3JnIj4KICAgICAgICA8T3JnYW5pemF0aW9uUGFnZSAvPgogICAgICA8L1JvdXRlPgoKICAgICAgPFJvdXRlIGNvbXBvbmVudD17Tm90Rm91bmR9IC8+CiAgICA8L1N3aXRjaD4KICApOwp9CgoKZnVuY3Rpb24gV2hhdHNBcHBCdXR0b24oKSB7CiAgY29uc3QgeyBsYW5nLCB0IH0gPSB1c2VMYW5nKCk7CiAgcmV0dXJuICgKICAgIDxhCiAgICAgIGhyZWY9Imh0dHBzOi8vd2EubWUvOTY2NTA0NjQ3NjQ5IgogICAgICB0YXJnZXQ9Il9ibGFuayIKICAgICAgcmVsPSJub29wZW5lciBub3JlZmVycmVyIgogICAgICBhcmlhLWxhYmVsPXt0KCfYqtmI2KfYtdmEINi52KjYsSDZiNin2KrYs9in2KgnLCAnQ29udGFjdCB1cyBvbiBXaGF0c0FwcCcpfQogICAgICB0aXRsZT17dCgn2KrZiNin2LXZhCDYudio2LEg2YjYp9iq2LPYp9ioJywgJ0NvbnRhY3QgdXMgb24gV2hhdHNBcHAnKX0KICAgICAgZGlyPXtsYW5nID09PSAnYXInID8gJ3J0bCcgOiAnbHRyJ30KICAgICAgc3R5bGU9e3sKICAgICAgICBwb3NpdGlvbjogJ2ZpeGVkJywKICAgICAgICBpbnNldEJsb2NrRW5kOiAnbWF4KDE2cHgsIGVudihzYWZlLWFyZWEtaW5zZXQtYm90dG9tKSknLAogICAgICAgIGluc2V0SW5saW5lRW5kOiAnbWF4KDE2cHgsIGVudihzYWZlLWFyZWEtaW5zZXQtcmlnaHQpKScsCiAgICAgICAgekluZGV4OiA5OTk5LAogICAgICAgIGJhY2tncm91bmQ6ICdoc2woMjIwIDYwJSA3JSknLAogICAgICAgIGJvcmRlcjogJzFweCBzb2xpZCBoc2woNDcgMTAwJSA0OCUpJywKICAgICAgfX0KICAgICAgY2xhc3NOYW1lPSIhZml4ZWQgZmxleCBoLTEyIHctMTIgZmxleC1yb3cgaXRlbXMtY2VudGVyIGp1c3RpZnktY2VudGVyIGdhcC0yIHJvdW5kZWQtZnVsbCBwLTMgc2hhZG93LWxnIHNoYWRvdy1zZWNvbmRhcnkvMTUgdHJhbnNpdGlvbi1hbGwgZHVyYXRpb24tMzAwIGhvdmVyOnNjYWxlLTEwNSBob3ZlcjpzaGFkb3cteGwgc206aC1hdXRvIHNtOnctYXV0byBzbTpyb3VuZGVkLTJ4bCBzbTpweC0zIHNtOnB5LTIuNSIKICAgID4KICAgICAgPHN2ZyB2aWV3Qm94PSIwIDAgMzIgMzIiIGNsYXNzTmFtZT0idy03IGgtNyBzaHJpbmstMCIgc3R5bGU9e3sgZmlsbDogJ2hzbCg0NyAxMDAlIDQ4JSknIH19PgogICAgICAgIDxwYXRoIGQ9Ik0xNiAuNUM3LjQ0LjUuNSA3LjQ0LjUgMTZjMCAyLjgyLjc0IDUuNDcgMi4wMiA3Ljc3TC41IDMxLjVsNy45NS0yLjAyQTE1LjQ0IDE1LjQ0IDAgMDAxNiAzMS41QzI0LjU2IDMxLjUgMzEuNSAyNC41NiAzMS41IDE2UzI0LjU2LjUgMTYgLjV6bTAgMjguMTJhMTIuNTUgMTIuNTUgMCAwMS02LjM4LTEuNzRsLS40Ni0uMjctNC43MiAxLjIgMS4yMi00LjYtLjMtLjQ3QTEyLjYgMTIuNiAwIDExMTYgMjguNjJ6TTIzLjE4IDE5LjVjLS4zNi0uMTgtMi4xNC0xLjA2LTIuNDctMS4xOC0uMzMtLjEyLS41Ny0uMTgtLjgxLjE4cy0uOTMgMS4xOC0xLjE0IDEuNDItLjQyLjI3LS43OC4wOWE5Ljg3IDkuODcgMCAwMS0yLjktMS43OSAxMC45IDEwLjkgMCAwMS0yLjAxLTIuNWMtLjIxLS4zNi0uMDItLjU2LjE2LS43NC4xNi0uMTYuMzYtLjQyLjU0LS42M3MuMjQtLjM2LjM2LS42LjA2LS40NS0uMDMtLjYzYy0uMDktLjE4LS44MS0xLjk1LTEuMTEtMi42Ny0uMjktLjctLjU5LS42LS44MS0uNjFoLS42OWMtLjI0IDAtLjYzLjA5LS45Ni40NXMtMS4yNiAxLjIzLTEuMjYgMyAxLjI5IDMuNDggMS40NyAzLjcyIDIuNTQgMy44OCA2LjE2IDUuNDRhMjAuNzUgMjAuNzUgMCAwMDIuMDYuNzZjLjg3LjI3IDEuNjYuMjQgMi4yOC4xNS43LS4xIDIuMTQtLjg3IDIuNDQtMS43MXMuMy0xLjU2LjIxLTEuNzFjLS4wOS0uMTUtLjMzLS4yNC0uNjktLjQyeiIvPgogICAgICA8L3N2Zz4KICAgICAgPHNwYW4gY2xhc3NOYW1lPSJoaWRkZW4gdGV4dC14cyBmb250LWJvbGQgd2hpdGVzcGFjZS1ub3dyYXAgdGV4dC13aGl0ZSBzbTppbmxpbmUiPnt0KCfYqtmI2KfYtdmEINi52KjYsSDZiNin2KrYs9in2KgnLCAnQ29udGFjdCB1cyBvbiBXaGF0c0FwcCcpfTwvc3Bhbj4KICAgIDwvYT4KICApOwp9CgpmdW5jdGlvbiBBcHAoKSB7CiAgcmV0dXJuICgKICAgIDxRdWVyeUNsaWVudFByb3ZpZGVyIGNsaWVudD17cXVlcnlDbGllbnR9PgogICAgICA8VGhlbWVQcm92aWRlcj4KICAgICAgPExhbmdQcm92aWRlcj4KICAgICAgICA8V291dGVyUm91dGVyIGJhc2U9e2ltcG9ydC5tZXRhLmVudi5CQVNFX1VSTC5yZXBsYWNlKC9cLyQvLCAnJyl9PgogICAgICAgICAgPEF1dGhQcm92aWRlcj4KICAgICAgICAgICAgPFF1b3RhQ29uZmlybVByb3ZpZGVyPgogICAgICAgICAgICAgIDxBcHBDb250ZW50IC8+CiAgICAgICAgICAgIDwvUXVvdGFDb25maXJtUHJvdmlkZXI+CiAgICAgICAgICA8L0F1dGhQcm92aWRlcj4KICAgICAgICA8L1dvdXRlclJvdXRlcj4KICAgICAgPC9MYW5nUHJvdmlkZXI+CiAgICAgIDwvVGhlbWVQcm92aWRlcj4KICAgIDwvUXVlcnlDbGllbnRQcm92aWRlcj4KICApOwp9CgpmdW5jdGlvbiBBcHBDb250ZW50KCkgewogIGNvbnN0IHsgbGFuZyB9ID0gdXNlTGFuZygpOwoKICByZXR1cm4gKAogICAgPGRpdiBkaXI9e2xhbmcgPT09ICdhcicgPyAncnRsJyA6ICdsdHInfT4KICAgICAgPFRvb2x0aXBQcm92aWRlcj4KICAgICAgICA8Um91dGVyIC8+CiAgICAgICAgPEJhY2tCdXR0b24gLz4KICAgICAgICA8V2hhdHNBcHBCdXR0b24gLz4KICAgICAgICA8VG9hc3RlciAvPgogICAgICAgIDxEZXZQYW5lbCAvPgogICAgICAgIDxVc2FnZUNvdW50ZXIgLz4KICAgICAgPC9Ub29sdGlwUHJvdmlkZXI+CiAgICA8L2Rpdj4KICApOwp9CgpleHBvcnQgZGVmYXVsdCBBcHA7Cg==
+import { Route, Switch, Router as WouterRouter, useLocation, Redirect } from 'wouter';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ArrowRight } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { AuthProvider } from '@/hooks/use-auth';
+import { LangProvider, useLang } from '@/hooks/use-language';
+import { ThemeProvider } from '@/hooks/use-theme';
+import { ProtectedRoute, GuestOnlyRoute } from '@/components/protected-route';
+
+// Pages
+import Home from '@/pages/home';
+import Pricing from '@/pages/pricing';
+import Login from '@/pages/login';
+import Register from '@/pages/register';
+import Dashboard from '@/pages/dashboard';
+import Consultation from '@/pages/consultation';
+import PaymentFlow from '@/pages/payment';
+import PaymentCallback from '@/pages/payment-callback';
+import { PaymentSuccess, PaymentFailed } from '@/pages/payment-status';
+import InvoiceDetail from '@/pages/invoice';
+import Contact from '@/pages/contact';
+import About from '@/pages/about';
+import FAQ from '@/pages/faq';
+import Appointment from '@/pages/appointment';
+import Privacy from '@/pages/privacy';
+import Terms from '@/pages/terms';
+
+// Admin Pages
+import AdminDashboard from '@/pages/admin/dashboard';
+import AdminUsers from '@/pages/admin/users';
+import AdminKnowledgeBase from '@/pages/admin/knowledge-base';
+import AdminPackages from '@/pages/admin/packages';
+import AdminCoupons from '@/pages/admin/coupons';
+import AdminPayments from '@/pages/admin/payments';
+import AdminConsultations from '@/pages/admin/consultations';
+import AdminAuditLog from '@/pages/admin/audit-log';
+import AdminNotifications from '@/pages/admin/notifications';
+// [DISABLED Aug-2026] import AdminTelegramSync from '@/pages/admin/telegram-sync';
+import AdminMojContent from '@/pages/admin/moj-content';
+import AdminKnowledgeQuality from '@/pages/admin/knowledge-quality';
+import AdminSectionControl from '@/pages/admin/section-control';
+import AdminConversionReport from '@/pages/admin/conversion-report';
+import AdminSourceStatus from '@/pages/admin/source-status';
+import AdminEmailSettings from '@/pages/admin/email-settings';
+import AdminContactMessages from '@/pages/admin/contact-messages';
+import AdminLegalCodex from '@/pages/admin/legal-codex';
+import AdminWhatsAppSettings from '@/pages/admin/whatsapp-settings';
+import KnowledgeSearch from '@/pages/knowledge-search';
+import LegalSearchPage from '@/pages/legal-search';
+import AdminInitiatives from '@/pages/admin/initiatives';
+import { DevPanel } from '@/components/dev-panel';
+import ContractsPage from '@/pages/contracts';
+import LegalAssistant from '@/pages/legal-assistant';
+import ServiceDetails from '@/pages/service-details';
+import ForgotPassword from '@/pages/forgot-password';
+import ResetPassword from '@/pages/reset-password';
+import UsageLogPage from '@/pages/usage-log';
+import OrganizationPage from '@/pages/organization';
+import { UsageCounter } from '@/components/UsageCounter';
+import { QuotaConfirmProvider } from '@/components/QuotaConfirmModal';
+
+const queryClient = new QueryClient();
+
+// Placeholder components for static pages
+const SimplePage = () => {
+  const { lang, t } = useLang();
+  const title = t('إخلاء المسؤولية القانوني', 'Legal Disclaimer');
+  return (
+  <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen flex flex-col bg-muted/20">
+    <div className="p-4 bg-primary text-white"><h1 className="text-xl font-bold">{title}</h1></div>
+    <div className="container mx-auto p-12 max-w-3xl prose prose-slate rtl:prose-invert">
+      <p>{t('محتوى صفحة إخلاء المسؤولية القانوني باللغة العربية...', 'The Legal Disclaimer page content is available in Arabic...')}</p>
+    </div>
+  </div>
+  );
+};
+
+function NotFound() {
+  const { lang, t } = useLang();
+  return (
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen flex items-center justify-center bg-muted/20 text-center px-4">
+      <div>
+        <h1 className="text-6xl font-bold text-primary mb-4">404</h1>
+        <p className="text-xl text-muted-foreground mb-8">{t('عذراً، الصفحة التي تبحث عنها غير موجودة.', 'Sorry, the page you are looking for does not exist.')}</p>
+        <button onClick={() => window.location.href = '/'} className="bg-primary text-white px-6 py-3 rounded-md font-bold">{t('العودة للرئيسية', 'Back to home')}</button>
+      </div>
+    </div>
+  );
+}
+
+function BackButton() {
+  const [location, navigate] = useLocation();
+  const navigationStack = useRef<string[]>([location]);
+  const currentLocation = useRef(location);
+  const isReturning = useRef(false);
+  const { t, lang } = useLang();
+
+  useEffect(() => {
+    if (location === currentLocation.current) return;
+
+    if (isReturning.current) {
+      navigationStack.current.pop();
+      isReturning.current = false;
+    } else {
+      navigationStack.current.push(location);
+    }
+
+    currentLocation.current = location;
+  }, [location]);
+
+  if (location === '/') return null;
+
+  const handleBack = () => {
+    const previousLocation = navigationStack.current.at(-2);
+    if (previousLocation) {
+      isReturning.current = true;
+      navigate(previousLocation);
+    } else {
+      navigate('/');
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleBack}
+      aria-label={t('العودة للصفحة السابقة', 'Go back')}
+      title={t('العودة للصفحة السابقة', 'Go back')}
+      className={`fixed top-[4.5rem] ${lang === 'ar' ? 'right-4 md:right-6' : 'left-4 md:left-6'} z-40 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+    >
+      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      <span>{t('رجوع', 'Back')}</span>
+    </button>
+  );
+}
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/packages"><Redirect to="/pricing" /></Route>
+      <Route path="/contact" component={Contact} />
+      <Route path="/about" component={About} />
+      <Route path="/faq" component={FAQ} />
+      <Route path="/appointment" component={Appointment} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/disclaimer"><SimplePage /></Route>
+
+      <Route path="/login">
+        <GuestOnlyRoute><Login /></GuestOnlyRoute>
+      </Route>
+      <Route path="/register">
+        <GuestOnlyRoute><Register /></GuestOnlyRoute>
+      </Route>
+      <Route path="/forgot-password">
+        <GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>
+      </Route>
+      <Route path="/reset-password" component={ResetPassword} />
+
+      {/* Protected Client Routes */}
+      <Route path="/dashboard">
+        <ProtectedRoute><Dashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/consultation">
+        <Consultation />
+      </Route>
+      <Route path="/consultation/:id">
+        <Consultation />
+      </Route>
+      <Route path="/payment">
+        <ProtectedRoute><PaymentFlow /></ProtectedRoute>
+      </Route>
+      <Route path="/payment/callback">
+        <ProtectedRoute><PaymentCallback /></ProtectedRoute>
+      </Route>
+      <Route path="/payment/success">
+        <ProtectedRoute ><PaymentSuccess /></ProtectedRoute>
+      </Route>
+      <Route path="/payment/failed">
+        <ProtectedRoute><PaymentFailed /></ProtectedRoute>
+      </Route>
+      <Route path="/invoices/:id">
+        <ProtectedRoute><InvoiceDetail /></ProtectedRoute>
+      </Route>
+
+      {/* Admin Routes */}
+      <Route path="/admin">
+        <ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/users">
+        <ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/knowledge-base">
+        <ProtectedRoute adminOnly><AdminKnowledgeBase /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/packages">
+        <ProtectedRoute adminOnly><AdminPackages /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/coupons">
+        <ProtectedRoute adminOnly><AdminCoupons /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/payments">
+        <ProtectedRoute adminOnly><AdminPayments /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/consultations">
+        <ProtectedRoute adminOnly><AdminConsultations /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/audit-log">
+        <ProtectedRoute adminOnly><AdminAuditLog /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/notifications">
+        <ProtectedRoute adminOnly><AdminNotifications /></ProtectedRoute>
+      </Route>
+      {/* [DISABLED Aug-2026] بوت تلجرام معطَّل — الصفحة محفوظة في telegram-sync.tsx */}
+      {/* <Route path="/admin/telegram-sync">
+        <ProtectedRoute adminOnly><AdminTelegramSync /></ProtectedRoute>
+      </Route> */}
+      <Route path="/admin/moj-content">
+        <ProtectedRoute adminOnly><AdminMojContent /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/knowledge-quality">
+        <ProtectedRoute adminOnly><AdminKnowledgeQuality /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/section-control">
+        <ProtectedRoute adminOnly><AdminSectionControl /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/conversion-report">
+        <ProtectedRoute adminOnly><AdminConversionReport /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/source-status">
+        <ProtectedRoute adminOnly><AdminSourceStatus /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/email-settings">
+        <ProtectedRoute adminOnly><AdminEmailSettings /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/contact-messages">
+        <ProtectedRoute adminOnly><AdminContactMessages /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/legal-codex">
+        <ProtectedRoute adminOnly><AdminLegalCodex /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/initiatives">
+        <ProtectedRoute adminOnly><AdminInitiatives /></ProtectedRoute>
+      </Route>
+      <Route path="/admin/whatsapp">
+        <ProtectedRoute adminOnly><AdminWhatsAppSettings /></ProtectedRoute>
+      </Route>
+
+      {/* Public service discovery — login is requested only when a user starts a metered action. */}
+      <Route path="/knowledge-search">
+        <KnowledgeSearch />
+      </Route>
+
+      {/* Standalone smart legal search */}
+      <Route path="/legal-search">
+        <LegalSearchPage />
+      </Route>
+
+      {/* Contracts */}
+      <Route path="/contracts">
+        <ContractsPage />
+      </Route>
+
+      {/* Legal Assistant hub */}
+      <Route path="/legal-assistant">
+        <LegalAssistant />
+      </Route>
+      <Route path="/services/:serviceId">
+        <ServiceDetails />
+      </Route>
+
+      {/* Usage log */}
+      <Route path="/usage-log">
+        <ProtectedRoute><UsageLogPage /></ProtectedRoute>
+      </Route>
+
+      {/* Organization management */}
+      <Route path="/organization">
+        <ProtectedRoute><OrganizationPage /></ProtectedRoute>
+      </Route>
+      <Route path="/join-org">
+        <OrganizationPage />
+      </Route>
+
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+
+function WhatsAppButton() {
+  const { lang, t } = useLang();
+  return (
+    <a
+      href="https://wa.me/966504647649"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={t('تواصل عبر واتساب', 'Contact us on WhatsApp')}
+      title={t('تواصل عبر واتساب', 'Contact us on WhatsApp')}
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      style={{
+        position: 'fixed',
+        insetBlockEnd: 'max(16px, env(safe-area-inset-bottom))',
+        insetInlineStart: 'max(16px, env(safe-area-inset-left))',
+        zIndex: 9999,
+        background: 'hsl(220 60% 7%)',
+        border: '1px solid hsl(47 100% 48%)',
+      }}
+      className="!fixed flex h-12 w-12 flex-row items-center justify-center gap-2 rounded-full p-3 shadow-lg shadow-secondary/15 transition-all duration-300 hover:scale-105 hover:shadow-xl sm:h-auto sm:w-auto sm:rounded-2xl sm:px-3 sm:py-2.5"
+    >
+      <svg viewBox="0 0 32 32" className="w-7 h-7 shrink-0" style={{ fill: 'hsl(47 100% 48%)' }}>
+        <path d="M16 .5C7.44.5.5 7.44.5 16c0 2.82.74 5.47 2.02 7.77L.5 31.5l7.95-2.02A15.44 15.44 0 0016 31.5C24.56 31.5 31.5 24.56 31.5 16S24.56.5 16 .5zm0 28.12a12.55 12.55 0 01-6.38-1.74l-.46-.27-4.72 1.2 1.22-4.6-.3-.47A12.6 12.6 0 1116 28.62zM23.18 19.5c-.36-.18-2.14-1.06-2.47-1.18-.33-.12-.57-.18-.81.18s-.93 1.18-1.14 1.42s-.42.27-.78.09a9.87 9.87 0 01-2.9-1.79 10.9 10.9 0 01-2.01-2.5c-.21-.36-.02-.56.16-.74.16-.16.36-.42.54-.63s.24-.36.36-.6.06-.45-.03-.63c-.09-.18-.81-1.95-1.11-2.67-.29-.7-.59-.6-.81-.61h-.69c-.24 0-.63.09-.96.45s-1.26 1.23-1.26 3 1.29 3.48 1.47 3.72 2.54 3.88 6.16 5.44a20.75 20.75 0 002.06.76c.87.27 1.66.24 2.28.15.7-.1 2.14-.87 2.44-1.71s.3-1.56.21-1.71c-.09-.15-.33-.24-.69-.42z"/>
+      </svg>
+      <span className="hidden text-xs font-bold whitespace-nowrap text-white sm:inline">{t('تواصل عبر واتساب', 'Contact us on WhatsApp')}</span>
+    </a>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+      <LangProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <AuthProvider>
+            <QuotaConfirmProvider>
+              <AppContent />
+            </QuotaConfirmProvider>
+          </AuthProvider>
+        </WouterRouter>
+      </LangProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+function AppContent() {
+  const { lang } = useLang();
+
+  return (
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <TooltipProvider>
+        <Router />
+        <BackButton />
+        <WhatsAppButton />
+        <Toaster />
+        <DevPanel />
+        <UsageCounter />
+      </TooltipProvider>
+    </div>
+  );
+}
+
+export default App;
