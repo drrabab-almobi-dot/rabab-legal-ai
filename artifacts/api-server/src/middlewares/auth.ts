@@ -18,10 +18,11 @@ declare global {
 // would allow any attacker who reads the source code to forge valid tokens.
 const _jwtSecret = process.env.SESSION_SECRET;
 if (!_jwtSecret) {
-  throw new Error(
-    "SESSION_SECRET environment variable is required for JWT signing. " +
+  console.error(
+    "FATAL: SESSION_SECRET environment variable is required for JWT signing. " +
     "Set it to a cryptographically random string (≥ 64 characters)."
   );
+  process.exit(1);
 }
 export const JWT_SECRET: string = _jwtSecret;
 
