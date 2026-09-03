@@ -305,7 +305,7 @@ function WhatsAppButton() {
       style={{
         position: 'fixed',
         insetBlockEnd: 'max(16px, env(safe-area-inset-bottom))',
-        insetInlineStart: 'max(16px, env(safe-area-inset-left))',
+        insetInlineEnd: 'max(16px, env(safe-area-inset-left))',
         zIndex: 9999,
         background: 'hsl(220 60% 7%)',
         border: '1px solid hsl(47 100% 48%)',
