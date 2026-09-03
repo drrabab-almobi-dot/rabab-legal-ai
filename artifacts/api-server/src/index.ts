@@ -166,7 +166,8 @@ app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
 
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
-  throw new Error("SESSION_SECRET environment variable is required");
+  console.error("FATAL: SESSION_SECRET environment variable is required. Set it in Render environment variables.");
+  process.exit(1);
 }
 
 // ── Cookie security: always use sameSite='none' + secure=true inside Replit ──
