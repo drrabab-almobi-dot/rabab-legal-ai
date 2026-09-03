@@ -32,7 +32,7 @@ export interface SendEmailOptions {
 
 function getSmtpTransporter(): Transporter {
   const host = process.env.SMTP_HOST!;
-  const port = Number(process.env.SMTP_PORT ?? "465");
+  const port = Number(process.env.SMTP_PORT ?? "587");
   const secure = process.env.SMTP_SECURE
     ? process.env.SMTP_SECURE === "true"
     : port === 465;
