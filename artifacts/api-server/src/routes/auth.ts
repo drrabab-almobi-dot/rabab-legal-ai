@@ -233,14 +233,6 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       res.status(201).json({ needsVerification: true, email: user.email });
       return;
     }
-
-    logAction({ userId: user.id, action: "register", details: { email }, ip: req.ip, userAgent: req.get("user-agent") });
-    res.status(201).json({
-      pendingVerification: true,
-      verifyToken,
-      maskedPhone: maskPhone(phone),
-    });
-    return;
   }
 
   // Fallback (no phone): send email OTP — stored as SHA-256 hash
