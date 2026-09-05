@@ -1,5 +1,5 @@
 import express from "express";
-import app from "./dist/index.mjs";
+import app from "./dist/api.mjs";
 
 const entry = express();
 entry.use(app);
