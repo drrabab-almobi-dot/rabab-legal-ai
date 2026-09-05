@@ -386,7 +386,7 @@ export default function Login() {
                   </Button>
 
                   <div className="text-center mt-6 text-sm">
-                    <span className="text-muted-foreground">{t('ليس لديك حساب؟', 'Don't have an account?')} </span>
+                    <span className="text-muted-foreground">{t('ليس لديك حساب؟', "Don't have an account?")} </span>
                     <Link href="/register" className="text-primary font-bold hover:underline">
                       {t('سجل الآن', 'Register now')}
                     </Link>
