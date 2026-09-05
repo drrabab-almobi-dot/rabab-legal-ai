@@ -609,9 +609,9 @@ export async function retrieveRelevantChunks(
   topK = 5,
   minSimilarity = 0.42,
   category?: DocCategory,
-  opts: { multiQuery?: boolean; autoLink?: boolean; excludeCategories?: string[]; excludeTelegramDocs?: boolean } = {},
+  opts: { multiQuery?: boolean; autoLink?: boolean; excludeCategories?: string[] } = {},
 ): Promise<RelevantChunk[]> {
-  const { multiQuery = true, autoLink = false, excludeCategories = [], excludeTelegramDocs = false } = opts;
+  const { multiQuery = true, autoLink = false, excludeCategories = [] } = opts;
 
   // ── Document-level WHERE clause (shared by main query + auto-link) ───────────
   const docWhere = and(
@@ -620,9 +620,6 @@ export async function retrieveRelevantChunks(
     ...(category ? [eq(knowledgeDocumentsTable.category as any, category)] : []),
     ...(excludeCategories.length > 0
       ? [sql`${knowledgeDocumentsTable.category} NOT IN (${sql.join(excludeCategories.map(c => sql`${c}`), sql`, `)})`]
-      : []),
-    ...(excludeTelegramDocs
-      ? [sql`${(knowledgeDocumentsTable as any).sourceType} != 'telegram'`]
       : []),
   );
 
@@ -644,7 +641,6 @@ export async function retrieveRelevantChunks(
           ${excludeCategories.length > 0
             ? sql`AND kd.category NOT IN (${sql.join(excludeCategories.map(c => sql`${c}`), sql`, `)})`
             : sql``}
-          ${excludeTelegramDocs ? sql`AND kd.source_type != 'telegram'` : sql``}
           AND  kc.search_vector IS NOT NULL
           AND  kc.search_vector @@ plainto_tsquery('simple', ${normalizedQuery})
         ORDER BY ts_rank(kc.search_vector, plainto_tsquery('simple', ${normalizedQuery})) DESC

@@ -478,7 +478,6 @@ export function AdminSidebar({ children }: { children: React.ReactNode }) {
     { name: t('حالة المصادر', 'Source Status'), icon: ShieldCheck, path: '/admin/source-status' },
     { name: t('تحكم الأقسام', 'Section Control'), icon: Settings, path: '/admin/section-control' },
     { name: t('تقرير التحويل', 'Conversion Report'), icon: TrendingUp, path: '/admin/conversion-report' },
-    // [DISABLED Aug-2026] بوت تلجرام معطَّل — أُزيل من القائمة حتى لا يظهر كخيار غير عامل
     { name: t('أحكام وتعاميم العدل', 'MOJ Rulings & Circulars'), icon: BookOpen, path: '/admin/moj-content' },
     { name: t('المدونات القضائية', 'Judicial Codex'), icon: BookOpen, path: '/admin/legal-codex' },
     { name: t('إعدادات البريد', 'Email Settings'), icon: Mail, path: '/admin/email-settings' },
@@ -512,6 +511,16 @@ export function AdminSidebar({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          <a
+            href="https://smart-legal-researcher.s3t3-9306.chatgpt.site/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-muted text-white"
+          >
+            <Globe className="w-5 h-5" />
+            <span className="font-medium">{t('الباحثة الذكية', 'Smart Legal Researcher')}</span>
+            <span className="mr-auto text-xs opacity-70" aria-hidden="true">↗</span>
+          </a>
         </nav>
         <div className="p-4 border-t border-secondary/35">
           <button

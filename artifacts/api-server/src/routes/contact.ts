@@ -3,7 +3,6 @@ import { db, contactMessagesTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/auth";
 import { sendEmail } from "../lib/email";
-import { notifyAdminNewContactMessage } from "../lib/telegram-notify";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -109,9 +108,6 @@ router.post("/contact", async (req, res): Promise<void> => {
   // 2b. Send WhatsApp notification (best-effort, non-blocking)
   const waText = `📩 رسالة تواصل جديدة\nالاسم: ${cleanName}\nالبريد: ${cleanEmail}\n\n${cleanMessage.slice(0, 200)}${cleanMessage.length > 200 ? '…' : ''}`;
   sendWhatsApp(waText).catch(() => {});
-
-  // 2c. Send Telegram notification to admin (best-effort, non-blocking)
-  notifyAdminNewContactMessage(cleanName, cleanEmail, cleanMessage).catch(() => {});
 
   // 3. Update email_sent flag in DB (best-effort)
   if (emailSent) {

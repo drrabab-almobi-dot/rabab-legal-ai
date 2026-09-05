@@ -126,47 +126,6 @@ router.get("/admin/section-quality", requireAdmin, async (_req, res): Promise<vo
   }
 });
 
-// ── Telegram import toggle ────────────────────────────────────────────────────
-let _tgCache: boolean | null = null;
-let _tgCacheTs = 0;
-const TG_CACHE_TTL = 60 * 1000; // 1 min
-
-export async function getTelegramImportEnabled(): Promise<boolean> {
-  const now = Date.now();
-  if (_tgCache !== null && now - _tgCacheTs < TG_CACHE_TTL) return _tgCache;
-  try {
-    const rows = await db
-      .select()
-      .from(platformSettingsTable)
-      .where(eq(platformSettingsTable.key, "telegram_import"));
-    const val = (rows[0]?.value as any)?.enabled;
-    _tgCache = val === true;
-  } catch {
-    _tgCache = false;
-  }
-  _tgCacheTs = now;
-  return _tgCache!;
-}
-
-router.get("/admin/telegram-import", requireAdmin, async (_req, res): Promise<void> => {
-  const enabled = await getTelegramImportEnabled();
-  res.json({ enabled });
-});
-
-router.put("/admin/telegram-import", requireAdmin, async (req, res): Promise<void> => {
-  const enabled = req.body?.enabled === true;
-  await db
-    .insert(platformSettingsTable)
-    .values({ key: "telegram_import", value: { enabled } as any, updatedAt: new Date() })
-    .onConflictDoUpdate({
-      target: platformSettingsTable.key,
-      set: { value: { enabled } as any, updatedAt: new Date() },
-    });
-  _tgCache = enabled;
-  _tgCacheTs = Date.now();
-  res.json({ success: true, enabled });
-});
-
 // ── Source status overview ─────────────────────────────────────────────────────
 router.get("/admin/source-status", requireAdmin, async (_req, res): Promise<void> => {
   try {
@@ -184,14 +143,11 @@ router.get("/admin/source-status", requireAdmin, async (_req, res): Promise<void
       GROUP BY kd.source_type
     `);
 
-    // Telegram sync state (last sync date per channel)
-    const tgEnabled = await getTelegramImportEnabled();
-
     const sources: Record<string, any> = {
-      telegram: {
-        label: 'تلجرام', icon: '📱',
-        description: 'مستندات مستوردة تلقائياً من قنوات تلجرام',
-        enabled: tgEnabled, canToggle: true,
+      legacy_import: {
+        label: 'أرشيفات مستوردة سابقاً', icon: '🗃️',
+        description: 'وثائق تاريخية محفوظة من تكاملات أُوقفت؛ لا توجد مزامنة نشطة',
+        enabled: true, canToggle: false,
         qualityThreshold: 70,
         docs: 0, chunks: 0, lowQualityChunks: 0, qualityPct: 0, lastSyncAt: null,
       },
@@ -219,7 +175,7 @@ router.get("/admin/source-status", requireAdmin, async (_req, res): Promise<void
     };
 
     for (const row of (sourceStats.rows as any[])) {
-      const key = row.source_type ?? 'unknown';
+      const key = row.source_type === 'telegram' ? 'legacy_import' : (row.source_type ?? 'unknown');
       if (sources[key]) {
         const total = Number(row.total_chunks) || 0;
         const low = Number(row.low_quality_chunks) || 0;

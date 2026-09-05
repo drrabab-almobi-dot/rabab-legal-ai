@@ -105,7 +105,7 @@ export default function KnowledgeQuality() {
   const [extractingMeta, setExtractingMeta] = useState<number | null>(null);
   const [metaMsgs, setMetaMsgs] = useState<Record<number, string>>({});
   // Citation filter: 'all' | 'extracted' | 'unextracted' | 'review'
-  // Pre-activate from URL param ?citFilter=review (used in Telegram deep-link)
+  // Pre-activate from URL param ?citFilter=review (used in internal deep-links)
   const [citFilter, setCitFilter] = useState<'all' | 'extracted' | 'unextracted' | 'review'>(() => {
     const p = new URLSearchParams(window.location.search).get('citFilter');
     return (p === 'review' || p === 'extracted' || p === 'unextracted') ? p : 'all';

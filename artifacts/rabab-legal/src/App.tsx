@@ -37,7 +37,6 @@ import AdminPayments from '@/pages/admin/payments';
 import AdminConsultations from '@/pages/admin/consultations';
 import AdminAuditLog from '@/pages/admin/audit-log';
 import AdminNotifications from '@/pages/admin/notifications';
-// [DISABLED Aug-2026] import AdminTelegramSync from '@/pages/admin/telegram-sync';
 import AdminMojContent from '@/pages/admin/moj-content';
 import AdminKnowledgeQuality from '@/pages/admin/knowledge-quality';
 import AdminSectionControl from '@/pages/admin/section-control';
@@ -261,12 +260,6 @@ function Router() {
           <AdminNotifications />
         </ProtectedRoute>
       </Route>
-
-      {/* [DISABLED Aug-2026] بوت تلجرام معطَّل — الصفحة محفوظة في telegram-sync.tsx */}
-      {/* <Route path="/admin/telegram-sync">
-        <ProtectedRoute adminOnly><AdminTelegramSync /></ProtectedRoute>
-      </Route> */}
-
       <Route path="/admin/moj-content">
         <ProtectedRoute adminOnly>
           <AdminMojContent />

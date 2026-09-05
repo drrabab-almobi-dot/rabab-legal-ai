@@ -64,7 +64,7 @@ function getRequestedResponseLanguage(value: unknown): string | null {
 }
 
 import { sanitizeOutput, PROHIBITION_RULE } from "../lib/content-filter.js";
-import { charterSystemMsg, loadServiceModule } from "../lib/legal-charter.js";
+import { appendMandatoryLegalFooter, charterSystemMsg, loadServiceModule } from "../lib/legal-charter.js";
 
 function getSystemPrompt(): string {
   const now = new Date();
@@ -510,11 +510,6 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   // legal_blog is NOT a valid document_category enum value — removing it prevents
   // the RAG query from failing and falling back to Tavily (internet search).
 
-  // ── Telegram import toggle: hide Telegram docs when disabled ──────────────
-  const { getTelegramImportEnabled } = await import("./platform-settings");
-  const telegramEnabled = await getTelegramImportEnabled().catch(() => false);
-  const excludeTelegramDocs = !telegramEnabled;
-
   // ── Proactive RAG + Tavily: inject pre-fetched results on first message ────
   // On the first user message we check the in-memory proactive cache populated
   // at consultation creation time. Pre-fetched KB chunks AND Tavily results are
@@ -525,7 +520,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   if (isFirstUserMessage && resolvedTaskType) {
     // Pass current exclusion settings so the helper can reject a stale cache
     // entry that was built when fewer sources were excluded.
-    const cached = getProactiveCachedChunks(id, excludeCategories, excludeTelegramDocs);
+    const cached = getProactiveCachedChunks(id, excludeCategories);
     if (cached) {
       // ── KB chunks ──────────────────────────────────────────────────────────
       if (cached.chunks.length > 0) {
@@ -590,7 +585,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     const apiKey = rawKey.replace(/[^\x20-\x7E]/g, "").trim();
     const chunks = await retrieveRelevantChunks(
       parsed.data.message, apiKey, 6, 0.38, undefined,
-      { multiQuery: true, autoLink: true, excludeCategories, excludeTelegramDocs },
+      { multiQuery: true, autoLink: true, excludeCategories },
     );
     // Merge proactive chunks with regular RAG chunks; deduplicate by content.
     // Proactive chunks come first so they retain their priority in verification.
@@ -880,7 +875,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
 
     // ── Verification layer: check citations against retrieved sources ────────
     const verification = verifyResponse(rawReply, ragChunks, webResults);
-    assistantReply = sanitizeOutput(verification.processedText);
+    assistantReply = appendMandatoryLegalFooter(sanitizeOutput(verification.processedText));
     req.log.info({
       replyLen: assistantReply.length,
       confidence: verification.summary.confidence,
@@ -961,7 +956,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     // Return the friendly message as the assistant reply so it appears in the chat bubble
     emitChatPhase(id, "done");
     res.status(200).json({
-      reply: friendlyError,
+      reply: appendMandatoryLegalFooter(friendlyError),
       messageId: null,
       questionsRemaining: null,
       isError: true,

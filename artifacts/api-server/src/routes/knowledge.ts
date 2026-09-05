@@ -9,7 +9,7 @@ import {
 }
  from "../lib/content-filter.js"
 ;
-import { charterSystemMsg } from "../lib/legal-charter.js";
+import { appendMandatoryLegalFooter, charterSystemMsg, MANDATORY_LEGAL_FOOTER } from "../lib/legal-charter.js";
 
 import {
   emitResearchPhase, subscribeResearchPhase, getCurrentResearchPhase,
@@ -56,12 +56,6 @@ import {
  extractText, indexDocument, detectMime, isIndexable, extractCaseMetadata, extractPdfWithPages, validateCaseMetadata 
 }
  from "../lib/document-indexer"
-;
-
-import {
- notifyAdminSuspiciousCitations, notifyAdminCleanedCitations, notifyAdminNeedsReview, notifyAdminHighFailureRate 
-}
- from "../lib/telegram-notify"
 ;
 
 import {
@@ -2891,7 +2885,7 @@ context
 ;
 
 
-    const draft = sanitizeOutput(resp.choices[0]?.message?.content ?? "")
+    const draft = appendMandatoryLegalFooter(sanitizeOutput(resp.choices[0]?.message?.content ?? ""))
 ;
 
     res.json( {
@@ -3421,6 +3415,7 @@ router.post("/knowledge/legal-research", requireAuth, async (req, res): Promise<
         "══════════════════════════════════════════",
       ].join("\n");
     }
+    memoWithCitations = appendMandatoryLegalFooter(memoWithCitations);
 
     if (requestId) emitResearchPhase(requestId, "done");
     res.json({
@@ -3435,7 +3430,7 @@ router.post("/knowledge/legal-research", requireAuth, async (req, res): Promise<
       hasCitations:     citableChunks.length > 0,
       citableCount:     citableChunks.length,
       references:       parsed.references        ?? [],
-      disclaimer:       parsed.disclaimer        ?? "",
+      disclaimer:       MANDATORY_LEGAL_FOOTER,
       sources_used:     { kb: chunks.length, web: tavilyResults.length },
       verification: {
         confidence: reportConfidence,
@@ -3760,7 +3755,6 @@ router.post("/admin/knowledge/extract-all-metadata", requireAdmin, async (req, r
     }
     // ── تنظيف تلقائي: حذف caseMetadata للوثائق التي فشلت جميع حقولها الجوهرية ──
     let cleanedCount = 0;
-    let cleanedDocNames: string[] = [];
     try {
       // نجلب الوثائق القضائية التي لديها caseMetadata لكن الحقول الثلاثة الجوهرية كلها null
       const corruptDocs = await db
@@ -3790,7 +3784,6 @@ router.post("/admin/knowledge/extract-all-metadata", requireAdmin, async (req, r
           .where(inArray(knowledgeDocumentsTable.id, corruptIds));
         cleanedCount = corruptDocs.length;
         (job as MetaJob).sanitized = cleanedCount;
-        cleanedDocNames = corruptDocs.map(d => d.filename ?? `#${d.id}`);
         logJob(job, `🧹 نُظِّفت بيانات الاستشهاد لـ ${cleanedCount} وثيقة فشلت جميع حقولها الجوهرية`);
         for (const d of corruptDocs) {
           logJob(job, `  ✗ ${d.filename}`);
@@ -3803,39 +3796,6 @@ router.post("/admin/knowledge/extract-all-metadata", requireAdmin, async (req, r
     job.running = false;
     const mj = job as MetaJob;
     logJob(job, `اكتمل: فحص ${job.done}، استُخرجت بيانات ${mj.extracted}، حقول مرفوضة ${mj.rejectedFields}، نُظِّفت ${cleanedCount}، فشل ${job.failed}`);
-
-    // أرسل تنبيه Telegram للمدير إذا تجاوز معدل الفشل الكلي 20%
-    if (job.failed > 0) {
-      notifyAdminHighFailureRate(job.failed, job.total).catch(() => {});
-    }
-    // أرسل تنبيه Telegram للمدير إذا وُجدت حقول مشبوهة
-    if (mj.rejectedFields > 0) {
-      notifyAdminSuspiciousCitations(mj.rejectedFields, mj.affectedDocs, job.done).catch(() => {});
-    }
-    // أرسل تنبيه Telegram منفصل إذا جرى تنظيف تلقائي لوثائق فاسدة
-    if (cleanedCount > 0) {
-      notifyAdminCleanedCitations(cleanedCount, cleanedDocNames, job.done).catch(() => {});
-    }
-    // احسب عدد الوثائق ذات needsReview:true من قاعدة البيانات وأرسل تنبيهاً إذا وُجدت
-    try {
-      const judicialWithMeta = await db
-        .select({ caseMetadata: knowledgeDocumentsTable.caseMetadata })
-        .from(knowledgeDocumentsTable)
-        .where(and(
-          isNull(knowledgeDocumentsTable.archivedAt),
-          eq(knowledgeDocumentsTable.status, "indexed"),
-          eq(knowledgeDocumentsTable.category as any, "judicial"),
-          sql`${knowledgeDocumentsTable.caseMetadata} IS NOT NULL`,
-        ));
-      const needsReviewCount = judicialWithMeta.filter(
-        d => citationNeedsReview(d.caseMetadata as any ?? {})
-      ).length;
-      if (needsReviewCount > 0) {
-        notifyAdminNeedsReview(needsReviewCount, judicialWithMeta.length).catch(() => {});
-      }
-    } catch {
-      // non-fatal — لا يوقف تدفق العملية
-    }
 
     setTimeout(() => bulkJobs.delete(jobId), 30 * 60 * 1000);
   })().catch(() => { job.running = false; });

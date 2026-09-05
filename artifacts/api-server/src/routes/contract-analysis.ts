@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { sanitizeOutput, PROHIBITION_RULE } from "../lib/content-filter.js";
-import { charterSystemMsg } from "../lib/legal-charter.js";
+import { appendMandatoryLegalFooter, charterSystemMsg, MANDATORY_LEGAL_FOOTER } from "../lib/legal-charter.js";
 import multer from "multer";
 import { requireAuth } from "../middlewares/auth";
 import { checkAndReserveService, commitService, releaseService } from "../lib/quota";
@@ -448,7 +448,7 @@ router.post("/contract/draft", requireAuth, async (req, res): Promise<void> => {
 
   const today = new Date().toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric", calendar: "islamic" });
 
-  const userMsg = `تصرّف بصفتك محامياً سعودياً متخصصاً في صياغة العقود والاتفاقيات، وأعد مسودة ${template.label} وفق الأنظمة السعودية النافذة، بأسلوب قانوني احترافي، واضح، متوازن، وقابل للتنفيذ.
+  const userMsg = `تصرّف كمساعد قانوني متخصص يعمل تحت مراجعة محامٍ مرخّص، وأعد مسودة ${template.label} وفق الأنظمة السعودية النافذة، بأسلوب قانوني احترافي، واضح، متوازن، وقابل للتنفيذ.
 
 بيانات العقد:
 ${fieldLines}
@@ -477,7 +477,7 @@ ${fieldLines}
       max_tokens: 4000,
     });
 
-    const contractText = sanitizeOutput(completion.choices[0]?.message?.content ?? "");
+    const contractText = appendMandatoryLegalFooter(sanitizeOutput(completion.choices[0]?.message?.content ?? ""));
     // Commit quota after successful generation
     if (sessionId) await commitService(sessionId);
     res.json({ contractText, wordCount: contractText.split(/\s+/).length });
@@ -614,7 +614,7 @@ ${configAddendum}`;
 
     const rawContent = sanitizeOutput(completion.choices[0]?.message?.content ?? "");
     const isDraft = rawContent.includes("===CONTRACT_START===");
-    const reply  = isDraft ? rawContent.replace("===CONTRACT_START===", "").trim() : rawContent;
+    const reply  = appendMandatoryLegalFooter(isDraft ? rawContent.replace("===CONTRACT_START===", "").trim() : rawContent);
 
     // Commit quota when contract is produced
     if (isDraft && sessionId) await commitService(sessionId);
@@ -662,8 +662,7 @@ router.post("/contract/review", requireAuth, upload.single("file"), async (req, 
         {
           role: "system",
           content: `أنت باحثة قانونية سعودية متخصصة في الأنظمة السعودية والقضاء التجاري، تعمل ضمن منصة RABAB LEGAL AI.
-مهمتك مراجعة قانونية شاملة ومنظّمة للعقود وفق الأنظمة السعودية. لا تكتفِ بالملاحظات العامة؛ حدّد رقم كل مادة وسبب الملاحظة وأثرها القانوني والصياغة المقترحة. لا تختلق أرقام مواد أو أحكام غير موثقة.
-يُمنع منعاً باتاً إنهاء الرد بأي توقيع أو اسم شخصي أو رقم هاتف أو بريد أو رابط أو عبارة ختامية (سعدنا بخدمتكم، بإشراف، للتواصل). أنهِ الرد بانتهاء المحتوى القانوني مباشرةً.`,
+مهمتك مراجعة قانونية شاملة ومنظّمة للعقود وفق الأنظمة السعودية. لا تكتفِ بالملاحظات العامة؛ حدّد رقم كل مادة وسبب الملاحظة وأثرها القانوني والصياغة المقترحة. لا تختلق أرقام مواد أو أحكام غير موثقة.`,
         },
         {
           role: "user",
@@ -695,7 +694,7 @@ ${snippet}`,
       max_tokens: 4000,
     });
 
-    const review = sanitizeOutput(completion.choices[0]?.message?.content ?? "");
+    const review = appendMandatoryLegalFooter(sanitizeOutput(completion.choices[0]?.message?.content ?? ""));
     if (reviewSessionId) await commitService(reviewSessionId);
     // usedLiveSearch is always false for contract/review (no Tavily call here —
     // contract text must not be forwarded to third-party search providers).
@@ -902,7 +901,7 @@ ${snippet}`;
     });
 
     res.json({
-      result: sanitizeOutput(completion.choices[0]?.message?.content ?? ""),
+      result: appendMandatoryLegalFooter(sanitizeOutput(completion.choices[0]?.message?.content ?? "")),
       filename: req.file?.originalname ?? "contract.txt",
       usedLiveSearch: false,
       contractText: snippet,
@@ -933,7 +932,7 @@ router.post("/contract/final-check", requireAuth, upload.single("file"), async (
         charterSystemMsg(),
         {
           role: "system",
-          content: `أنت باحثة قانونية سعودية متخصصة، تعمل ضمن منصة RABAB LEGAL AI. مهمتك المراجعة النهائية للعقود قبل التوقيع. لا تختلق أرقام مواد أو أحكام غير موثقة. يُمنع منعاً باتاً إنهاء الرد بأي توقيع أو اسم شخصي أو رقم هاتف أو بريد أو رابط أو عبارة ختامية. أنهِ الرد بانتهاء المحتوى القانوني مباشرةً.`,
+          content: `أنت باحثة قانونية سعودية متخصصة، تعمل ضمن منصة RABAB LEGAL AI. مهمتك المراجعة النهائية للعقود قبل التوقيع. لا تختلق أرقام مواد أو أحكام غير موثقة.`,
         },
         {
           role: "user",
@@ -966,7 +965,7 @@ ${snippet}`,
       max_tokens: 3000,
     });
 
-    res.json({ result: sanitizeOutput(completion.choices[0]?.message?.content ?? ""), filename: req.file?.originalname ?? "contract.txt", usedLiveSearch: false, contractText: snippet });
+    res.json({ result: appendMandatoryLegalFooter(sanitizeOutput(completion.choices[0]?.message?.content ?? "")), filename: req.file?.originalname ?? "contract.txt", usedLiveSearch: false, contractText: snippet });
   } catch (err: any) {
     res.status(422).json({ error: err?.message ?? "فشل المراجعة النهائية" });
   }
@@ -1023,7 +1022,7 @@ ${snippet}`,
     });
 
     const raw = completion.choices[0]?.message?.content ?? "{}";
-    res.json({ data: JSON.parse(raw), filename: req.file.originalname, usedLiveSearch: false, contractText: snippet });
+    res.json({ data: JSON.parse(raw), legalNotice: MANDATORY_LEGAL_FOOTER, filename: req.file.originalname, usedLiveSearch: false, contractText: snippet });
   } catch (err: any) {
     res.status(422).json({ error: err?.message ?? "فشل استخراج البيانات" });
   }
@@ -1062,7 +1061,7 @@ router.post("/contract/refine", requireAuth, async (req, res): Promise<void> => 
       max_tokens: 3000,
     });
 
-    const reply = sanitizeOutput(completion.choices[0]?.message?.content ?? "");
+    const reply = appendMandatoryLegalFooter(sanitizeOutput(completion.choices[0]?.message?.content ?? ""));
     res.json({ reply });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? "فشل تحديث التحليل" });

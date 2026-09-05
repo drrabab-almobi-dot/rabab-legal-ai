@@ -46,7 +46,7 @@ export interface CaseMetadata {
 
 /**
  * Source type of a knowledge document.
- * telegram     = مستورد من قناة تلجرام (يخضع لمفتاح التشغيل)
+ * telegram     = مستورد تاريخياً من Telegram (محفوظ للتوافق مع السجلات السابقة؛ لا يوجد تكامل نشط)
  * official     = بوابة الأنظمة السعودية (هيئة الخبراء) — دائماً مفعّل
  * lawyer_upload= رفعه المحامي يدوياً داخل حسابه — دائماً مفعّل
  * unknown      = مصدر غير محدد (يُعامَل بحذر)

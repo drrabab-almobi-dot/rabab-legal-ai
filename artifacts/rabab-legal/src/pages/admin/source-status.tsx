@@ -1,15 +1,14 @@
 /**
  * حالة المصادر — Source Status Admin Page
  * تُظهر كل مصدر: الحالة، عدد الوثائق، نسبة جودة النص، آخر مزامنة
- * ومفتاح تشغيل تيليجرام + تحذير الجودة
+ * وتحذير الجودة لكل مصدر مفعل
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { AdminSidebar } from '@/components/layout';
 import { cn } from '@/lib/utils';
 import {
   CheckCircle2, XCircle, AlertTriangle, RefreshCw,
-  Loader2, ToggleLeft, ToggleRight, Info, Shield,
-  FileText, Upload, Wifi,
+  Loader2, Info, Shield, FileText, Upload,
 } from 'lucide-react';
 import { useLang } from '@/hooks/use-language';
 
@@ -123,7 +122,6 @@ function formatDate(
 }
 
 const SOURCE_ICONS: Record<string, React.ReactNode> = {
-  // [DISABLED Aug-2026] telegram: <Wifi className="w-6 h-6" />,
   official:      <Shield className="w-6 h-6" />,
   lawyer_upload: <Upload className="w-6 h-6" />,
   unknown:       <FileText className="w-6 h-6" />,
@@ -135,9 +133,9 @@ interface LocalizedSourceCopy {
 }
 
 const SOURCE_COPY: Record<string, LocalizedSourceCopy> = {
-  telegram: {
-    label: ['تلجرام', 'Telegram'],
-    description: ['مستندات مستوردة تلقائياً من قنوات تلجرام', 'Documents imported automatically from Telegram channels'],
+  legacy_import: {
+    label: ['أرشيفات مستوردة سابقاً', 'Previously imported archives'],
+    description: ['وثائق تاريخية محفوظة من تكاملات أُوقفت ولا تخضع لمزامنة نشطة', 'Historical documents retained after retired integrations; no active sync'],
   },
   official: {
     label: ['بوابة الأنظمة السعودية', 'Saudi Laws Portal'],
@@ -161,14 +159,12 @@ const SOURCE_COPY: Record<string, LocalizedSourceCopy> = {
   },
 };
 
-// [DISABLED Aug-2026] 'telegram' أُزيل — البوت معطَّل ولا يُعرض كمصدر نشط
-const SOURCE_ORDER = ['official', 'lawyer_upload', 'unknown'];
+const SOURCE_ORDER = ['official', 'lawyer_upload', 'legacy_import', 'unknown'];
 
 export default function AdminSourceStatus() {
   const { lang, t } = useLang();
   const [sources, setSources] = useState<Record<string, SourceInfo>>({});
   const [loading, setLoading] = useState(true);
-  // [DISABLED Aug-2026] const [toggling, setToggling] = useState(false);
   const [error, setError] = useState('');
   const [saveMsg, setSaveMsg] = useState('');
 
@@ -188,10 +184,6 @@ export default function AdminSourceStatus() {
   }, [t]);
 
   useEffect(() => { load(); }, [load]);
-
-  // [DISABLED Aug-2026] toggleTelegram — البوت معطَّل، حُذف الزر من الواجهة
-  // الكود محفوظ هنا لإمكانية الإحياء:
-  // const toggleTelegram = async (newEnabled: boolean) => { ... PUT /api/admin/telegram-import ... };
 
   return (
     <AdminSidebar>
