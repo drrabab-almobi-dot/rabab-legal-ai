@@ -67,7 +67,11 @@ async function resolveIdentity(req: Request): Promise<{ userId: number; userRole
 
       // Re-check isActive and tokenVersion to handle admin-disabled/re-enabled accounts immediately
       const [user] = await db
-        .select({ isActive: usersTable.isActive, tokenVersion: usersTable.tokenVersion })
+        .select({
+          isActive: usersTable.isActive,
+          tokenVersion: usersTable.tokenVersion,
+          role: usersTable.role,
+        })
         .from(usersTable)
         .where(eq(usersTable.id, payload.userId));
       if (!user?.isActive) return null;
@@ -79,7 +83,7 @@ async function resolveIdentity(req: Request): Promise<{ userId: number; userRole
       const tokenVer = payload.tokenVersion ?? 1;
       if (tokenVer !== user.tokenVersion) return null;
 
-      return { userId: payload.userId, userRole: payload.userRole };
+      return { userId: payload.userId, userRole: user.role };
     } catch {
       return null;
     }
@@ -88,7 +92,12 @@ async function resolveIdentity(req: Request): Promise<{ userId: number; userRole
   // 2. Fall back to session cookie (web)
   const userId = req.session?.userId;
   if (userId) {
-    return { userId, userRole: req.session?.userRole ?? "user" };
+    const [user] = await db
+      .select({ isActive: usersTable.isActive, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    if (!user?.isActive) return null;
+    return { userId, userRole: user.role };
   }
 
   return null;

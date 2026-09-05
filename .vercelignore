@@ -1,0 +1,5 @@
+project-transfer/
+exports/
+migration_export/
+.agents/
+docs/*.zip

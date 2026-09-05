@@ -9,11 +9,6 @@ import { logger } from "./lib/logger";
 const PgStore = connectPgSimple(session);
 
 const app: Express = express();
-let appReady = false;
-
-export function markAppReady(): void {
-  appReady = true;
-}
 
 // ── Trust Replit's HTTPS reverse-proxy so session cookies and IP detection ──
 // work correctly. Without this, Express sees every request as HTTP even though
@@ -40,14 +35,81 @@ app.use(
   }),
 );
 
+const allowedOrigins = new Set(
+  [
+    "https://rabablegal.com",
+    "https://www.rabablegal.com",
+    "https://rabab-legal.vercel.app",
+    "https://rabab-legal-ai.vercel.app",
+    ...(process.env.CORS_ALLOWED_ORIGINS ?? "").split(","),
+    ...(process.env.NODE_ENV === "production"
+      ? []
+      : ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]),
+  ]
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      logger.warn({ origin }, "CORS request from disallowed origin");
+      callback(null, false);
+    },
     credentials: true,
   }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+interface RateLimitBucket {
+  count: number;
+  resetAt: number;
+}
+
+const rateLimitBuckets = new Map<string, RateLimitBucket>();
+const rateLimitWindowMs = 15 * 60 * 1000;
+const rateLimitMaxRequests = 300;
+const rateLimitCleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of rateLimitBuckets) {
+    if (bucket.resetAt <= now) rateLimitBuckets.delete(key);
+  }
+}, 5 * 60 * 1000);
+rateLimitCleanup.unref();
+
+app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
+  if (req.path === "/health" || req.path === "/healthz") {
+    next();
+    return;
+  }
+
+  const key = req.ip ?? req.socket.remoteAddress ?? "unknown";
+  const now = Date.now();
+  const current = rateLimitBuckets.get(key);
+  const bucket = !current || current.resetAt <= now
+    ? { count: 1, resetAt: now + rateLimitWindowMs }
+    : { count: current.count + 1, resetAt: current.resetAt };
+  rateLimitBuckets.set(key, bucket);
+
+  res.setHeader("RateLimit-Limit", rateLimitMaxRequests);
+  res.setHeader("RateLimit-Remaining", Math.max(0, rateLimitMaxRequests - bucket.count));
+  res.setHeader("RateLimit-Reset", Math.ceil(bucket.resetAt / 1000));
+
+  if (bucket.count > rateLimitMaxRequests) {
+    res.status(429).json({
+      error: "تجاوزت الحد المسموح من الطلبات. يرجى المحاولة لاحقاً.",
+      code: "RATE_LIMIT_EXCEEDED",
+    });
+    return;
+  }
+
+  next();
+});
 
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
@@ -80,18 +142,34 @@ app.use(
   }),
 );
 
-// Render must be able to see that the process is alive while database
-// migrations/checks are still running. All real API traffic remains gated
-// until those checks complete, so requests cannot use a half-initialized app.
+// Cookie-authenticated state changes must originate from an explicitly trusted
+// frontend. Bearer-token and cookie-free server-to-server calls are not
+// susceptible to browser CSRF and remain supported.
 app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
-  if (req.path === "/healthz" || appReady) {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
     next();
     return;
   }
-  res.status(503).json({
-    error: "الخادم قيد التجهيز. يرجى المحاولة بعد لحظات.",
-    code: "SERVICE_STARTING",
-  });
+  if (req.headers.authorization?.startsWith("Bearer ") || !req.headers.cookie) {
+    next();
+    return;
+  }
+
+  const requestOrigin = req.headers.origin ?? (() => {
+    try {
+      return req.headers.referer ? new URL(req.headers.referer).origin : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  if (requestOrigin && allowedOrigins.has(requestOrigin)) {
+    next();
+    return;
+  }
+
+  logger.warn({ origin: requestOrigin, path: req.path }, "Rejected cookie-authenticated cross-site request");
+  res.status(403).json({ error: "طلب غير مصرح", code: "CSRF_REJECTED" });
 });
 
 app.use("/api", router);
@@ -105,7 +183,6 @@ app.use("/api", (_req: Request, res: Response): void => {
 // ── Global JSON error handler ──────────────────────────────────────────────
 // Catches any unhandled error thrown in route handlers and returns a safe
 // JSON response instead of Express's default HTML error page.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, _next: NextFunction): void => {
   (req as any).log?.error({ err }, "Unhandled route error");
   logger.error({ err, url: req.url, method: req.method }, "Unhandled route error");

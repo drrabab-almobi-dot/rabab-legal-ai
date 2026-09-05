@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, usersTable, packagesTable, subscriptionsTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
 import { getTavilyStats } from "../lib/legal-search";
+import { requireAdmin } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -18,7 +19,7 @@ router.get("/healthz", (_req, res) => {
 
 // ── Comprehensive diagnostic endpoint ────────────────────────────────────
 // Returns safe system-health data. Does NOT expose env-var values.
-router.get("/diagnostics", async (req, res): Promise<void> => {
+router.get("/diagnostics", requireAdmin, async (req, res): Promise<void> => {
   const checks: Record<string, unknown> = {};
 
   // 1. OpenAI key presence & format (never expose the actual value)
