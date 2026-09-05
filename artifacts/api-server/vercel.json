@@ -1,6 +1,6 @@
 {
   "framework": "express",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build",
-  "outputDirectory": "."
+  "installCommand": "cd ../.. && npx pnpm@10 install --frozen-lockfile",
+  "buildCommand": "cd ../.. && npx pnpm@10 --filter @workspace/api-server run build",
+  "outputDirectory": "dist"
 }
