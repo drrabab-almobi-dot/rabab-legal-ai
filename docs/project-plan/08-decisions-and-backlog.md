@@ -21,7 +21,7 @@
 2. حماية بيانات الاقتباسات أثناء إعادة الاستخراج الحي.
 3. استكمال حفظ نتائج البحث وإعادة فتحها.
 4. تحسين مؤشرات البحث الحي في الويب والجوال.
-5. استكمال السحب القابل للاستئناف والمراجعة البشرية لـ MTProto عند اعتماد تشغيله.
+5. استكمال ربط الباحثة الذكية واستيراد الأرشيفات الموثقة مع مراجعة بشرية قبل الاعتماد.
 6. تغطية اختبارات المصادقة والحصص والدفع والتذكيرات.
 7. استكمال توحيد عقود API للجوال.
 8. تنفيذ مسارات الجوال الأساسية بعد بوابة الويب.
@@ -32,7 +32,7 @@
 2. Protect citation metadata during live re-extraction.
 3. Complete saved-search persistence and reopening.
 4. Improve live-search indicators across web and mobile.
-5. Complete resumable MTProto ingestion and human approval when activation is approved.
+5. Complete smart-researcher integration and verified-archive ingestion with human approval before publication.
 6. Expand auth, quota, billing, and reminder coverage.
 7. Finalize shared mobile API contracts.
 8. Implement core mobile flows after the web quality gate.

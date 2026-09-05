@@ -468,9 +468,9 @@ const F: Record<string, TaskField> = {
 
 const TASK_TYPES: TaskTypeConfig[] = [
   // ── Group 1: التحليل الشامل ──────────────────────────────────────────────
-  { id: 'judicial',            group: 'التحليل الشامل',        icon: '🏛️',  name: 'الاستشارة القضائية',          description: 'تحدّث بحرية عن وضعك القانوني ورباب ستحلّل وتُرشدك',          fields: [] },
-  { id: 'case_management',     group: 'التحليل الشامل',        icon: '🗂️',  name: 'إدارة القضية',                description: 'نظّم مراحل القضية ومستنداتها وحدّد الإجراء التالي',          fields: [F.subject, F.facts, F.documents] },
-  { id: 'judgment_analysis',   group: 'التحليل الشامل',        icon: '⚖️',  name: 'تحليل الأحكام',               description: 'حلّل الحكم وأسبابه ونقاطه المؤثرة وخيارات الاعتراض',         fields: [F.facts, F.documents] },
+  { id: 'judicial',            group: 'التحليل الشامل',        icon: '🏛️',  name: 'الاستشارة القضائية',          description: 'حلّل المسألة القضائية تدريجياً وفق الوقائع والمستندات المتاحة', fields: [] },
+  { id: 'case_management',     group: 'التحليل الشامل',        icon: '🗂️',  name: 'إدارة القضية',                description: 'ملف متسلسل للجلسات والمذكرات والمستندات مع خطوة تالية واضحة', fields: [F.subject, F.facts, F.documents] },
+  { id: 'judgment_analysis',   group: 'التحليل الشامل',        icon: '⚖️',  name: 'تحليل الأحكام',               description: 'حلّل الحكم وأسبابه وخيارات الاستئناف أو الالتماس أو النقض',   fields: [F.facts, F.documents] },
   { id: 'comprehensive',       group: 'التحليل الشامل',        icon: '⚖️',  name: 'الاستشارة الشاملة',          description: 'تحليل قانوني متكامل يغطي كل جوانب القضية',                   fields: [] },
   { id: 'fact_gathering',      group: 'التحليل الشامل',        icon: '🔍',  name: 'جمع الوقائع',                  description: 'قائمة أسئلة منظمة لاستيفاء وقائع القضية',                    fields: [F.subject, F.initial_info] },
   { id: 'legal_classification', group: 'التحليل الشامل',       icon: '🏷️',  name: 'التكييف القانوني',             description: 'تحديد الوصف القانوني الدقيق والتكييفات البديلة',             fields: [F.facts] },
@@ -483,7 +483,7 @@ const TASK_TYPES: TaskTypeConfig[] = [
   { id: 'final_recommendation', group: 'الاستراتيجية',         icon: '🎯',  name: 'التوصية النهائية',             description: 'خطة تنفيذية قابلة للتطبيق بخيارات مرتبة',                   fields: [F.facts, F.goal] },
 
   // ── Group 3: الإجراءات ───────────────────────────────────────────────────
-  { id: 'pleadings',           group: 'الإجراءات',              icon: '📝',  name: 'الاعتراضات واللوائح',         description: 'إعداد لائحة أو مذكرة أو اعتراض وفق وقائع القضية',             fields: [F.subject, F.facts, F.documents] },
+  { id: 'pleadings',           group: 'الإجراءات',              icon: '📝',  name: 'الاعتراضات واللوائح',         description: 'مسودة لائحة أو مذكرة مع خيار المواد النظامية والسوابق المتحققة', fields: [F.subject, F.facts, F.documents] },
   { id: 'jurisdiction',        group: 'الإجراءات',              icon: '🏛️',  name: 'تحديد الاختصاص',             description: 'الجهة القضائية المختصة نوعاً وقيمةً ومكاناً',                fields: [F.facts, F.dispute_type] },
   { id: 'deadlines',           group: 'الإجراءات',              icon: '⏰',  name: 'المدد النظامية',              description: 'التقادم والمواعيد الحرجة ترتيباً زمنياً',                    fields: [F.facts, F.dispute_type, F.dispute_date] },
   { id: 'claims',              group: 'الإجراءات',              icon: '📝',  name: 'تحديد الطلبات',               description: 'جميع الطلبات الأصلية والاحتياطية والمستعجلة',                fields: [F.facts] },

@@ -8,11 +8,11 @@
  * On the first chat message the cached chunks are injected before the regular RAG
  * pass, annotated with [مسترجع مسبقاً] so the model knows they were pre-fetched.
  *
- * SECURITY NOTE: Proactive search always respects the same category/Telegram
- * exclusion controls as the regular RAG path. Exclusion settings are fetched
- * fresh from the DB at trigger time and stored with the cache entry. Before
- * injecting, chat.ts verifies the current request exclusions are not stricter
- * than those used to build the cache.
+ * SECURITY NOTE: Proactive search always respects the same category exclusion
+ * controls as the regular RAG path. Exclusion settings are fetched fresh from
+ * the DB at trigger time and stored with the cache entry. Before injecting,
+ * chat.ts verifies the current request exclusions are not stricter than those
+ * used to build the cache.
  */
 
 import { retrieveRelevantChunks, type RelevantChunk } from "./rag";
@@ -24,7 +24,6 @@ export interface ProactiveSearchOptions {
   /** Override exclusion settings (used in tests / admin calls). When omitted the
    *  function fetches the current platform visibility settings from the DB. */
   excludeCategories?: string[];
-  excludeTelegramDocs?: boolean;
 }
 
 /** What is stored per-consultation in the cache. */
@@ -34,8 +33,6 @@ interface CacheEntry {
   tavilyResults: LegalSearchResult[];
   /** The excludeCategories value used when this cache entry was built. */
   excludeCategories: string[];
-  /** The excludeTelegramDocs value used when this cache entry was built. */
-  excludeTelegramDocs: boolean;
   expiresAt: number;
 }
 
@@ -70,24 +67,13 @@ function evictExpired(): void {
 // ─── Lazy imports for platform settings (avoid circular imports) ───────────────
 async function resolveExclusions(
   opts: ProactiveSearchOptions,
-): Promise<{ excludeCategories: string[]; excludeTelegramDocs: boolean }> {
-  if (opts.excludeCategories !== undefined && opts.excludeTelegramDocs !== undefined) {
-    // Caller passed explicit values — use them directly (e.g. from tests)
-    return {
-      excludeCategories: opts.excludeCategories,
-      excludeTelegramDocs: opts.excludeTelegramDocs,
-    };
-  }
+): Promise<{ excludeCategories: string[] }> {
+  if (opts.excludeCategories !== undefined) return { excludeCategories: opts.excludeCategories };
 
   // Fetch live settings from the DB (same logic as chat.ts)
-  const { getSectionVisibility, getTelegramImportEnabled } = await import(
-    "../routes/platform-settings"
-  );
+  const { getSectionVisibility } = await import("../routes/platform-settings");
 
-  const [visibility, telegramEnabled] = await Promise.all([
-    getSectionVisibility().catch(() => null),
-    getTelegramImportEnabled().catch(() => false),
-  ]);
+  const visibility = await getSectionVisibility().catch(() => null);
 
   const excludeCategories: string[] = opts.excludeCategories ?? [];
   if (opts.excludeCategories === undefined) {
@@ -97,9 +83,7 @@ async function resolveExclusions(
     // lives in the separate legal_codices table, not in knowledge_documents.
   }
 
-  const excludeTelegramDocs = opts.excludeTelegramDocs ?? !telegramEnabled;
-
-  return { excludeCategories, excludeTelegramDocs };
+  return { excludeCategories };
 }
 
 // ─── Task-type → search query mapping ────────────────────────────────────────
@@ -261,9 +245,9 @@ export function buildProactiveQuery(
  * Run a proactive knowledge-base search for a consultation and cache the result.
  * Safe to call fire-and-forget (all errors are caught internally).
  *
- * SECURITY: Exclusion settings (category visibility, Telegram import toggle) are
- * resolved from the live DB before retrieval. The resolved settings are stored
- * with the cache entry so the chat route can validate them before injection.
+ * SECURITY: Category-visibility exclusions are resolved from the live DB before
+ * retrieval. The resolved settings are stored with the cache entry so the chat
+ * route can validate them before injection.
  *
  * @param consultationId  The consultation DB id (used as cache key).
  * @param taskType        The task type string from the consultation.
@@ -285,7 +269,7 @@ export async function triggerProactiveSearch(
   inProgressSearches.add(consultationId);
   try {
     // Resolve exclusion settings from the DB (same path as chat.ts)
-    const { excludeCategories, excludeTelegramDocs } = await resolveExclusions(opts);
+    const { excludeCategories } = await resolveExclusions(opts);
 
     // Run RAG and Tavily in parallel to minimise latency
     const [chunks, tavilyResults] = await Promise.all([
@@ -299,7 +283,6 @@ export async function triggerProactiveSearch(
           multiQuery: true,
           autoLink: true,
           excludeCategories,
-          excludeTelegramDocs,
         },
       ),
       // Tavily proactive search — silent on failure
@@ -311,7 +294,6 @@ export async function triggerProactiveSearch(
       chunks,
       tavilyResults,
       excludeCategories,
-      excludeTelegramDocs,
       expiresAt: Date.now() + CACHE_TTL_MS,
     });
   } catch {
@@ -330,20 +312,15 @@ export async function triggerProactiveSearch(
  *  - The cache entry is absent or expired.
  *  - The current request excludes MORE categories than the cache was built with
  *    (i.e. a setting became more restrictive after the cache was populated).
- *  - The current request disables Telegram docs but the cache was built with
- *    Telegram docs enabled.
- *
  * In those cases the caller falls back to the regular RAG pass, which always
  * applies the current exclusion settings.
  *
  * @param consultationId      The consultation DB id.
  * @param currentExcludeCategories  The excludeCategories for the current request.
- * @param currentExcludeTelegram    The excludeTelegramDocs for the current request.
  */
 export function getProactiveCachedChunks(
   consultationId: number,
   currentExcludeCategories: string[],
-  currentExcludeTelegram: boolean,
 ): ProactiveCacheHit | null {
   const entry = proactiveCache.get(consultationId);
   if (!entry || entry.expiresAt <= Date.now()) {
@@ -360,13 +337,6 @@ export function getProactiveCachedChunks(
       proactiveCache.delete(consultationId);
       return null;
     }
-  }
-
-  // Same check for Telegram: if Telegram is now disabled but cache was built
-  // with it enabled, the cache may contain Telegram-sourced chunks → skip.
-  if (currentExcludeTelegram && !entry.excludeTelegramDocs) {
-    proactiveCache.delete(consultationId);
-    return null;
   }
 
   return { chunks: entry.chunks, tavilyResults: entry.tavilyResults };

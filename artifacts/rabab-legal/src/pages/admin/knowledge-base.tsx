@@ -450,8 +450,17 @@ export default function KnowledgeBase() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-primary">{t('قاعدة المعرفة القانونية', 'Legal knowledge base')}</h1>
         <p className="text-muted-foreground mt-1">
-          {t('ارفع ملفاتك القانونية أو ZIP من تيليجرام ليستخدمها المساعد مرجعاً في كل إجابة', 'Upload legal files or Telegram ZIP archives for the assistant to use as references in every answer')}
+          {t('ارفعي الملفات القانونية والأرشيفات الموثقة ليستخدمها المساعد مرجعاً في كل إجابة', 'Upload verified legal files and archives for the assistant to use as references in every answer')}
         </p>
+        <a
+          href="https://smart-legal-researcher.s3t3-9306.chatgpt.site/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/10"
+        >
+          {t('فتح الباحثة الذكية للأرشيف والبحث القانوني', 'Open the smart legal researcher archive')}
+          <span aria-hidden="true">↗</span>
+        </a>
       </div>
 
       {/* Reclassify banner */}
@@ -754,13 +763,11 @@ export default function KnowledgeBase() {
             <div className="space-y-4">
               {/* Guide box */}
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900">
-                <p className="font-bold mb-2">📲 {t('كيف تصدّرين ملفات قناة تيليجرام دفعةً واحدة؟', 'How do you export Telegram channel files in bulk?')}</p>
+                <p className="font-bold mb-2">📦 {t('كيف ترفعين أرشيف مستندات موثّق دفعةً واحدة؟', 'How do you upload a verified document archive in bulk?')}</p>
                 <ol className="space-y-1 list-decimal list-inside text-amber-800">
-                  <li>{t('افتحي', 'Open')} <strong>Telegram Desktop</strong> {t('على الكمبيوتر', 'on your computer')}</li>
-                  <li>{t('اذهبي للقناة ← اضغطي على اسمها ←', 'Open the channel, click its name, then')} <strong>⋮ ← Export Chat History</strong></li>
-                  <li>{t('اختاري', 'Select')} <strong>Only files</strong> ({t('أو', 'or')} Documents)</li>
-                  <li>{t('اضغطي', 'Click')} <strong>Export</strong> {t('وانتظري التنزيل', 'and wait for the download')}</li>
-                  <li>{t('اضغطي على المجلد الناتج وحوّليه إلى ZIP', 'Compress the resulting folder into a ZIP archive')}</li>
+                  <li>{t('اختاري الملفات من أرشيف الباحثة الذكية أو من مصدر قانوني موثّق ومصرّح باستخدامه', 'Select files from the smart researcher archive or another verified, authorized legal source')}</li>
+                  <li>{t('راجعي المصدر وبيانات الحكم أو النظام قبل الرفع', 'Verify the source and judgment or regulation metadata before uploading')}</li>
+                  <li>{t('ضعي الملفات في مجلد واحد وحوّليه إلى ZIP', 'Place the files in one folder and compress it into a ZIP archive')}</li>
                   <li>{t('ارفعيه هنا — النظام يفهرس كل PDF/TXT/DOCX تلقائياً', 'Upload it here — the system automatically indexes every PDF, TXT, and DOCX file')}</li>
                 </ol>
               </div>
@@ -891,7 +898,7 @@ export default function KnowledgeBase() {
             <div className="text-center py-12">
               <p className="text-5xl mb-4">📭</p>
               <p className="text-muted-foreground">{t('لا توجد مصادر مضافة بعد', 'No sources added yet')}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">{t('ارفعي ZIP من تيليجرام لبدء الفهرسة الشاملة', 'Upload a Telegram ZIP archive to start comprehensive indexing')}</p>
+              <p className="text-sm text-muted-foreground/70 mt-1">{t('ارفعي أرشيف ZIP موثّق لبدء الفهرسة الشاملة', 'Upload a verified ZIP archive to start comprehensive indexing')}</p>
             </div>
           ) : (
             <div className="space-y-2">

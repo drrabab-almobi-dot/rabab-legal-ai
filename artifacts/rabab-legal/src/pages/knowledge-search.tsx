@@ -3563,6 +3563,16 @@ export default function KnowledgeSearch() {
           </div>
           <h1 className="text-3xl font-bold text-primary mb-1">{t('الباحثة القانونية الذكية', 'Smart Legal Research')}</h1>
           <p className="text-muted-foreground text-base">{t('ابحث في مصادر قانونية موثوقة بالذكاء الاصطناعي', 'AI-powered search across trusted legal sources')}</p>
+          <a
+            href="https://smart-legal-researcher.s3t3-9306.chatgpt.site/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+          >
+            <BookMarkedIcon className="w-4 h-4" />
+            {t('زيارة أرشيف الباحثة الذكية', 'Visit the smart researcher archive')}
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
         </div>
 
         {/* Tabs */}

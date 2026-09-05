@@ -41,6 +41,24 @@ const SERVICE_MODULE_MAP: Record<string, string> = {
 
 const _moduleCache = new Map<string, string | null>();
 
+/** Text appended programmatically to every conversational legal response. */
+export const MANDATORY_LEGAL_FOOTER = `هذه المعلومات لأغراض معرفية وليست استشارة قانونية ملزمة، وفي حال رغبتكم طلب الاستشارة مع المحامية د. رباب المعبي تواصلوا عبر واتساب: https://wa.me/966504647649
+سعدنا بخدمتكم،
+RABAB LEGAL AI`;
+
+/**
+ * Ensures a user-facing legal response ends with the required notice exactly once.
+ * This is deliberately applied after output sanitization because the sanitizer
+ * removes model-generated signatures and contact details.
+ */
+export function appendMandatoryLegalFooter(text: string): string {
+  const result = text.trimEnd();
+  if (!result) return MANDATORY_LEGAL_FOOTER;
+  return result.endsWith(MANDATORY_LEGAL_FOOTER)
+    ? result
+    : `${result}\n\n${MANDATORY_LEGAL_FOOTER}`;
+}
+
 /**
  * يُحمِّل ملحق تعليمات الخدمة المناسب بحسب نوع المهمة.
  * يُعيد null إذا كان الملف غير موجود أو فارغاً (graceful fallback).
