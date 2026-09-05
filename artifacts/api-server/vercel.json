@@ -1,6 +1,6 @@
 {
   "framework": "express",
-  "installCommand": "cd ../.. && corepack enable && corepack prepare --activate && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && corepack prepare --activate && pnpm --filter @workspace/api-server run build",
+  "installCommand": "(cd ../.. && corepack enable && corepack install && pnpm install --frozen-lockfile)",
+  "buildCommand": "(cd ../.. && corepack install && pnpm --filter @workspace/api-server run build)",
   "outputDirectory": "dist"
 }
