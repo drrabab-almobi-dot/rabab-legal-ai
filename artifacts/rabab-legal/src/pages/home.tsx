@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { setPageSEO } from '@/lib/seo';
 import { Link, useLocation } from 'wouter';
 import { Navbar, Footer } from '@/components/layout';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { Scale, CheckCircle2, Star, ChevronDown, ChevronUp, MessageSquare, Shield, Clock, Phone, FileText, FileSignature, Handshake, Building, Gavel, Lightbulb, Briefcase, Landmark, Search, Loader2, Lock, PenLine, FileSearch, Bot, ArrowLeft, BookOpen, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { Scale, CheckCircle2, ChevronDown, ChevronUp, MessageSquare, Shield, Clock, Phone, FileText, FileSignature, Handshake, Building, Gavel, Lightbulb, Briefcase, Landmark, Search, Loader2, Lock, PenLine, FileSearch, Bot, ArrowLeft, BookOpen, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import launchHeroImg from '@/assets/launch-hero.jpg';
 import lawyerHeroImg from '@/assets/lawyer-hero.png';
@@ -215,42 +215,15 @@ export default function Home() {
     },
   ];
 
-  const processFrameStyles = [
-    {
-      card: "border-secondary/70 shadow-secondary/15",
-      number: "border border-secondary/30 bg-secondary/15 text-secondary",
-    },
-    {
-      card: "border-accent/70 shadow-accent/15",
-      number: "border border-accent/30 bg-accent/15 text-accent",
-    },
-    {
-      card: "border-blue-400/70 shadow-blue-400/15",
-      number: "border border-blue-400/30 bg-blue-400/15 text-blue-300",
-    },
-  ];
-
-  const testimonialFrameStyles = [
-    "border-secondary/45 shadow-secondary/10",
-    "border-accent/45 shadow-accent/10",
-    "border-blue-400/45 shadow-blue-400/10",
-  ];
-
-  const faqFrameStyles = [
-    "border-secondary/45",
-    "border-accent/45",
-    "border-blue-400/45",
-  ];
-
   const faqs = [
-    { q: "كيف أبدأ استشارتي القانونية؟", a: "ببساطة سجل حساباً جديداً، اختر باقة تناسب احتياجك، واطرح سؤالك مباشرة عبر المنصة ليتم الرد عليه بشكل فوري." },
-    { q: "هل الاستشارات سرية؟", a: "نعم، نحن نطبق أعلى معايير التشفير والسرية. لا يتم مشاركة بياناتك أو استشاراتك مع أي طرف ثالث تحت أي ظرف." },
+    { q: "كيف أبدأ استشارتي القانونية؟", a: "سجلي حساباً، اختاري الخدمة الأقرب لاحتياجك، ثم أضيفي الوقائع والمستندات ذات الصلة. ابدئي بالمعلومات اللازمة فقط، ويمكن استكمال السياق خلال الحوار." },
+    { q: "هل الاستشارات سرية؟", a: "راجعي سياسة الخصوصية وشروط الاستخدام قبل رفع أي مستند، وتجنبي إدراج بيانات لا تلزم لفهم المسألة. ولأي ملف شديد الحساسية، تواصلي مع المحامية لتحديد قناة مناسبة." },
     { q: "ما مدى دقة الإجابات المقدمة؟", a: "تُقدَّم الإجابات عبر منصة ذكاء اصطناعي متخصصة في المنظومة القانونية السعودية وتُعدّ توجيهاً أولياً لا رأياً قانونياً نهائياً. للقضايا التي تستوجب تعمقاً أكثر، تتيح المنصة إمكانية الرجوع مباشراً إلى المحامية د. رباب لاستكمال الاستشارة والحصول على الرأي القانوني المتخصص." },
     { q: "هل يمكنني استخدام رباب لصياغة العقود؟", a: "نعم، تتيح رباب خدمة متخصصة لصياغة العقود وفق الأنظمة السعودية ودول مجلس التعاون، مع إمكانية رفع ملف عقد موجود لمراجعته وتحسينه." },
     { q: "ما الفرق بين الاستشارة القانونية والاستشارة القضائية؟", a: "الاستشارة القانونية تجيب عن أسئلة قانونية عامة كالحقوق والالتزامات والعقود، أما الاستشارة القضائية فتُعنى بالقضايا المرفوعة أمام المحاكم وتحليل الأحكام والمرافعات وفق الأنظمة." },
     { q: "هل يمكنني رفع وثيقة أو عقد وتحليلها؟", a: "نعم، يمكنك رفع ملفات PDF أو Word أو صور مستندات وتحليلها مباشراً داخل المحادثة، وستستخرج رباب النص وتجيب عن أسئلتك استناداً إلى محتوى الوثيقة." },
-    { q: "هل رباب متاحة على مدار الساعة؟", a: "نعم، الخدمة متاحة 24/7 طوال أيام السنة. يمكنك طرح استشارتك في أي وقت والحصول على رد فوري دون الحاجة لحجز موعد أو انتظار." },
-    { q: "ما الأنظمة التي تستند إليها رباب؟", a: "تستند رباب إلى منظومة الأنظمة واللوائح السعودية ودول مجلس التعاون، مع تحديث دوري لمواكبة المستجدات التشريعية." },
+    { q: "هل رباب متاحة على مدار الساعة؟", a: "يمكن الوصول إلى المنصة في أي وقت. أما الاستشارة المهنية المتخصصة أو متابعة المحامية فتخضع لقناة التواصل والترتيبات المعتمدة." },
+    { q: "ما الأنظمة التي تستند إليها رباب؟", a: "تركّز المنصة على الأنظمة واللوائح السعودية ودول مجلس التعاون، مع توجيه المستخدم إلى المواد والمراجع ذات الصلة عند توفرها. تحققي دائماً من النص الرسمي الساري قبل اتخاذ قرار." },
     { q: "كيف تختلف رباب عن البحث في الإنترنت؟", a: "رباب لا تعرض نتائج بحث عامة، بل تحلل سؤالك وتجيب عليه مباشراً مستندةً إلى نصوص قانونية موثّقة، مع ذكر المصادر والمواد النظامية ذات الصلة." },
     { q: "هل يمكن الاستفادة من رباب للقضايا التجارية والشركات؟", a: "نعم، تغطي رباب الاستفسارات المتعلقة بتأسيس الشركات والعقود التجارية والنزاعات بين الشركاء وأحكام نظام الشركات ونظام الاستثمار، وتُعدّ أداةً فعّالة للمحامين ورجال الأعمال على حدٍّ سواء." },
   ];
@@ -259,121 +232,112 @@ export default function Home() {
     <div className="min-h-screen flex flex-col overflow-x-hidden font-sans">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-primary pt-16 pb-0">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/80 to-primary"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <motion.div 
-              className="flex-1 hidden lg:block"
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}
-            >
-              <div className="relative w-full max-w-md mx-auto rounded-2xl overflow-hidden border-4 border-secondary/30 shadow-2xl shadow-secondary/10">
-                <img src={launchHeroImg} alt={t('RABAB LEGAL AI — الإطلاق التجريبي', 'RABAB LEGAL AI — Launch Preview')} className="object-cover w-full h-auto block" />
-              </div>
-            </motion.div>
-            <motion.div 
-              className="flex-1 text-center lg:text-right"
-              initial="hidden" animate="visible" variants={staggerContainer}
-            >
-              <motion.span variants={fadeInUp} className="inline-block py-1 px-3 rounded-full mb-6 text-xs sm:text-sm font-semibold" style={{color:'hsl(47 100% 48%)', background:'hsl(191 100% 50% / 0.1)', border:'2px solid hsl(191 100% 50% / 0.7)'}}>
-                {t('رباب محاميتك الرقمية — RABAB LEGAL AI', 'Rabab, your digital lawyer — RABAB LEGAL AI')}
-              </motion.span>
-              <motion.h1 variants={fadeInUp} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6 leading-snug">
-                {t('رباب مستشارتك القانونية طوال 24 ساعة', 'Rabab, your legal consultant around the clock')}
-              </motion.h1>
-              <motion.p variants={fadeInUp} className="text-sm md:text-base text-white mb-4 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                {t('استشارات قانونية دقيقة وفق الأنظمة السعودية ودول مجلس التعاون، باستخدام أحدث تقنيات الذكاء الاصطناعي، مع إمكانية طلب تأكيد الاستشارة من المحامية د. رباب المعبي.', 'Accurate legal guidance under Saudi and GCC laws, powered by advanced AI, with the option to request confirmation from Lawyer Dr. Rabab Almoaibi.')}
+      {/* Hero — contemporary legal editorial system */}
+      <section className="relative overflow-hidden bg-[#071529] py-12 text-white sm:py-16 lg:py-20">
+        <div className="legal-editorial-grid absolute inset-0 opacity-60" aria-hidden="true" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-[#D6A447]" aria-hidden="true" />
+        <div className="container relative z-10 mx-auto px-5 sm:px-8 lg:px-12">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(340px,0.75fr)] lg:gap-16">
+            <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-3xl text-center lg:text-right">
+              <motion.p variants={fadeInUp} className="mb-5 text-[11px] font-extrabold tracking-[0.18em] text-[#D6A447]" dir="ltr">
+                RABAB LEGAL AI · SAUDI ARABIA + GCC
               </motion.p>
-              <motion.div variants={fadeInUp} className="flex justify-center lg:justify-end mb-8">
-                <a
-                  href="#why-rabab"
-                  onClick={e => { e.preventDefault(); document.getElementById('why-rabab')?.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="flex items-center gap-1.5 text-secondary/80 hover:text-secondary text-sm font-medium transition-colors"
-                >
-                  {t('لماذا تختار رباب الرقمية؟', 'Why choose Rabab Digital?')}
-                  <ChevronDown className="w-4 h-4 animate-bounce" />
+              <motion.h1 variants={fadeInUp} className="text-balance text-4xl font-extrabold leading-[1.16] text-white sm:text-5xl lg:text-6xl">
+                {t('مسار قانوني أوضح، من السؤال إلى القرار.', 'A clearer legal path, from question to decision.')}
+              </motion.h1>
+              <motion.p variants={fadeInUp} className="mx-auto mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg lg:mx-0">
+                {t('منصة تساعدك على فهم المسألة القانونية، تنظيم مستندات القضية، صياغة المذكرات والعقود، والبحث في المصادر ذات الصلة ضمن سياق واحد قابل للمراجعة.', 'One reviewable workspace for legal questions, case files, pleadings, contracts, and source-led research.')}
+              </motion.p>
+              <motion.div variants={fadeInUp} className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+                <Link href="/consultation">
+                  <Button size="lg" className="h-12 w-full rounded-md bg-[#D6A447] px-6 font-bold text-[#071529] hover:bg-[#e2b65d] sm:w-auto">
+                    {t('ابدأ الاستشارة', 'Start a consultation')}
+                  </Button>
+                </Link>
+                <a href="https://smart-legal-researcher.s3t3-9306.chatgpt.site/" target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline" className="h-12 w-full rounded-md border-white/35 bg-transparent px-6 font-bold text-white hover:bg-white/10 sm:w-auto">
+                    {t('افتح الباحثة الذكية', 'Open smart researcher')}
+                  </Button>
                 </a>
               </motion.div>
+              <motion.div variants={fadeInUp} className="mt-9 grid grid-cols-3 border-y border-white/15 text-right">
+                {[
+                  { number: '01', label: t('افهم موقفك', 'Understand') },
+                  { number: '02', label: t('راجع الدليل', 'Review evidence') },
+                  { number: '03', label: t('نظّم خطوتك', 'Plan next step') },
+                ].map((item) => (
+                  <div key={item.number} className="border-e border-white/15 px-3 py-4 last:border-e-0 sm:px-5">
+                    <span className="block text-xs font-extrabold tracking-wider text-[#2BB9ED]" dir="ltr">{item.number}</span>
+                    <span className="mt-1.5 block text-xs font-semibold leading-5 text-white/85 sm:text-sm">{item.label}</span>
+                  </div>
+                ))}
+              </motion.div>
             </motion.div>
+            <motion.figure initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: 'easeOut' }} className="mx-auto w-full max-w-md lg:max-w-none">
+              <div className="border border-white/20 bg-white/[0.03] p-3 sm:p-4">
+                <img src={launchHeroImg} alt={t('RABAB LEGAL AI — الإطلاق التجريبي', 'RABAB LEGAL AI — Launch Preview')} className="aspect-square w-full object-cover" />
+              </div>
+              <figcaption className="legal-wordmark-rule mt-5 text-xs leading-6 text-white/60">
+                {t('ذكاء قانوني دقيق وموثوق، مهيأ لعرض التحليل والمصدر والخطوة التالية بوضوح.', 'Precise, trusted legal intelligence designed around analysis, source, and next step.')}
+              </figcaption>
+            </motion.figure>
           </div>
         </div>
       </section>
 
-      {/* Benefits */}
-      <section id="why-rabab" className="pt-6 pb-6 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-10 text-center text-4xl sm:text-5xl md:text-6xl leading-tight font-bold lg:whitespace-nowrap">
+      {/* Trust and reviewability */}
+      <section id="why-rabab" className="legal-paper-surface legal-paper-grid border-b border-[#12335B]/15 bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
+        <div className="container mx-auto px-5 sm:px-8 lg:px-12">
+          <p className="mb-3 text-center text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">TRUST / REVIEW / CONTINUITY</p>
+          <h2 className="mb-10 text-center text-3xl font-extrabold leading-tight sm:text-4xl md:text-5xl">
             {t('لماذا تختار رباب الرقمية؟', 'Why choose Rabab Digital?')}
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
-              <p className="text-lg text-white mb-8 leading-relaxed">
-                {t('نجمع بين خبرة المحاماة العريقة والتكنولوجيا الحديثة لتقديم تجربة استشارية استثنائية.', 'We combine established legal expertise with modern technology to provide an exceptional consultation experience.')}
+              <p className="mb-8 max-w-2xl text-base leading-8 text-[#12335B] sm:text-lg">
+                {t('تُبنى التجربة حول وضوح الوقائع والمصادر والخطوة التالية؛ لتظل المحادثة والمستندات مرتبة وسهلة المراجعة.', 'The experience is built around clear facts, sources, and next steps, so conversations and documents remain organised and reviewable.')}
               </p>
-              <div className="space-y-6">
+              <div className="border-y border-[#12335B]/15">
                 {[
-                  { title: "استجابة فورية", titleEn: "Instant Response", desc: "لا داعي للانتظار لحجز موعد، استشارتك جاهزة على مدار الساعة.", descEn: "No need to wait for an appointment; your consultation is ready around the clock." },
-                  { title: "دقة وموثوقية", titleEn: "Accuracy & Reliability", desc: "مبنية على أحدث الأنظمة والقوانين المعمول بها في المملكة ودول مجلس التعاون.", descEn: "Built on the latest applicable laws and regulations in Saudi Arabia and the GCC." },
-                  { title: "خصوصية تامة", titleEn: "Complete Privacy", desc: "تشفير كامل لبياناتك ومحادثاتك لضمان السرية المطلقة.", descEn: "Full encryption for your data and conversations to ensure absolute confidentiality." },
+                  { number: '01', title: "سياق متصل", titleEn: "Connected context", desc: "رتّبي وقائع القضية والجلسات والمذكرات بحيث يستمر التسلسل بين المراحل.", descEn: "Organise the facts, hearings, and drafts so the record can continue across stages." },
+                  { number: '02', title: "مصادر قابلة للتتبع", titleEn: "Traceable sources", desc: "راجعي المواد والمراجع المرتبطة بالتحليل قبل اعتماد أي مسودة أو خطوة.", descEn: "Review the materials and sources connected to the analysis before using a draft or next step." },
+                  { number: '03', title: "خبرة بشرية عند الحاجة", titleEn: "Human expertise when needed", desc: "يمكن طلب التواصل مع المحامية د. رباب المعبي لاستكمال الاستشارة المتخصصة.", descEn: "Request contact with Lawyer Dr. Rabab Almoaibi for specialised follow-up when needed." },
                 ].map((benefit, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="mt-1"><CheckCircle2 className="w-6 h-6 text-secondary" /></div>
+                  <div key={i} className="grid grid-cols-[40px_1fr] gap-4 border-b border-[#12335B]/15 py-5 last:border-b-0">
+                    <span className="text-sm font-extrabold tracking-[0.08em] text-[#2BB9ED]" dir="ltr">{benefit.number}</span>
                     <div>
-                        <h4 className="font-bold text-lg mb-1 text-secondary whitespace-nowrap">{t(benefit.title, benefit.titleEn)}</h4>
-                        <p className="text-white text-lg leading-relaxed">
-                          {i === 0 ? (
-                            <>
-                              {t('لا داعي للانتظار لحجز موعد، استشارتك جاهزة ', 'No need to wait for an appointment; your consultation is ready ')}
-                              <span dir={lang === 'ar' ? 'rtl' : 'ltr'} className="inline-block whitespace-nowrap">{t('على مدار الساعة.', 'around the clock.')}</span>
-                            </>
-                          ) : t(benefit.desc, benefit.descEn)}
-                        </p>
+                      <h4 className="text-base font-extrabold text-[#071529] sm:text-lg">{t(benefit.title, benefit.titleEn)}</h4>
+                      <p className="mt-1.5 text-sm leading-7 text-[#12335B]">{t(benefit.desc, benefit.descEn)}</p>
                     </div>
                   </div>
                 ))}
-                {/* ── ميزة حصرية: خبرة بشرية عند الحاجة ── */}
-                <div className="flex gap-4 rounded-xl border border-blue-400/60 bg-blue-600/20 px-4 py-4">
-                  <div className="mt-1 shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-lg mb-1 text-secondary">
-                      {t('خبرة بشرية عند الحاجة', 'Human Expertise When You Need It')}
-                    </h4>
-                    <p className="text-white text-lg leading-relaxed">
-                      {t('إمكانية الرجوع المباشر والتواصل مع المحامية د. رباب أحمد المعبي عند الحاجة والحصول على الرأي القانوني.', 'Contact Lawyer Dr. Rabab Ahmed Almoaibi directly when needed and receive a legal opinion.')}
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 bg-secondary blur-3xl opacity-20 rounded-full"></div>
-              <img src={lawyerHeroImg} alt={t('محامية رباب', 'Lawyer Rabab')} className="rounded-2xl relative z-10 border border-white/10" />
+              <div className="absolute -inset-3 border border-[#D6A447]/40" aria-hidden="true" />
+              <img src={lawyerHeroImg} alt={t('محامية رباب', 'Lawyer Rabab')} className="relative z-10 aspect-[4/3] w-full object-cover" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── CTA التسجيل ── */}
-      <section className="py-14 bg-gradient-to-b from-primary to-sidebar">
-        <div className="container mx-auto px-4 text-center">
+      {/* Primary action */}
+      <section className="legal-ink-surface bg-[#12335B] py-14">
+        <div className="container mx-auto px-5 text-center sm:px-8">
           <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">
-               {t('ابدأ استشارتك القانونية الأولى مجاناً', 'Start your first legal consultation for free')}
+            <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">BEGIN WITH CONTEXT</p>
+            <h2 className="mb-4 text-2xl font-extrabold text-white md:text-3xl">
+               {t('ابدأ باستشارة منظمة، ثم أضيفي التفاصيل عند الحاجة.', 'Start with a structured consultation, then add detail as needed.')}
             </h2>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <p className="mx-auto mb-8 max-w-2xl text-sm leading-7 text-white/70">{t('يمكنك البدء بالسؤال، رفع المستند، أو الانتقال مباشرة إلى خدمة العقود والبحث القانوني.', 'Begin with a question, upload a document, or proceed directly to contracts and legal research.')}</p>
+            <div className="flex flex-col justify-center gap-3 sm:flex-row">
               <Link href="/register">
-                <Button size="lg" className="bg-secondary text-primary font-bold hover:bg-secondary/90 text-lg px-10 h-14 shadow-xl shadow-secondary/30 w-full sm:w-auto">
+                <Button size="lg" className="h-12 w-full rounded-md bg-[#D6A447] px-7 font-bold text-[#071529] hover:bg-[#e2b65d] sm:w-auto">
                    {t('ابدأ الاستشارة', 'Start Consultation')}
                 </Button>
               </Link>
               <Link href="/pricing">
-                <Button size="lg" variant="outline" className="border-secondary/50 text-secondary font-bold hover:bg-secondary/10 text-lg px-10 h-14 w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="h-12 w-full rounded-md border-white/35 px-7 font-bold text-white hover:bg-white/10 sm:w-auto">
                    {t('عرض الباقات', 'View Plans')}
                 </Button>
               </Link>
@@ -382,44 +346,33 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── كتالوج الخدمات الرئيسية ── */}
-       <section id="services" className="bg-gradient-to-b from-primary to-sidebar py-12 md:py-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="mx-auto mb-10 max-w-2xl text-center">
-             <p className="mb-3 text-3xl font-black leading-tight text-secondary md:text-4xl">{t('خدماتنا القانونية', 'Our Legal Services')}</p>
-             <h2 className="text-3xl font-black text-white md:text-4xl">{t('اختر الخدمة المناسبة لاحتياجك', 'Choose the service that fits your needs')}</h2>
-             <p className="mt-3 text-white">{t('اضغط على الخدمة لعرض شرحها وفروعها واختيار المسار المناسب.', 'Select a service to view its description, branches, and the best path for you.')}</p>
+      {/* Primary services */}
+      <section id="services" className="legal-paper-grid bg-[#F6F2E9] py-14 text-[#071529] sm:py-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="mb-10 grid gap-5 border-b border-[#12335B]/20 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className={lang === 'ar' ? 'text-right' : 'text-left'}>
+              <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#12335B]" dir="ltr">SERVICES / 01–04</p>
+              <h2 className="max-w-3xl text-3xl font-extrabold leading-tight text-[#071529] sm:text-4xl">{t('خدمات قانونية تبدأ بالسؤال وتنتهي بخطوة منظمة.', 'Legal services that move from question to an organised next step.')}</h2>
+            </div>
+            <p className="max-w-sm text-sm leading-7 text-[#12335B]">{t('اختاري المسار الأقرب لاحتياجك، ثم أضيفي الوقائع والمستندات بالقدر الذي يلزم لفهم السياق.', 'Choose the relevant path, then add the facts and documents needed to understand the context.')}</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {SERVICE_CATALOG.map((service, index) => {
+          <div className="grid grid-cols-1 border-s border-t border-[#12335B]/20 sm:grid-cols-2 lg:grid-cols-4">
+            {SERVICE_CATALOG.filter((service) => ['legal-consultation', 'judicial', 'contracts', 'research'].includes(service.id)).map((service, index) => {
               const ServiceIcon = service.icon;
-              // تدوير لوحة الألوان بين الصفوف يمنع تكرار اللون نفسه عمودياً.
-              const row = Math.floor(index / serviceGridColumns);
-              const column = index % serviceGridColumns;
-              const frameStyle = serviceFrameStyles[(column + row) % serviceFrameStyles.length];
               return (
-                <motion.div
-                  key={service.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: Math.min(index * 0.06, 0.35) }}
-                >
-                  <Link href={`/services/${service.id}`} className="group block h-full">
-                    <div className={`flex h-full min-h-60 flex-col rounded-2xl border-2 bg-white/5 p-7 ${lang === 'ar' ? 'text-right' : 'text-left'} transition-all hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl ${frameStyle.card}`}>
-                      <div className="flex items-start gap-4">
-                        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border transition-colors ${frameStyle.icon}`}>
-                          <ServiceIcon className="h-7 w-7" />
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="min-w-0 break-words text-xl font-black leading-snug text-secondary">{lang === 'ar' ? service.title : translateArabicText(service.title)}</h3>
-                          <p className="mt-2 text-base leading-relaxed text-white/90">{lang === 'ar' ? service.summary : translateArabicText(service.summary)}</p>
-                        </div>
+                <motion.div key={service.id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }}>
+                  <Link href={`/services/${service.id}`} className="group block h-full border-b border-e border-[#12335B]/20 bg-[#F6F2E9]/90 p-6 transition-colors hover:bg-white sm:min-h-[270px]">
+                    <div className="flex h-full flex-col">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold tracking-[0.12em] text-[#2BB9ED]" dir="ltr">0{index + 1}</span>
+                        <ServiceIcon className="h-5 w-5 text-[#12335B]" strokeWidth={1.7} />
                       </div>
-                      <div className="mt-auto flex items-center justify-between border-t border-white/15 pt-5 text-base font-bold text-white">
-                         <span>{t('عرض الخدمة والفروع', 'View Service & Branches')}</span>
-                        <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                      <h3 className="mt-10 text-xl font-extrabold leading-snug text-[#071529]">{lang === 'ar' ? service.title : translateArabicText(service.title)}</h3>
+                      <p className="mt-3 text-sm leading-7 text-[#12335B]">{lang === 'ar' ? service.description : translateArabicText(service.description)}</p>
+                      <div className="mt-auto flex items-center justify-between border-t border-[#12335B]/15 pt-5 text-sm font-bold text-[#071529]">
+                        <span>{t('استعراض الخدمة', 'Explore service')}</span>
+                        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                       </div>
                     </div>
                   </Link>
@@ -621,30 +574,30 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4">{t('كيف تعمل الخدمة؟', 'How Does the Service Work?')}</h2>
-            <p className="text-white text-lg max-w-2xl mx-auto">{t('خطوات بسيطة للحصول على الرأي القانوني الذي تحتاجه', 'Simple steps to get the legal guidance you need')}</p>
+      <section className="legal-paper-surface bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
+        <div className="container mx-auto px-5 sm:px-8 lg:px-12">
+          <div className="mb-10 grid gap-4 border-b border-[#12335B]/20 pb-7 md:grid-cols-[1fr_auto] md:items-end">
+            <div>
+              <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">WORKFLOW / 01–03</p>
+              <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">{t('ثلاث مراحل لتحويل السؤال إلى مسار عملي.', 'Three stages to turn a question into a practical path.')}</h2>
+            </div>
+            <p className="max-w-sm text-sm leading-7 text-[#12335B]">{t('تظهر المعلومات اللازمة تدريجياً؛ لا تحتاجين إلى معرفة كل شيء قبل البدء.', 'The needed information appears gradually; you do not need to know everything before you begin.')}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 border-s border-t border-[#12335B]/20 md:grid-cols-3">
             {[
-              { num: "01", title: "سجل حسابك", titleEn: "Create Your Account", desc: "أنشئ حساباً جديداً في ثوانٍ معدودة وابدأ رحلتك معنا.", descEn: "Create a new account in seconds and begin your journey with us." },
-              { num: "02", title: "اختر باقتك", titleEn: "Choose Your Plan", desc: "حدد الباقة المناسبة لاحتياجاتك القانونية وأكمل الدفع بأمان.", descEn: "Choose the plan that suits your legal needs and complete payment securely." },
-              { num: "03", title: "اطرح سؤالك", titleEn: "Ask Your Question", desc: "احصل على إجابة فورية ودقيقة مبنية على الأنظمة السعودية.", descEn: "Receive an instant, accurate answer based on Saudi laws." }
+              { num: "01", title: "صِف المسألة", titleEn: "Describe the matter", desc: "ابدئي بالوقائع الأساسية، وحددي الدولة ونوع الخدمة، وأرفقي المستند إن كان مهماً للسياق.", descEn: "Start with the core facts, country, and service; attach a document when it matters to context." },
+              { num: "02", title: "راجعي التحليل والمصدر", titleEn: "Review analysis and source", desc: "اقرئي التكييف والخطوات المقترحة، وراجعي المواد والمراجع التي تدعم النتيجة.", descEn: "Read the analysis and suggested steps, then review the cited materials and references." },
+              { num: "03", title: "نظّمي الخطوة التالية", titleEn: "Organise the next step", desc: "احتفظي بالسياق، وحرري المسودة أو تابعي القضية أو تواصلي مع المحامية عند الحاجة.", descEn: "Keep the context, prepare the draft, follow the case, or contact the lawyer when needed." }
             ].map((step, i) => {
-              const frameStyle = processFrameStyles[i];
               return (
                 <motion.div
                   key={i}
                   initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}
-                  className={`bg-card p-8 rounded-2xl border-2 text-center transition-colors shadow-sm relative group ${frameStyle.card}`}
+                  className="border-b border-e border-[#12335B]/20 bg-[#F6F2E9]/90 p-6 text-right sm:min-h-[260px]"
                 >
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold transition-colors ${frameStyle.number}`}>
-                    {step.num}
-                  </div>
-                  <h3 className="text-xl font-bold mb-3 text-primary-foreground">{t(step.title, step.titleEn)}</h3>
-                  <p className="text-white text-lg leading-relaxed">{t(step.desc, step.descEn)}</p>
+                  <span className="block text-sm font-extrabold tracking-[0.12em] text-[#2BB9ED]" dir="ltr">{step.num}</span>
+                  <h3 className="mt-12 text-xl font-extrabold leading-snug">{t(step.title, step.titleEn)}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[#12335B]">{t(step.desc, step.descEn)}</p>
                 </motion.div>
               );
             })}
@@ -652,20 +605,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── قاعدة المعرفة القانونية — عنوان وسطر توضيحي فقط ── */}
-      <section className="py-14 bg-primary border-t border-white/10">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}
-            className="text-center"
-          >
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-white mb-3 tracking-tight">
-               {t('قاعدة معرفة قانونية متكاملة', 'A Complete Legal Knowledge Base')}
-            </h2>
-            <p className="text-white text-base md:text-lg font-medium">
-               {t('محتوى قانوني موثّق يُغذّي كل استشارة', 'Documented legal content that supports every consultation')}
-            </p>
+      {/* Smart legal researcher */}
+      <section className="legal-ink-surface bg-[#071529] py-14 text-white sm:py-16">
+        <div className="container mx-auto grid items-end gap-7 px-5 sm:px-8 lg:grid-cols-[1fr_auto] lg:px-12">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="max-w-3xl">
+            <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">RESEARCH / SOURCE-LED</p>
+            <h2 className="text-3xl font-extrabold leading-tight sm:text-4xl">{t('الباحثة الذكية: ابدئي بالمصدر، ثم ابني موقفك.', 'Smart researcher: start with the source, then build the position.')}</h2>
+            <p className="mt-5 text-base leading-8 text-white/70">{t('ابحثي في السوابق القضائية والتعاميم والمدونات والقواعد والمبادئ، ثم استخدمي النتائج داخل الاستشارة أو ملف القضية.', 'Search precedents, circulars, legal codices, rules, and principles, then use the results in the consultation or case file.')}</p>
           </motion.div>
+          <a href="https://smart-legal-researcher.s3t3-9306.chatgpt.site/" target="_blank" rel="noopener noreferrer">
+            <Button size="lg" variant="outline" className="h-12 w-full rounded-md border-[#D6A447]/75 px-6 font-bold text-[#D6A447] hover:bg-[#D6A447] hover:text-[#071529] sm:w-auto">
+              {t('زيارة أرشيف الباحثة الذكية', 'Visit smart researcher archive')}
+            </Button>
+          </a>
         </div>
       </section>
 
@@ -830,56 +782,49 @@ export default function Home() {
       </section>
 
 
-      {/* Testimonials */}
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4">{t('ماذا يقول عملاؤنا؟', 'What Our Clients Say')}</h2>
+      {/* Professional service standard */}
+      <section className="legal-paper-surface bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
+        <div className="container mx-auto px-5 sm:px-8 lg:px-12">
+          <div className="mb-10 max-w-3xl">
+            <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">SERVICE STANDARD</p>
+            <h2 className="text-3xl font-extrabold leading-tight sm:text-4xl">{t('خدمة قانونية تتعامل مع المعلومة بمسؤولية.', 'A legal service that treats information responsibly.')}</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 border-s border-t border-[#12335B]/20 md:grid-cols-3">
             {[
-              { name: "أحمد س.", nameEn: "Ahmed S.", role: "رائد أعمال", roleEn: "Entrepreneur", text: "وفرت علي المنصة الكثير من الوقت والجهد في فهم عقود التأسيس قبل التوقيع عليها. خدمة ممتازة.", textEn: "The platform saved me significant time and effort understanding incorporation contracts before signing. Excellent service." },
-              { name: "سارة م.", nameEn: "Sarah M.", role: "موظفة", roleEn: "Employee", text: "استشارة دقيقة وواضحة جداً في قضية عمالية، ساعدتني في معرفة حقوقي كاملة.", textEn: "Clear and precise guidance on an employment matter that helped me understand my rights fully." },
-              { name: "عبدالله ع.", nameEn: "Abdullah A.", role: "مستثمر", roleEn: "Investor", text: "تجربة احترافية، الإجابات سريعة وتغطي الجوانب القانونية بشكل شامل وموثوق.", textEn: "A professional experience: fast answers that cover the legal issues comprehensively and reliably." }
-            ].map((testimonial, i) => (
-              <Card key={i} className={`bg-card/80 border-2 shadow-sm ${testimonialFrameStyles[i % testimonialFrameStyles.length]}`}>
-                <CardContent className="p-8">
-                  <div className="flex gap-1 mb-4 text-secondary">
-                    {[...Array(5)].map((_, j) => <Star key={j} className="w-4 h-4 fill-current" />)}
-                  </div>
-                  <p className="text-white mb-6 leading-relaxed italic">"{t(testimonial.text, testimonial.textEn)}"</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                       {t(testimonial.name, testimonial.nameEn).charAt(0)}
-                    </div>
-                    <div>
-                       <p className="font-bold text-sm text-primary">{t(testimonial.name, testimonial.nameEn)}</p>
-                       <p className="text-xs text-white">{t(testimonial.role, testimonial.roleEn)}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+              { icon: FileSearch, title: 'السياق قبل الإجابة', titleEn: 'Context before answer', description: 'تُجمع الوقائع والمستندات ذات الصلة قبل الانتقال إلى تحليل أكثر تفصيلاً.', descriptionEn: 'Relevant facts and documents are gathered before moving to detailed analysis.' },
+              { icon: BookOpen, title: 'المصدر جزء من النتيجة', titleEn: 'Source is part of the result', description: 'تظهر المواد والمراجع عند توفرها، ويمكنك الرجوع إلى الباحثة الذكية لتعميق البحث.', descriptionEn: 'Materials and references are shown when available, with the smart researcher available for deeper investigation.' },
+              { icon: Shield, title: 'حدود مهنية واضحة', titleEn: 'Clear professional boundaries', description: 'المحتوى معرفي وغير ملزم، مع إتاحة التواصل مع المحامية عند الحاجة إلى استشارة متخصصة.', descriptionEn: 'Content is informational and non-binding, with lawyer contact available for specialised advice.' },
+            ].map((principle) => {
+              const PrincipleIcon = principle.icon;
+              return (
+                <div key={principle.title} className="border-b border-e border-[#12335B]/20 bg-[#F6F2E9]/90 p-6 sm:min-h-[235px]">
+                  <PrincipleIcon className="h-5 w-5 text-[#12335B]" strokeWidth={1.7} />
+                  <h3 className="mt-10 text-xl font-extrabold leading-snug">{t(principle.title, principle.titleEn)}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[#12335B]">{t(principle.description, principle.descriptionEn)}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-14 bg-primary">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-secondary mb-4">{t('الأسئلة الشائعة', 'Frequently Asked Questions')}</h2>
-            <p className="!text-white text-base">{t('إجابات على الأسئلة الأكثر شيوعاً', 'Answers to the most common questions')}</p>
+      <section className="legal-ink-surface bg-[#071529] py-14 text-white sm:py-16">
+        <div className="container mx-auto max-w-4xl px-5 sm:px-8">
+          <div className="mb-10 border-b border-white/15 pb-7 text-right">
+            <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">FAQ / CLARITY</p>
+            <h2 className="text-3xl font-extrabold leading-tight sm:text-4xl">{t('أسئلة شائعة قبل أن تبدأي.', 'Frequently asked questions before you begin.')}</h2>
+            <p className="mt-3 text-sm leading-7 text-white/70">{t('إجابات مختصرة توضح طريقة استخدام المنصة وحدود الخدمة.', 'Short answers about using the platform and the scope of the service.')}</p>
           </div>
-          <div className="space-y-3">
+          <div className="border-t border-white/15">
             {faqs.map((faq, i) => (
-              <div key={i} className={`border-2 rounded-xl overflow-hidden bg-primary/95 ${faqFrameStyles[i % faqFrameStyles.length]}`} style={{backdropFilter:'blur(4px)'}}>
+              <div key={i} className="overflow-hidden border-b border-white/15">
                 <button 
-                  className="w-full px-6 py-4 flex justify-between items-center text-right font-bold text-white hover:bg-white/5 transition-colors"
+                  className="flex min-h-14 w-full items-center justify-between gap-5 px-0 py-4 text-right text-sm font-bold text-white transition-colors hover:text-[#D6A447] sm:text-base"
                   onClick={() => setActiveFaq(activeFaq === i ? null : i)}
                 >
                   {faq.q}
-                  {activeFaq === i ? <ChevronUp className="w-5 h-5 text-secondary" /> : <ChevronDown className="w-5 h-5 text-secondary" />}
+                  {activeFaq === i ? <ChevronUp className="h-5 w-5 shrink-0 text-[#D6A447]" /> : <ChevronDown className="h-5 w-5 shrink-0 text-[#D6A447]" />}
                 </button>
                 <AnimatePresence>
                   {activeFaq === i && (
@@ -889,7 +834,7 @@ export default function Home() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-6 pb-5 pt-0 text-white leading-relaxed border-t border-secondary/20 mt-0 pt-4">
+                      <div className="border-t border-white/10 pb-5 pt-4 text-sm leading-7 text-white/70">
                         {faq.a}
                       </div>
                     </motion.div>
