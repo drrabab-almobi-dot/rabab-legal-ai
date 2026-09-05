@@ -84,7 +84,7 @@ app.use(
 // migrations/checks are still running. All real API traffic remains gated
 // until those checks complete, so requests cannot use a half-initialized app.
 app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
-  if (req.path === "/health" || req.path === "/healthz" || appReady) {
+  if (req.path === "/healthz" || appReady) {
     next();
     return;
   }
