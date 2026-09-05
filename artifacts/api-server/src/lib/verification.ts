@@ -9,6 +9,8 @@
  * the user always knows what is source-backed and what is not.
  */
 
+import { isTrustedOfficialWebResult } from "./legal-source-trust";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface SourceChunk {
@@ -26,6 +28,7 @@ export interface TavilyResult {
   url?: string;
   content: string;
   score?: number;
+  official?: boolean;
 }
 
 export type ConfidenceLevel = "high" | "medium" | "low";
@@ -147,6 +150,38 @@ function findInSources(
   return null;
 }
 
+function findCitationInSources(
+  raw: string,
+  type: CitationCheck["type"],
+  chunks: SourceChunk[],
+  web: TavilyResult[],
+): "kb" | "web" | null {
+  const matches = (contentValue: string) => {
+    const content = normalizeAr(contentValue);
+    if (type !== "article") return content.includes(normalizeAr(raw));
+
+    const articleNumber = raw.match(/المادة\s+\(?(\d+(?:\s*[-–]\s*\d+)?)/)?.[1];
+    if (!articleNumber) return false;
+    const articleFound = content.includes(normalizeAr(`المادة ${articleNumber}`));
+    if (!articleFound) return false;
+
+    const lawTail = raw.match(/\sمن\s+((?:نظام|لائحة)[\u0600-\u06FF\s]{2,40})/)?.[1]?.trim();
+    const lawTokens = lawTail?.split(/\s+/).filter(Boolean) ?? [];
+    const boundedLawTokens: string[] = [];
+    for (const token of lawTokens) {
+      if (boundedLawTokens.length >= 2 && (/^و/.test(token) || token === "الصادر" || token === "بموجب")) break;
+      boundedLawTokens.push(token);
+      if (boundedLawTokens.length >= 3) break;
+    }
+    const lawName = boundedLawTokens.join(" ");
+    return !lawName || content.includes(normalizeAr(lawName));
+  };
+
+  if (chunks.some((source) => matches(source.content))) return "kb";
+  if (web.some((source) => matches(source.content))) return "web";
+  return null;
+}
+
 // ─── Main verification ────────────────────────────────────────────────────────
 
 /**
@@ -158,8 +193,9 @@ export function verifyResponse(
   chunks: SourceChunk[],
   tavilyResults: TavilyResult[] = []
 ): VerificationResult {
-  const noSources = chunks.length === 0 && tavilyResults.length === 0;
   const highQualityKB = chunks.filter((c) => c.similarity >= 0.42);
+  const trustedWeb = tavilyResults.filter(isTrustedOfficialWebResult);
+  const noSources = highQualityKB.length === 0 && trustedWeb.length === 0;
 
   // ── 1. Build sources panel ────────────────────────────────────────────────
   const sources: SourcePanelItem[] = [
@@ -177,7 +213,7 @@ export function verifyResponse(
     ...tavilyResults.slice(0, 4).map((r) => ({
       name: r.title || "مصدر ويب",
       similarity: Math.round((r.score ?? 0.5) * 100),
-      verified: true,
+      verified: isTrustedOfficialWebResult(r),
       snippet:
         r.content.slice(0, 200).trim() + (r.content.length > 200 ? "…" : ""),
       sourceType: "web" as const,
@@ -186,10 +222,9 @@ export function verifyResponse(
   ];
 
   // ── 2. Sufficient sources? ────────────────────────────────────────────────
-  const sufficientSources =
-    highQualityKB.length >= 3 ||
-    (highQualityKB.length >= 1 && tavilyResults.length >= 2) ||
-    tavilyResults.length >= 3;
+  // A single directly relevant official text can be sufficient legal evidence;
+  // raw result count is not a proxy for authority or accuracy.
+  const sufficientSources = highQualityKB.length >= 1 || trustedWeb.length >= 1;
 
   // ── 3. Citation checks ────────────────────────────────────────────────────
   const citationChecks: CitationCheck[] = [];
@@ -203,12 +238,6 @@ export function verifyResponse(
       if (seenRaw.has(raw) || raw.length < 4) continue;
       seenRaw.add(raw);
 
-      // Dates: pass through (too many false positives from training knowledge)
-      if (type === "date") {
-        citationChecks.push({ raw, type, verified: true });
-        continue;
-      }
-
       // لا يوجد مصدر يعني أنه لا يمكن اعتماد مرجع قانوني؛ لا نمرّر
       // أرقام المواد أو المراسيم من ذاكرة النموذج كأنها موثقة.
       if (noSources) {
@@ -216,7 +245,7 @@ export function verifyResponse(
         continue;
       }
 
-      const foundIn = findInSources(raw, chunks, tavilyResults);
+      const foundIn = findCitationInSources(raw, type, highQualityKB, trustedWeb);
       citationChecks.push({ raw, type, verified: foundIn !== null, foundIn: foundIn ?? undefined });
     }
   }
@@ -231,7 +260,7 @@ export function verifyResponse(
     let bestSim = 0;
     for (const c of chunks)
       bestSim = Math.max(bestSim, tokenOverlap(inner, c.content));
-    for (const r of tavilyResults)
+    for (const r of trustedWeb)
       bestSim = Math.max(bestSim, tokenOverlap(inner, r.content));
     quotationChecks.push({
       raw: qm[0],
@@ -242,9 +271,7 @@ export function verifyResponse(
 
   // ── 5. Process text — annotate unverified citations ───────────────────────
   let processedText = text;
-  const unverifiedCitations = citationChecks.filter(
-    (c) => !c.verified && c.type !== "date"
-  );
+  const unverifiedCitations = citationChecks.filter((c) => !c.verified);
 
   // Replace longest first to avoid substring conflicts
   for (const cit of [...unverifiedCitations].sort(
@@ -253,7 +280,8 @@ export function verifyResponse(
     const typeLabel =
       cit.type === "article" ? "رقم مادة" :
       cit.type === "decree"  ? "رقم مرسوم" :
-      cit.type === "circular"? "رقم تعميم" : "مرجع";
+      cit.type === "circular"? "رقم تعميم" :
+      cit.type === "date"    ? "تاريخ" : "مرجع";
     processedText = processedText.split(cit.raw).join(
       `[⚠ ${typeLabel} غير موجود في المصادر المسترجعة — تم حجبه تلقائياً. للتحقق: بوابة هيئة الخبراء]`
     );
@@ -273,7 +301,7 @@ export function verifyResponse(
       ? chunks.reduce((s, c) => s + c.similarity, 0) / chunks.length
       : 0;
 
-  const checkableCitations = citationChecks.filter((c) => c.type !== "date");
+  const checkableCitations = citationChecks;
   const citRate =
     checkableCitations.length > 0
       ? checkableCitations.filter((c) => c.verified).length /
@@ -313,19 +341,26 @@ export function verifyArticles(
   chunks: SourceChunk[],
   tavilyResults: TavilyResult[] = []
 ): ArticleVerificationResult[] {
-  const noSources = chunks.length === 0 && tavilyResults.length === 0;
+  const trustedWeb = tavilyResults.filter(isTrustedOfficialWebResult);
+  const highQualityKB = chunks.filter((c) => c.similarity >= 0.42);
+  const noSources = highQualityKB.length === 0 && trustedWeb.length === 0;
   return articles.map((a) => {
     if (noSources) return { ...a, verified: false };
-    // Try to find the article number in sources
-    const byNumber = findInSources(`المادة ${a.article}`, chunks, tavilyResults);
-    // Also check law name presence (shorter match)
+    const articleKey = normalizeAr(`المادة ${a.article}`);
     const lawKey = normalizeAr(a.law).split(" ").slice(0, 3).join(" ");
-    const byLaw = lawKey.length >= 4 ? findInSources(lawKey, chunks, tavilyResults) : null;
-    const verified = byNumber !== null || byLaw !== null;
+    const kbMatch = highQualityKB.some((source) => {
+      const content = normalizeAr(source.content);
+      return content.includes(articleKey) && lawKey.length >= 4 && content.includes(lawKey);
+    });
+    const webMatch = trustedWeb.some((source) => {
+      const content = normalizeAr(source.content);
+      return content.includes(articleKey) && lawKey.length >= 4 && content.includes(lawKey);
+    });
+    const verified = kbMatch || webMatch;
     return {
       ...a,
       verified,
-      foundIn: byNumber ?? byLaw ?? undefined,
+      foundIn: kbMatch ? "kb" : webMatch ? "web" : undefined,
     };
   });
 }

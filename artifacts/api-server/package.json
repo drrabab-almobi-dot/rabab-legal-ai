@@ -16,6 +16,7 @@
     "test:quota": "node ./test-build.mjs src/lib/quota.test.ts",
     "test:auth-middleware": "node ./test-build.mjs src/middlewares/auth.test.ts",
     "test:citation-cleanup": "node ./test-build.mjs src/lib/citation-cleanup.test.ts",
+    "test:verification": "node ./test-build.mjs src/lib/verification.test.ts",
     "test:chat": "node ./test-build.mjs src/routes/chat.test.ts"
   },
   "dependencies": {

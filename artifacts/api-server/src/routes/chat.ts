@@ -27,6 +27,7 @@ import {
   removeIrrelevantProactiveContext,
 } from "../lib/proactive-relevance";
 import { emitChatPhase, subscribeChatPhase, getCurrentPhase } from "../lib/chat-status";
+import { isTrustedOfficialWebResult } from "../lib/legal-source-trust";
 
 const router: IRouter = Router();
 const SUPPORTED_COUNTRY_CODES = new Set(["SA", "AE", "KW", "QA", "BH", "OM"]);
@@ -790,18 +791,16 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   // ── Source-sufficiency gate: warn the model if combined sources still < 3 ───
   // highQualityKBPre was computed before Tavily; reuse it here.
   const highQualityKB = highQualityKBPre;
-  const sufficientSources =
-    highQualityKB.length >= 3 ||
-    (highQualityKB.length >= 1 && webResults.length >= 2) ||
-    webResults.length >= 3;
+  const trustedOfficialWeb = webResults.filter(isTrustedOfficialWebResult);
+  const sufficientSources = highQualityKB.length >= 1 || trustedOfficialWeb.length >= 1;
 
   if (!sufficientSources) {
     contextMessages.push({
       role: "system",
       content:
-        `تنبيه للنموذج [تعليمة إلزامية]: عدد المصادر ذات الصلة العالية المسترجعة أقل من الحد الأدنى المطلوب ` +
-        `(عُثر على ${highQualityKB.length} من قاعدة المعرفة و ${webResults.length} من الويب بعد البحث الفوري). ` +
-        `طبّق قاعدة نقص المصادر الإلزامية: لا تُقدم إجابة موضوعية ذات أرقام أو نصوص — أجب بإخطار نقص المصادر مع اقتراح مسار بحث.`,
+        `تنبيه للنموذج [تعليمة إلزامية]: لم يُعثر على نص قانوني موثوق ذي صلة مباشرة ` +
+        `(قاعدة المعرفة: ${highQualityKB.length}، المصادر الحكومية الرسمية: ${trustedOfficialWeb.length}). ` +
+        `لا تُقدم إجابة موضوعية أو أرقام مواد — أجب بإخطار نقص الدليل وحدد المستند أو الواقعة اللازمة للبحث.`,
     });
     req.log.info({ highQualityKB: highQualityKB.length, webResults: webResults.length }, "Insufficient sources — gate injected");
   }
@@ -880,7 +879,13 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
 
     // ── Verification layer: check citations against retrieved sources ────────
     const verification = verifyResponse(rawReply, ragChunks, webResults);
-    assistantReply = sanitizeOutput(verification.processedText);
+    if (!verification.summary.sufficientSources) {
+      assistantReply = "تعذر تقديم رأي قانوني موثوق لأن البحث لم يسترجع نصًا نظاميًا أو قضائيًا ذا صلة مباشرة. لم أستخدم المعرفة العامة لتخمين الإجابة. يرجى تحديد الدولة وموضوع النزاع أو إرفاق المستند محل التحليل لإعادة البحث الموثق.";
+    } else if (verification.summary.blockedCount > 0) {
+      assistantReply = "أوقفت الإجابة لأن مسودتها تضمنت مرجعًا قانونيًا لم يثبت في المصادر المسترجعة. لم تُعرض المسودة منعًا لتمرير تحليل مبني على مادة أو مرسوم غير موثق. أعد المحاولة بذكر اسم النظام أو أرفق مصدره الرسمي.";
+    } else {
+      assistantReply = sanitizeOutput(verification.processedText);
+    }
     req.log.info({
       replyLen: assistantReply.length,
       confidence: verification.summary.confidence,
