@@ -1,11 +1,6 @@
 {
-  "version": 2,
-  "functions": {
-    "api/index.mjs": {
-      "runtime": "nodejs20.x"
-    }
-  },
-  "routes": [
-    { "src": "/(.*)", "dest": "api/index.mjs" }
-  ]
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist/public",
+  "framework": "vite"
 }
