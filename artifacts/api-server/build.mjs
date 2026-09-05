@@ -16,12 +16,11 @@ async function buildAll() {
 
   await esbuild({
     // Build two ESM entrypoints:
-    // - index.mjs starts the always-on Replit service.
-    // - app.mjs exports the Express application without starting a listener,
-    //   which is the entrypoint consumed by the Vercel function.
+    // - index.mjs for the always-on service startup path.
+    // - api.mjs for a listener-free Express app export used by Vercel.
     entryPoints: {
       index: path.resolve(artifactDir, "src/index.ts"),
-      app: path.resolve(artifactDir, "src/app.ts"),
+      api: path.resolve(artifactDir, "src/app.ts"),
     },
     platform: "node",
     bundle: true,
