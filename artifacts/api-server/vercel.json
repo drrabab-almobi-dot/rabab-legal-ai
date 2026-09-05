@@ -1,6 +1,6 @@
 {
   "framework": "express",
-  "installCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.34.5 --activate && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.34.5 --activate && pnpm --filter @workspace/api-server run build",
+  "installCommand": "cd ../.. && npx pnpm@10.34.5 install --frozen-lockfile",
+  "buildCommand": "cd ../.. && npx pnpm@10.34.5 exec tsc --build lib/db lib/api-zod && cd artifacts/api-server && npx pnpm@10.34.5 exec tsc -p tsconfig.json --noEmit && npx pnpm@10.34.5 exec eslint src/routes/ && node build.mjs",
   "outputDirectory": "dist"
 }
