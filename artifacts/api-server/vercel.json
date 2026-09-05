@@ -4,10 +4,7 @@
   "buildCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.34.5 --activate && pnpm --filter @workspace/api-server run build",
   "functions": {
     "api/index.mjs": {
-      "includeFiles": [
-        "dist/**",
-        "../dist/**"
-      ]
+      "includeFiles": "dist/**"
     }
   },
   "routes": [
