@@ -29,7 +29,11 @@ let botUsername = "@Rabab_legal_bot";
 let botHealthy = false;
 
 // ── OpenAI ───────────────────────────────────────────────────────────────────
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY?.trim() });
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
+  return new OpenAI({ apiKey });
+}
 
 // ── Admin ID ─────────────────────────────────────────────────────────────────
 function getAdminId(): number | null {
@@ -240,6 +244,7 @@ async function getAIResponse(userId: number, userMessage: string): Promise<strin
   const systemWithRag = ragContext ? SYSTEM_PROMPT + ragContext : SYSTEM_PROMPT;
 
   try {
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       temperature: 0.3,

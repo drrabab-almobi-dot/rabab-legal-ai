@@ -11,7 +11,12 @@ import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
 
 const router = Router();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
+  return new OpenAI({ apiKey });
+}
 
 const SERVICES = [
   { id: "consultation",  label: "استشارة قانونية عامة",        branches: [] },
@@ -59,6 +64,7 @@ ${SERVICES.map(s => `- ${s.id}: ${s.label}`).join("\n")}
 - الحقول المتاحة لكل خدمة: ${JSON.stringify(FIELDS_BY_SERVICE)}`;
 
   try {
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [

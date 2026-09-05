@@ -22,13 +22,16 @@ import { eq, sql } from "drizzle-orm";
 const execFileAsync = promisify(execFile);
 
 // Use the internal lib directly — avoids pdf-parse reading a test file at module load
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getPdfParse(): Promise<(buffer: Buffer, options?: any) => Promise<{ text: string; numpages: number }>> {
   const mod = await import("pdf-parse/lib/pdf-parse.js" as any);
   return (mod.default ?? mod) as any;
 }
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
+  return new OpenAI({ apiKey });
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -231,6 +234,7 @@ export async function extractCaseMetadata(
   // Truncate to ~6000 chars to avoid huge token usage
   const truncated = rawText.slice(0, 6000);
 
+  const openai = getOpenAIClient();
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     response_format: { type: "json_object" },

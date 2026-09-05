@@ -7,7 +7,7 @@
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "pnpm run typecheck:libs && pnpm run typecheck && pnpm run lint && node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
-    "lint": "eslint src/routes/",
+    "lint": "eslint src/",
     "lint:report": "pnpm run lint || true",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:libs": "pnpm exec tsc --build ../../lib/db ../../lib/api-zod",

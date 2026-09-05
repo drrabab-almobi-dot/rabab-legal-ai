@@ -1,5 +1,16 @@
 {
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "installCommand": "pnpm install --frozen-lockfile --prod=false",
   "buildCommand": "pnpm run build",
-  "outputDirectory": "artifacts/rabab-legal/dist/public"
+  "outputDirectory": "artifacts/rabab-legal/dist/public",
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "artifacts/api-server/prompts/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.mjs"
+    }
+  ]
 }
