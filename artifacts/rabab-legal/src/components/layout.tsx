@@ -7,6 +7,7 @@ import { useLogout } from '@workspace/api-client-react';
 import { Button } from './ui';
 import { Scale, LogOut, User as UserIcon, Menu, X, MessageSquare, CreditCard, Home, FileText, BookOpen, Bell, Globe, ClipboardList, RefreshCw, ShieldCheck, Settings, TrendingUp, Mail, Inbox, Palette, Check } from 'lucide-react';
 import { NotificationBell } from './notification-bell';
+import brandMark from '@/assets/brand/rabab-legal-ai-mark.webp';
 
 const PLATFORM_LANGUAGES: Array<{
   value: Lang;
@@ -17,6 +18,29 @@ const PLATFORM_LANGUAGES: Array<{
   { value: 'ar', labelAr: 'العربية', labelEn: 'Arabic', short: 'ع' },
   { value: 'en', labelAr: 'الإنجليزية', labelEn: 'English', short: 'EN' },
 ];
+
+function BrandLockup({ compact = false }: { compact?: boolean }) {
+  const { t } = useLang();
+  if (compact) {
+    return (
+      <img
+        src={brandMark}
+        alt={t('شعار رباب القانونية للذكاء الاصطناعي', 'Rabab Legal AI logo')}
+        className="h-10 w-10 rounded-md object-cover object-center ring-1 ring-white/15"
+      />
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-2.5" dir="ltr">
+      <img src={brandMark} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover object-center ring-1 ring-white/15" />
+      <div className="min-w-0 leading-none">
+        <span className="block truncate text-[11px] font-extrabold tracking-[0.16em] text-white">RABAB LEGAL AI</span>
+        <span className="mt-1 block text-[10px] font-medium text-white/65" dir="rtl">ذكاء قانوني دقيق وموثوق</span>
+      </div>
+    </div>
+  );
+}
 
 function LanguagePickerButton() {
   const { lang, setLang, t } = useLang();
@@ -191,25 +215,13 @@ export function Navbar() {
   ];
 
   return (
-    <nav dir={lang === 'ar' ? 'rtl' : 'ltr'} className="sticky top-0 z-50 w-full border-b border-secondary/30" style={{ background: 'var(--navbar-bg, black)' }}>
+    <nav dir={lang === 'ar' ? 'rtl' : 'ltr'} className="sticky top-0 z-50 w-full border-b border-white/10" style={{ background: 'var(--legal-ink)' }}>
       {/* RTL: col1=يمين | col2=وسط | col3=يسار */}
       <div className="container mx-auto px-4 h-16 hidden xl:grid items-center" style={{gridTemplateColumns:'auto 1fr auto'}}>
 
         {/* Col 1 → أقصى اليمين: الشعار */}
         <div className="flex items-center">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className={`relative flex flex-col leading-tight ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              <div className="flex items-center gap-2" dir="ltr">
-                <div className="flex flex-col leading-tight text-right">
-                  <span className="font-bold text-base whitespace-nowrap" style={{color:'hsl(47 100% 48%)'}}>{t('رباب محاميتك الرقمية', 'Rabab Digital Lawyer')}</span>
-                  <span className="font-bold text-base whitespace-nowrap" style={{color:'hsl(47 100% 48%)'}}>RABAB LEGAL AI</span>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
-                  <Scale className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </div>
-          </Link>
+          <Link href="/" className="group flex items-center" aria-label={t('الرئيسية', 'Home')}><BrandLockup /></Link>
         </div>
 
         {/* Col 2 → وسط: روابط الناف موزّعة بالتساوي */}
@@ -219,7 +231,7 @@ export function Navbar() {
               <Link
                 key={link.path}
                 href={link.path}
-                className="text-xs font-medium transition-colors whitespace-nowrap text-white hover:text-white/80 relative flex items-center gap-1"
+                className={`relative flex items-center gap-1 whitespace-nowrap border-b-2 py-5 text-xs font-semibold transition-colors ${location === link.path ? 'border-[#D6A447] text-white' : 'border-transparent text-white/75 hover:border-white/30 hover:text-white'}`}
               >
                 {link.name}
               </Link>
@@ -249,7 +261,7 @@ export function Navbar() {
                 {t('تسجيل الدخول', 'Login')}
               </Link>
               <Link href="/register">
-                <Button size="sm" className="bg-secondary text-primary hover:bg-secondary/90 whitespace-nowrap text-xs font-bold">
+                <Button size="sm" className="whitespace-nowrap bg-[#D6A447] text-[#071529] hover:bg-[#e2b65d] text-xs font-bold">
                   {t('حساب جديد', 'Register')}
                 </Button>
               </Link>
@@ -263,14 +275,7 @@ export function Navbar() {
           scroll horizontally inside their own flexible column instead of
           dropping below the logo when the preview is narrower than desktop. */}
       <div className="hidden md:flex xl:hidden container mx-auto h-16 items-center gap-2 px-3">
-        <Link href="/" className="flex shrink-0 items-center gap-1.5 group">
-          <span className="max-w-[118px] truncate text-[11px] font-bold leading-tight whitespace-nowrap" style={{color:'hsl(47 100% 48%)'}}>
-            {t('رباب محاميتك الرقمية', 'Rabab Digital Lawyer')}
-          </span>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{background:'hsl(47 100% 48%)'}}>
-            <Scale className="h-5 w-5" style={{color:'hsl(220 55% 8%)'}} />
-          </div>
-        </Link>
+        <Link href="/" className="flex shrink-0 items-center" aria-label={t('الرئيسية', 'Home')}><BrandLockup /></Link>
 
         <div className="min-w-0 flex-1 overflow-x-auto" style={{scrollbarWidth:'none'}}>
           <div className="flex min-w-max items-center justify-center gap-3">
@@ -318,11 +323,9 @@ export function Navbar() {
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
-        <Link href="/" className="flex min-w-0 items-center gap-2 group">
-          <span className="min-w-0 max-w-[calc(100vw-116px)] truncate font-bold text-sm whitespace-nowrap" style={{color:'hsl(47 100% 48%)'}}>{t('رباب محاميتك الرقمية', 'Rabab Digital Lawyer')}</span>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background:'hsl(47 100% 48%)'}}>
-            <Scale className="w-5 h-5" style={{color:'hsl(220 55% 8%)'}} />
-          </div>
+        <Link href="/" className="flex min-w-0 items-center gap-2" aria-label={t('الرئيسية', 'Home')}>
+          <span className="min-w-0 truncate text-xs font-extrabold tracking-[0.14em] text-white" dir="ltr">RABAB LEGAL AI</span>
+          <BrandLockup compact />
         </Link>
       </div>
 
@@ -402,11 +405,11 @@ export function Navbar() {
 export function Footer() {
   const { t, lang } = useLang();
   return (
-    <footer dir={lang === 'ar' ? 'rtl' : 'ltr'} className="bg-primary text-primary-foreground py-12 mt-auto border-t-[4px] border-secondary">
+    <footer dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mt-auto border-t-2 border-[#D6A447] bg-[#071529] py-12 text-primary-foreground">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2">
               <Scale className="w-8 h-8" style={{color:'hsl(47 100% 48%)'}} />
               <div className="flex flex-col leading-tight">
                 <span className="font-bold text-xl whitespace-nowrap" style={{ color: 'hsl(47 100% 48%)' }}>{t('رباب محاميتك الرقمية', 'Rabab, your digital lawyer')}</span>
@@ -426,7 +429,7 @@ export function Footer() {
             </p>
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-4 text-secondary">{t('روابط سريعة', 'Quick Links')}</h3>
+            <h3 className="mb-4 text-lg font-bold text-[#D6A447]">{t('روابط سريعة', 'Quick Links')}</h3>
             <ul className="space-y-2">
               <li><Link href="/" className="text-white hover:text-secondary transition-colors">{t('الرئيسية', 'Home')}</Link></li>
               <li><Link href="/about" className="text-white hover:text-secondary transition-colors">{t('من نحن', 'About Us')}</Link></li>
@@ -437,7 +440,7 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-4 text-secondary">{t('قانوني', 'Legal')}</h3>
+            <h3 className="mb-4 text-lg font-bold text-[#D6A447]">{t('قانوني', 'Legal')}</h3>
             <ul className="space-y-2">
               <li><Link href="/privacy" className="text-white hover:text-secondary transition-colors">{t('سياسة الخصوصية', 'Privacy Policy')}</Link></li>
               <li><Link href="/terms" className="text-white hover:text-secondary transition-colors">{t('شروط الاستخدام', 'Terms of Use')}</Link></li>
@@ -447,7 +450,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-12 pt-8 border-t border-primary-foreground/20 text-center text-sm flex flex-col md:flex-row justify-between items-center gap-4" style={{color:'hsl(47 100% 48%)'}}>
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/15 pt-8 text-center text-sm text-white/65 md:flex-row">
           <p>© {new Date().getFullYear()} {t('رباب محاميتك الرقمية', 'Rabab, your digital lawyer')} — RABAB LEGAL AI. {t('جميع الحقوق محفوظة.', 'All rights reserved.')}</p>
           <div className="flex gap-4">
             <a href="https://wa.me/966504647649" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">{t('تواصل عبر واتساب', 'Contact via WhatsApp')}</a>

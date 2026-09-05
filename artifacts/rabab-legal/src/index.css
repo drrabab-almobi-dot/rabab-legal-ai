@@ -51,6 +51,13 @@
 }
 
 :root {
+  /* RABAB LEGAL AI — contemporary legal identity */
+  --legal-ink: #071529;
+  --legal-navy: #12335B;
+  --legal-paper: #F6F2E9;
+  --legal-gold: #D6A447;
+  --legal-blue: #2BB9ED;
+  --legal-line: rgba(18, 51, 91, 0.14);
   --button-outline: rgba(0, 212, 255, 0.15);
   --badge-outline: rgba(0, 212, 255, 0.08);
   --opaque-button-border-intensity: -8;
@@ -186,6 +193,47 @@
 }
 .ai-border {
   border: 1px solid hsl(191 100% 50% / 0.3);
+}
+
+/* Public legal pages use a restrained editorial surface. Operational screens
+   retain their existing component contracts while the visual system evolves. */
+.legal-editorial-grid {
+  background-image:
+    linear-gradient(rgba(246, 242, 233, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(246, 242, 233, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.legal-paper-grid {
+  background-image: linear-gradient(90deg, rgba(18, 51, 91, 0.05) 1px, transparent 1px);
+  background-size: 25% 100%;
+}
+
+.legal-wordmark-rule::before {
+  content: '';
+  display: block;
+  width: 34px;
+  height: 2px;
+  margin-bottom: 10px;
+  background: var(--legal-gold);
+}
+
+.legal-paper-surface h1,
+.legal-paper-surface h2,
+.legal-paper-surface h3,
+.legal-paper-surface h4,
+.legal-paper-surface h5,
+.legal-paper-surface h6 {
+  color: var(--legal-ink) !important;
+}
+
+.legal-ink-surface h1,
+.legal-ink-surface h2,
+.legal-ink-surface h3,
+.legal-ink-surface h4,
+.legal-ink-surface h5,
+.legal-ink-surface h6 {
+  color: var(--legal-gold) !important;
 }
 
 /* Keep the floating WhatsApp contact control on the physical left side so it
