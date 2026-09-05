@@ -1,6 +1,6 @@
 {
   "framework": "express",
-  "installCommand": "cd ../.. && npx pnpm@10.34.5 --config.verify-deps-before-run=false install --frozen-lockfile --prod=false",
-  "buildCommand": "cd ../.. && npx pnpm@10.34.5 --config.verify-deps-before-run=false --filter @workspace/api-server run build",
+  "installCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.34.5 --activate && pnpm install --frozen-lockfile --prod=false",
+  "buildCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.34.5 --activate && pnpm --filter @workspace/api-server run build",
   "outputDirectory": "dist"
 }
