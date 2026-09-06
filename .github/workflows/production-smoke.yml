@@ -1,0 +1,109 @@
+name: Production Smoke Monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: production-smoke-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check public production routes
+        id: smoke
+        continue-on-error: true
+        run: node scripts/production-smoke.mjs
+
+      - name: Open or update production incident
+        if: steps.smoke.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const label = 'production-incident';
+            const title = 'Production monitor: public route check failed';
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = [
+              'The scheduled production smoke monitor detected a failure.',
+              '',
+              `- Workflow run: ${runUrl}`,
+              '- Checked routes: login page, API health, auth providers, and Google OAuth start.',
+              '- The JSON smoke report is attached to the workflow run.',
+              '',
+              'Do not place secrets, passwords, OAuth codes, or personal data in this issue.',
+            ].join('\n');
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              labels: label,
+              per_page: 100,
+            });
+            const existing = issues.find((issue) => issue.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
+              core.notice(`Updated incident #${existing.number}`);
+            } else {
+              const { data: issue } = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+                labels: [label, 'bug'],
+              });
+              core.notice(`Opened incident #${issue.number}`);
+            }
+
+      - name: Resolve recovered production incidents
+        if: steps.smoke.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const label = 'production-incident';
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              labels: label,
+              per_page: 100,
+            });
+            for (const issue of issues) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `Recovery confirmed by [production smoke monitor](${runUrl}). Closing this incident automatically.`,
+              });
+              await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
+            }
+            core.notice(`Resolved ${issues.length} recovered incident(s)`);
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-smoke-report
+          path: production-smoke-report.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Mark monitor run as failed
+        if: steps.smoke.outcome == 'failure'
+        run: exit 1
