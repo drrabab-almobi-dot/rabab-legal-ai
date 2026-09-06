@@ -27,6 +27,15 @@ import {
   removeIrrelevantProactiveContext,
 } from "../lib/proactive-relevance";
 import { emitChatPhase, subscribeChatPhase, getCurrentPhase } from "../lib/chat-status";
+import {
+  attachmentFactIntakePrompt,
+  attachmentInterviewMarker,
+  buildAttachmentVerificationQuery,
+  formatAttachmentIntakeReply,
+  getAttachmentInterviewProgress,
+  hasAttachmentContext,
+  parseAttachmentIntakeResponse,
+} from "../lib/attachment-interview";
 
 const router: IRouter = Router();
 const SUPPORTED_COUNTRY_CODES = new Set(["SA", "AE", "KW", "QA", "BH", "OM"]);
@@ -389,10 +398,24 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   // Subsequent messages in the same consultation don't deduct quota.
   // NOTE: isFirstUserMessage must be computed AFTER msgHistory is loaded.
   const isFirstUserMessage = msgHistory.filter(m => m.role === "user").length === 0;
+  const attachmentInterview = getAttachmentInterviewProgress(msgHistory);
+  const isInitialAttachmentIntake =
+    isFirstUserMessage &&
+    parsedAttachmentName !== null &&
+    hasAttachmentContext(parsed.data.message);
+  const isAttachmentIntakeTurn =
+    isInitialAttachmentIntake || attachmentInterview.state === "collecting";
 
   let reservedSessionId: number | undefined;
   if (req.userRole !== "admin") {
-    if (isFirstUserMessage) {
+    // Document intake is not a completed consultation. Its temporary
+    // reservation is released until the facts are complete and a verified
+    // opinion can actually be delivered on a later turn.
+    const shouldReserveService =
+      isFirstUserMessage ||
+      attachmentInterview.state === "collecting" ||
+      attachmentInterview.state === "ready";
+    if (shouldReserveService) {
       // A consultation always consumes its own reservation, never the latest
       // pending reservation belonging to another open consultation.
       const pending = cons.serviceSessionId
@@ -438,7 +461,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       attachmentName: parsedAttachmentName,
     }).returning();
   } catch (error) {
-    if (isFirstUserMessage && reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
+    if (reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
     throw error;
   }
 
@@ -463,7 +486,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   if (isFirstUserMessage && parsedAttachmentName) {
     contextMessages.push({
       role: "system",
-      content: `أرفق المستفيد ملفاً باسم "${parsedAttachmentName}" وراجَع النص المستخرج منه. حلّل المرفق ضمن سياق الاستشارة ولا تعرض النص المستخرج كاملاً في ردك. ابدأ بتحديد ما يكفي من الوقائع، ثم اسأل سؤالاً واحداً واضحاً فقط عن أهم معلومة مؤثرة ناقصة، ولا تكرر معلومة قدّمها المستفيد أو وردت في المرفق. استمر في الحوار بهذه الطريقة إلى أن تكتمل المعطيات اللازمة، ثم قدّم إجابة ختامية منظمة ومتحفظة مع بيان ما لا يمكن الجزم به.`,
+      content: `أرفق المستفيد ملفاً باسم "${parsedAttachmentName}" وراجَع النص المستخرج منه. لا تعرض النص المستخرج كاملاً في ردك.`,
     });
   }
 
@@ -507,6 +530,101 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     req.log.info({ isSensitiveCase: true }, "Sensitive personal case detected — empathetic language enforced");
   }
   // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Attachment fact intake ───────────────────────────────────────────────
+  // A successfully extracted attachment is evidence, not a finished legal
+  // question. Collect the one missing material fact at a time before touching
+  // Tavily or a legal opinion. This keeps provider outages out of the intake
+  // conversation and defers billing until a verified opinion is possible.
+  let attachmentFactSummary = attachmentInterview.factSummary;
+  let attachmentConversationIncluded = false;
+  if (isAttachmentIntakeTurn) {
+    contextMessages.push({
+      role: "system",
+      content: attachmentFactIntakePrompt(isInitialAttachmentIntake),
+    });
+    for (const m of msgHistory.filter(m => m.role !== "system")) {
+      contextMessages.push({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      });
+    }
+    contextMessages.push({ role: "user", content: parsed.data.message });
+    attachmentConversationIncluded = true;
+
+    try {
+      emitChatPhase(id, "generating");
+      const completion = await getOpenAI().chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: contextMessages,
+        max_tokens: 900,
+        temperature: 0.1,
+      });
+      const rawIntakeReply = completion.choices[0]?.message?.content ?? "";
+      const intake = parseAttachmentIntakeResponse(rawIntakeReply);
+      const intakeState = isInitialAttachmentIntake ? "collecting" : intake.state;
+      attachmentFactSummary = intake.text || attachmentFactSummary;
+
+      if (intakeState === "collecting") {
+        const reply = sanitizeOutput(formatAttachmentIntakeReply(intake.text));
+        await db.insert(consultationMessagesTable).values({
+          consultationId: id,
+          role: "assistant",
+          content: reply,
+          usedLiveSearch: false,
+        });
+        await db.insert(consultationMessagesTable).values({
+          consultationId: id,
+          role: "system",
+          content: attachmentInterviewMarker("collecting", attachmentFactSummary ?? reply),
+        });
+        if (reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
+        emitChatPhase(id, "done");
+        res.json({
+          reply,
+          messageId: null,
+          questionsRemaining: null,
+          interviewPhase: "collecting_facts",
+          usedLiveSearch: false,
+        });
+        return;
+      }
+
+      // Facts are now complete. Persist the hidden state for auditability and
+      // pass its concise summary into the verified analysis that follows.
+      await db.insert(consultationMessagesTable).values({
+        consultationId: id,
+        role: "system",
+        content: attachmentInterviewMarker("ready", attachmentFactSummary ?? ""),
+      });
+      contextMessages.push({
+        role: "system",
+        content: `[وقائع مستخرجة من المرفق واستيضاح المستفيد]\n${attachmentFactSummary ?? "لا يوجد ملخص صالح؛ لا تقدّم رأياً قبل التحقق من الوقائع."}`,
+      });
+    } catch (err: any) {
+      req.log.error({ name: err?.constructor?.name, status: err?.status, code: err?.code }, "Attachment fact intake failed");
+      await db.delete(consultationMessagesTable)
+        .where(eq(consultationMessagesTable.id, savedUserMessage.id))
+        .catch(() => {});
+      if (reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
+      emitChatPhase(id, "done");
+      res.status(200).json({
+        reply: "تعذّر إتمام قراءة الوقائع من المرفق الآن. لم تُحتسب الاستشارة؛ يرجى المحاولة لاحقاً.",
+        messageId: null,
+        questionsRemaining: null,
+        isError: true,
+        code: "AI_PROVIDER_FAILURE",
+      });
+      return;
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Once an attachment interview has completed, use the extracted factual
+  // summary (rather than a one-line follow-up) for RAG and Tavily relevance.
+  const sourceQuery = attachmentFactSummary
+    ? buildAttachmentVerificationQuery(attachmentFactSummary, parsed.data.message)
+    : parsed.data.message;
 
   // ── Load platform visibility settings (cached 5 min) ─────────────────────
   const visibility = await getSectionVisibility().catch(() => null);
@@ -595,7 +713,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     const rawKey = process.env.OPENAI_API_KEY ?? "";
     const apiKey = rawKey.replace(/[^\x20-\x7E]/g, "").trim();
     const chunks = await retrieveRelevantChunks(
-      parsed.data.message, apiKey, 6, 0.38, undefined,
+      sourceQuery, apiKey, 6, 0.38, undefined,
       { multiQuery: true, autoLink: true, excludeCategories, excludeTelegramDocs },
     );
     // Merge proactive chunks with regular RAG chunks; deduplicate by content.
@@ -670,7 +788,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   // A cache made from consultation metadata can be unrelated to the first message.
   // In that case, remove it from the model context and make a fresh live search.
   const proactiveRelevance = evaluateProactiveRelevance(
-    parsed.data.message,
+    sourceQuery,
     proactiveTavilyResults,
     isFirstUserMessage,
   );
@@ -719,7 +837,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     // Emit 'searching' so the frontend can show the live-search indicator.
     emitChatPhase(id, "searching");
     try {
-      const legalResults = await searchLegalSources(parsed.data.message, 6);
+      const legalResults = await searchLegalSources(sourceQuery, 6);
       // Deduplicate against anything already pre-fetched proactively
       const seenUrls = new Set(proactiveTavilyResults.map(r => r.url));
       const freshResults = legalResults.filter(r => !seenUrls.has(r.url));
@@ -762,13 +880,13 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     highQualityKBPre.length >= 3 ||
     (highQualityKBPre.length >= 1 && webResults.length >= 2) ||
     webResults.length >= 3;
-  const requiresVerifiedLegalSources = isSubstantiveLegalQuery(parsed.data.message);
+  const requiresVerifiedLegalSources = isSubstantiveLegalQuery(sourceQuery);
   const verificationUnavailable = tavilyFailed || (requiresVerifiedLegalSources && !sufficientSources);
 
   // ── Verification gate: never produce or charge for an unverified legal analysis ─
   if (verificationUnavailable) {
     const unavailableBecause = tavilyFailed ? "verifier_outage" : "insufficient_sources";
-    const noChargeNotice = isFirstUserMessage
+    const noChargeNotice = reservedSessionId
       ? "لم تُحتسب الاستشارة ولم يُخصم من رصيدك"
       : "لم يُحتسب هذا الطلب كاستهلاك إضافي";
     req.log.error(
@@ -778,7 +896,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     await db.delete(consultationMessagesTable)
       .where(eq(consultationMessagesTable.id, savedUserMessage.id))
       .catch((error) => req.log.warn({ error }, "Failed to remove provisional message after verifier outage"));
-    if (isFirstUserMessage && reservedSessionId) {
+    if (reservedSessionId) {
       await releaseService(reservedSessionId)
         .catch((error) => req.log.warn({ error }, "Failed to release reservation after verifier outage"));
     }
@@ -854,16 +972,18 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     });
   }
 
-  // Add previous messages
-  for (const m of msgHistory.filter(m => m.role !== "system")) {
-    contextMessages.push({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    });
-  }
+  if (!attachmentConversationIncluded) {
+    // Add previous messages
+    for (const m of msgHistory.filter(m => m.role !== "system")) {
+      contextMessages.push({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      });
+    }
 
-  // Add current user message
-  contextMessages.push({ role: "user", content: parsed.data.message });
+    // Add current user message
+    contextMessages.push({ role: "user", content: parsed.data.message });
+  }
 
   // Signal that we're now in the OpenAI generation phase (Tavily is done or skipped)
   emitChatPhase(id, "generating");
@@ -1007,7 +1127,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       sources: sourcesToStore as any,
     }).returning();
   } catch (error) {
-    if (isFirstUserMessage && reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
+    if (reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
     throw error;
   }
 
@@ -1016,7 +1136,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   // consultation reuse the same counted session without additional deduction.
   // Exception: when Tavily verification failed the reply is a refusal — no real
   // service was delivered, so we release the reservation instead of committing.
-  if (isFirstUserMessage && reservedSessionId) {
+  if (reservedSessionId) {
     if (tavilyFailed) {
       await releaseService(reservedSessionId).catch(() => {});
       req.log.info({ reservedSessionId }, "Tavily failed — quota reservation released (not committed)");
@@ -1030,6 +1150,14 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   await db.update(consultationsTable)
     .set({ status: "answered", updatedAt: new Date() })
     .where(eq(consultationsTable.id, id));
+
+  if (attachmentInterview.state === "ready") {
+    await db.insert(consultationMessagesTable).values({
+      consultationId: id,
+      role: "system",
+      content: attachmentInterviewMarker("completed", attachmentFactSummary ?? ""),
+    }).catch((error) => req.log.warn({ error }, "Failed to record completed attachment interview state"));
+  }
 
   // Signal done so SSE clients close cleanly
   emitChatPhase(id, "done");

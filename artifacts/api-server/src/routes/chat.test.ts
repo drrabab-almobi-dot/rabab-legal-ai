@@ -60,19 +60,22 @@ async function api(
 
 type MockMode = "success" | "429" | "close";
 let mockMode: MockMode = "success";
+let mockAssistantContent = "هذا رد اختباري من OpenAI.";
 
-const MOCK_SUCCESS_BODY = JSON.stringify({
-  id: "chatcmpl-test",
-  object: "chat.completion",
-  choices: [
-    {
-      index: 0,
-      message: { role: "assistant", content: "هذا رد اختباري من OpenAI." },
-      finish_reason: "stop",
-    },
-  ],
-  usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
-});
+function mockSuccessBody(content = mockAssistantContent): string {
+  return JSON.stringify({
+    id: "chatcmpl-test",
+    object: "chat.completion",
+    choices: [
+      {
+        index: 0,
+        message: { role: "assistant", content },
+        finish_reason: "stop",
+      },
+    ],
+    usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+  });
+}
 
 const MOCK_429_BODY = JSON.stringify({
   error: {
@@ -95,7 +98,7 @@ const mockOpenAI = http.createServer((req, res) => {
   }
   // success
   res.writeHead(200, { "Content-Type": "application/json" });
-  res.end(MOCK_SUCCESS_BODY);
+  res.end(mockSuccessBody());
 });
 
 await new Promise<void>((resolve) => mockOpenAI.listen(0, "127.0.0.1", resolve));
@@ -106,6 +109,48 @@ const mockPort = (mockOpenAI.address() as AddressInfo).port;
 process.env["OPENAI_BASE_URL"] = `http://127.0.0.1:${mockPort}`;
 // Ensure the key passes getOpenAI() validation (must start with "sk-")
 process.env["OPENAI_API_KEY"] = "sk-test-key-for-unit-tests-only";
+process.env["TAVILY_API_KEY"] = "tvly-test-key-for-unit-tests-only";
+
+// Intercept only Tavily. OpenAI requests continue to the local mock server.
+const nativeFetch = globalThis.fetch;
+let tavilyMode: "official-results" | "bad-request" = "official-results";
+let tavilyRequestCount = 0;
+interface CapturedTavilyRequest {
+  headers: Headers;
+  body: Record<string, unknown>;
+}
+let lastTavilyRequest: CapturedTavilyRequest | null = null;
+function getCapturedTavilyRequest(): CapturedTavilyRequest {
+  if (!lastTavilyRequest) throw new Error("Tavily request details were not captured");
+  return lastTavilyRequest;
+}
+globalThis.fetch = async (input, init) => {
+  const url = input instanceof Request ? input.url : String(input);
+  if (url !== "https://api.tavily.com/search") return nativeFetch(input, init);
+
+  tavilyRequestCount += 1;
+  const request = new Request(input, init);
+  lastTavilyRequest = {
+    headers: request.headers,
+    body: JSON.parse(await request.text()) as Record<string, unknown>,
+  };
+  if (tavilyMode === "bad-request") {
+    return new Response(JSON.stringify({ detail: { error: "Invalid test field" } }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return new Response(JSON.stringify({
+    results: [
+      { title: "نظام الأحوال الشخصية | هيئة الخبراء", url: "https://laws.boe.gov.sa/", content: "نص نظامي رسمي سعودي متعلق بالأحوال الشخصية.", score: 0.91 },
+      { title: "وزارة العدل", url: "https://moj.gov.sa/", content: "خدمة رسمية لوزارة العدل في المملكة العربية السعودية.", score: 0.86 },
+      { title: "ناجز", url: "https://najiz.sa/", content: "منصة ناجز الرسمية للخدمات العدلية.", score: 0.82 },
+    ],
+  }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+};
 
 // ─── App server bootstrap ─────────────────────────────────────────────────────
 
@@ -344,6 +389,103 @@ await test("Missing live legal verifier → 503, message removed, session releas
   }
 });
 
+// ─── Attachment fact intake: Tavily only after facts are complete ──────────────
+
+async function startAttachmentIntake(token: string, consultationId: number): Promise<{ status: number; body: any }> {
+  mockMode = "success";
+  mockAssistantContent = "الوقائع الظاهرة: يوجد عقد ونزاع بشأن الإخلال. ما تاريخ الإخلال الذي تستند إليه؟ [[RABAB_ATTACHMENT_INTAKE:MORE]]";
+  tavilyRequestCount = 0;
+  return api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
+    token,
+    body: {
+      attachmentName: "agreement.txt",
+      message: "[محتوى مرفق للتحليل]\nعقد تجاري ونزاع حول الإخلال.\n[/محتوى مرفق للتحليل]",
+    },
+  });
+}
+
+await test("Attachment intake asks one question without Tavily or quota charge", async () => {
+  const { token, userId } = await registerTestUser();
+  const { consultationId, sessionId, subscriptionId, packageId } = await setupConsultation(userId);
+  cleanupActions.push(() => teardown(userId, packageId));
+
+  tavilyMode = "bad-request";
+  const intake = await startAttachmentIntake(token, consultationId);
+  assert.equal(intake.status, 200);
+  assert.equal(intake.body.interviewPhase, "collecting_facts");
+  assert.equal(tavilyRequestCount, 0, "Tavily must not run while facts are being collected");
+  assert.equal((intake.body.reply.match(/[؟?]/g) ?? []).length, 1, "intake must ask exactly one question");
+
+  const [sub] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, subscriptionId));
+  assert.equal(sub.consultationsUsed, 0, "fact intake must not consume a quota unit");
+  const sessions = await db.select().from(serviceSessionsTable).where(eq(serviceSessionsTable.id, sessionId));
+  assert.equal(sessions.length, 0, "fact-intake reservation must be released");
+});
+
+await test("Attachment facts trigger official Tavily request only when ready", async () => {
+  const { token, userId } = await registerTestUser();
+  const { consultationId, subscriptionId, packageId } = await setupConsultation(userId);
+  cleanupActions.push(() => teardown(userId, packageId));
+
+  const intake = await startAttachmentIntake(token, consultationId);
+  assert.equal(intake.status, 200);
+  assert.equal(tavilyRequestCount, 0);
+
+  mockAssistantContent = "وقائع مكتملة: عقد تجاري، إخلال مزعوم، والمطلوب تحديد المسار النظامي. [[RABAB_ATTACHMENT_INTAKE:READY]]";
+  tavilyMode = "official-results";
+  tavilyRequestCount = 0;
+  lastTavilyRequest = null;
+  const final = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
+    token,
+    body: { message: "أطلب معرفة المسار النظامي للمطالبة بسبب الإخلال بالعقد." },
+  });
+  assert.equal(final.status, 200, `expected verified reply, got ${final.status}: ${JSON.stringify(final.body)}`);
+  assert.equal(tavilyRequestCount, 1, "Tavily must run once facts are complete");
+
+  const tavilyRequest = getCapturedTavilyRequest();
+  assert.equal(tavilyRequest.headers.get("authorization"), "Bearer tvly-test-key-for-unit-tests-only");
+  assert.equal(tavilyRequest.body.api_key, undefined, "legacy api_key body field must not be sent");
+  assert.equal(tavilyRequest.body.search_depth, "advanced");
+  assert.equal(tavilyRequest.body.max_results, 6);
+  assert.equal(tavilyRequest.body.include_domains_mode, "filter");
+  assert.match(String((tavilyRequest.body.include_domains as string[]).join(" ")), /laws\.boe\.gov\.sa/);
+
+  const [sub] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, subscriptionId));
+  assert.equal(sub.consultationsUsed, 1, "only the verified final opinion may consume a quota unit");
+});
+
+await test("Failed Tavily verification after attachment intake does not charge", async () => {
+  const { token, userId } = await registerTestUser();
+  const { consultationId, subscriptionId, packageId } = await setupConsultation(userId);
+  cleanupActions.push(() => teardown(userId, packageId));
+
+  const intake = await startAttachmentIntake(token, consultationId);
+  assert.equal(intake.status, 200);
+
+  mockAssistantContent = "وقائع مكتملة: عقد تجاري، إخلال مزعوم، والمطلوب تحديد المسار النظامي. [[RABAB_ATTACHMENT_INTAKE:READY]]";
+  tavilyMode = "bad-request";
+  tavilyRequestCount = 0;
+  const failedVerification = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
+    token,
+    body: { message: "تاريخ الإخلال هو 1 محرم 1447هـ وأطلب المسار النظامي." },
+  });
+  assert.equal(failedVerification.status, 503);
+  assert.equal(failedVerification.body.code, "LEGAL_VERIFICATION_UNAVAILABLE");
+  assert.equal(tavilyRequestCount, 1);
+
+  const { getTavilyStats } = await import("../lib/legal-search");
+  const tavilyStats = getTavilyStats();
+  assert.equal(tavilyStats.lastHttpStatus, 400);
+  assert.match(tavilyStats.lastErrorMessage ?? "", /Invalid test field/);
+  assert.doesNotMatch(tavilyStats.lastErrorMessage ?? "", /tvly-/);
+
+  const [sub] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, subscriptionId));
+  assert.equal(sub.consultationsUsed, 0, "failed final verification must not consume a quota unit");
+  const messages = await db.select().from(consultationMessagesTable)
+    .where(eq(consultationMessagesTable.consultationId, consultationId));
+  assert.equal(messages.filter((message) => message.role === "user").length, 1, "failed final request must be removed");
+});
+
 // ─── Test 4: Successful reply ─────────────────────────────────────────────────
 
 await test("Successful OpenAI reply → session committed (counted=true), user message kept", async () => {
@@ -352,6 +494,7 @@ await test("Successful OpenAI reply → session committed (counted=true), user m
   cleanupActions.push(() => teardown(userId, packageId));
 
   mockMode = "success";
+  mockAssistantContent = "هذا رد اختباري من OpenAI.";
 
   const res = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
     token,
@@ -390,6 +533,7 @@ for (const action of cleanupActions) {
 
 appServer.close();
 mockOpenAI.close();
+globalThis.fetch = nativeFetch;
 
 console.log(`\n${passed + failed} tests: ${passed} passed, ${failed} failed\n`);
 // Force-exit: pino worker threads keep the process alive otherwise.

@@ -15,12 +15,6 @@ interface L1Entry {
   results: LegalSearchResult[];
   expiresAt: number;
 }
-
-// ── L1: In-process cache (survives within the same worker) ───────────────────
-interface L1Entry {
-  results: LegalSearchResult[];
-  expiresAt: number;
-}
 const tavilyL1 = new Map<string, L1Entry>();
 
 // ── In-flight dedup map — prevents concurrent cold misses from each calling
@@ -206,15 +200,24 @@ export async function searchLegalSources(
 
   const promise = (async (): Promise<LegalSearchResult[]> => {
     try {
+      // Tavily's current REST API authenticates with an Authorization bearer
+      // header. The legacy `api_key` JSON field causes HTTP 400 on current
+      // accounts, even though the remaining payload is valid.
+      const requestedResults = Number.isInteger(maxResults)
+        ? Math.min(Math.max(maxResults, 1), 20)
+        : 4;
       const response = await fetch("https://api.tavily.com/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey.trim()}`,
+        },
         body: JSON.stringify({
-          api_key: apiKey,
           query: query,
           search_depth: "advanced",
           include_domains: LEGAL_DOMAINS,
-          max_results: maxResults,
+          include_domains_mode: "filter",
+          max_results: requestedResults,
           include_raw_content: false,
           include_answer: false,
           include_images: false,
@@ -223,15 +226,38 @@ export async function searchLegalSources(
       });
 
       if (!response.ok) {
+        // Tavily returns the validation reason in detail.error for HTTP 400.
+        // Record only that server-provided diagnostic, bounded and scrubbed;
+        // never log the authorization header, API key, full payload, or query.
+        const responseBody = await response.json().catch(() => null) as {
+          detail?: { error?: unknown } | unknown;
+          error?: unknown;
+        } | null;
+        const rawReason =
+          typeof responseBody?.detail === "object" && responseBody.detail !== null &&
+          "error" in responseBody.detail && typeof responseBody.detail.error === "string"
+            ? responseBody.detail.error
+            : typeof responseBody?.error === "string"
+              ? responseBody.error
+              : "No provider diagnostic returned";
+        const safeReason = rawReason
+          .replace(/[\r\n\t]/g, " ")
+          .replace(/(?:tvly|sk)-[A-Za-z0-9_\-]+/g, "[redacted]")
+          .slice(0, 320);
         // Record structured stats so monitoring endpoints can surface this
         tavilyStats.httpErrorCount += 1;
         tavilyStats.lastErrorAt = new Date().toISOString();
         tavilyStats.lastHttpStatus = response.status;
-        tavilyStats.lastErrorMessage = `HTTP ${response.status}`;
+        tavilyStats.lastErrorMessage = `HTTP ${response.status}: ${safeReason}`;
+        console.warn(JSON.stringify({
+          msg: "Tavily request rejected",
+          tavilyStatus: response.status,
+          tavilyReason: safeReason,
+        }));
         // Throw so callers know this was an API-level failure (not "zero results")
         throw Object.assign(
           new Error(`Tavily HTTP error ${response.status}`),
-          { tavilyStatus: response.status },
+          { tavilyStatus: response.status, tavilyReason: safeReason },
         );
       }
 
