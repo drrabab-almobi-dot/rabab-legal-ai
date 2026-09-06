@@ -9,6 +9,7 @@ This identity is intentionally limited to the public domain landing page at `/` 
 | Use | Asset | Notes |
 |---|---|---|
 | Public domain header and footer | `src/assets/brand/domain-rabab-legal-ai-mark.webp` | Cropped R mark from the latest approved RABAB LEGAL AI artwork. |
+| Public domain Hero | `src/assets/rabab-legal-ai-hero.webp` | Approved square RABAB LEGAL AI artwork shown in the existing Hero image slot on `/`. |
 | Google Search and browser identity | `public/favicon-48.png`, `public/favicon-192.png`, `public/favicon-512.png` | Square PNG icons generated from the approved artwork. |
 | iOS/browser shortcut | `public/apple-touch-icon.png` | 180×180 PNG generated from the approved artwork. |
 

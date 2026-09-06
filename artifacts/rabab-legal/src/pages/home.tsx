@@ -4,7 +4,7 @@ import { Link } from 'wouter';
 import { Button } from '@/components/ui';
 import { Scale, CheckCircle2, ChevronDown, ChevronUp, MessageSquare, Shield, Clock, Phone, FileText, FileSignature, Handshake, Building, Gavel, Lightbulb, Briefcase, Landmark, Search, Loader2, Lock, PenLine, FileSearch, Bot, ArrowLeft, BookOpen, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import launchHeroImg from '@/assets/launch-hero.jpg';
+import launchHeroImg from '@/assets/rabab-legal-ai-hero.webp';
 import lawyerHeroImg from '@/assets/lawyer-hero.png';
 import domainBrandMark from '@/assets/brand/domain-rabab-legal-ai-mark.webp';
 import { buildWhatsAppContactLink } from '@/lib/whatsapp-contact';
@@ -346,7 +346,7 @@ export default function Home() {
             </motion.div>
             <motion.figure initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: 'easeOut' }} className="mx-auto w-full max-w-md lg:max-w-none">
               <div className="border border-white/20 bg-white/[0.03] p-3 sm:p-4">
-                <img src={launchHeroImg} alt={t('RABAB LEGAL AI — الإطلاق التجريبي', 'RABAB LEGAL AI — Launch Preview')} className="aspect-square w-full object-cover" />
+                <img src={launchHeroImg} alt={t('شركة رباب أحمد المعبي للمحاماة والاستشارات القانونية', 'Rabab Ahmed Almoaibi Law Firm and Legal Consultations')} className="aspect-square w-full object-cover" />
               </div>
               <figcaption className="domain-wordmark-rule mt-5 text-xs leading-6 text-white/60">
                 {t('ذكاء قانوني دقيق وموثوق، مهيأ لعرض التحليل والمصدر والخطوة التالية بوضوح.', 'Precise, trusted legal intelligence designed around analysis, source, and next step.')}
