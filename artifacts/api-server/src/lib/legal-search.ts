@@ -7,6 +7,7 @@
 import { createHash } from "crypto";
 import { db, tavilyCacheTable } from "@workspace/db";
 import { eq, lt } from "drizzle-orm";
+import { isOfficialLegalUrl } from "./legal-source-trust";
 
 // ── Cache config ─────────────────────────────────────────────────────────────
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
@@ -116,6 +117,7 @@ export interface LegalSearchResult {
   url: string;
   content: string;
   score: number;
+  official: boolean;
 }
 
 /**
@@ -239,6 +241,7 @@ export async function searchLegalSources(
           url: r.url ?? "",
           content: (r.content ?? "").slice(0, 600), // cap per result
           score: r.score ?? 0,
+          official: isOfficialLegalUrl(r.url),
         }));
 
       const expiresAt = new Date(Date.now() + CACHE_TTL_MS);
@@ -294,14 +297,15 @@ export function formatSearchContext(results: LegalSearchResult[]): string {
   const blocks = results
     .map(
       (r, i) =>
-        `[مصدر رسمي ${i + 1}: ${r.title}]\n` +
+        `[${r.official || isOfficialLegalUrl(r.url) ? "مصدر رسمي" : "مصدر قانوني ثانوي"} ${i + 1}: ${r.title}]\n` +
         `الرابط: ${r.url}\n` +
         `${r.content}`
     )
     .join("\n\n---\n\n");
 
   return (
-    `فيما يلي نتائج بحث فوري في المصادر القانونية الرسمية السعودية والخليجية — ` +
+    `فيما يلي نتائج بحث فوري في مصادر قانونية. لا يُعامل المصدر على أنه رسمي ` +
+    `إلا إذا كان رابطه تابعاً لجهة حكومية معتمدة — ` +
     `استخدمها لتأكيد المواد النظامية وتحديث إجابتك بأحدث المراجع:\n\n` +
     blocks
   );
