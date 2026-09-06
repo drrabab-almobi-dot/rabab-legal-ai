@@ -10,7 +10,18 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/api/index.mjs"
+      "destination": "https://rabab-legal-ai-api.vercel.app/api/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
+        }
+      ]
     }
   ]
 }

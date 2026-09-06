@@ -11,8 +11,13 @@ const apiConfig = await readJson("../artifacts/api-server/vercel.json");
 assert.equal(rootConfig.installCommand, "pnpm install --frozen-lockfile --prod=false");
 assert.equal(rootConfig.outputDirectory, "artifacts/rabab-legal/dist/public");
 assert(rootConfig.rewrites?.some(
-  (rewrite) => rewrite.source === "/api/:path*" && rewrite.destination === "/api/index.mjs",
-), "root Vercel config must rewrite all /api/* requests to api/index.mjs");
+  (rewrite) => rewrite.source === "/api/:path*" && rewrite.destination === "https://rabab-legal-ai-api.vercel.app/api/:path*",
+), "root Vercel config must proxy all /api/* requests to the dedicated API project");
+assert(rootConfig.headers?.some(
+  (header) => header.source === "/api/:path*" && header.headers?.some(
+    (entry) => entry.key === "x-vercel-enable-rewrite-caching" && entry.value === "0",
+  ),
+), "root Vercel config must disable proxy caching for API responses");
 assert.equal(
   rootConfig.functions?.["api/index.mjs"]?.includeFiles,
   "artifacts/api-server/prompts/**",
