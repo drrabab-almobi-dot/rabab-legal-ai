@@ -1,65 +1,65 @@
 import { Route, Switch, Router as WouterRouter, useLocation, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ArrowRight } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/hooks/use-auth';
 import { LangProvider, useLang } from '@/hooks/use-language';
 import { ThemeProvider } from '@/hooks/use-theme';
 import { ProtectedRoute, GuestOnlyRoute } from '@/components/protected-route';
-
-// Pages
-import Home from '@/pages/home';
-import Pricing from '@/pages/pricing';
-import Login from '@/pages/login';
-import Register from '@/pages/register';
-import Dashboard from '@/pages/dashboard';
-import Consultation from '@/pages/consultation';
-import PaymentFlow from '@/pages/payment';
-import PaymentCallback from '@/pages/payment-callback';
-import { PaymentSuccess, PaymentFailed } from '@/pages/payment-status';
-import InvoiceDetail from '@/pages/invoice';
-import Contact from '@/pages/contact';
-import About from '@/pages/about';
-import FAQ from '@/pages/faq';
-import Appointment from '@/pages/appointment';
-import Privacy from '@/pages/privacy';
-import Terms from '@/pages/terms';
-
-// Admin Pages
-import AdminDashboard from '@/pages/admin/dashboard';
-import AdminUsers from '@/pages/admin/users';
-import AdminKnowledgeBase from '@/pages/admin/knowledge-base';
-import AdminPackages from '@/pages/admin/packages';
-import AdminCoupons from '@/pages/admin/coupons';
-import AdminPayments from '@/pages/admin/payments';
-import AdminConsultations from '@/pages/admin/consultations';
-import AdminAuditLog from '@/pages/admin/audit-log';
-import AdminNotifications from '@/pages/admin/notifications';
-// [DISABLED Aug-2026] import AdminTelegramSync from '@/pages/admin/telegram-sync';
-import AdminMojContent from '@/pages/admin/moj-content';
-import AdminKnowledgeQuality from '@/pages/admin/knowledge-quality';
-import AdminSectionControl from '@/pages/admin/section-control';
-import AdminConversionReport from '@/pages/admin/conversion-report';
-import AdminSourceStatus from '@/pages/admin/source-status';
-import AdminEmailSettings from '@/pages/admin/email-settings';
-import AdminContactMessages from '@/pages/admin/contact-messages';
-import AdminLegalCodex from '@/pages/admin/legal-codex';
-import AdminWhatsAppSettings from '@/pages/admin/whatsapp-settings';
-import KnowledgeSearch from '@/pages/knowledge-search';
-import LegalSearchPage from '@/pages/legal-search';
-import AdminInitiatives from '@/pages/admin/initiatives';
-import { DevPanel } from '@/components/dev-panel';
-import ContractsPage from '@/pages/contracts';
-import LegalAssistant from '@/pages/legal-assistant';
-import ServiceDetails from '@/pages/service-details';
-import ForgotPassword from '@/pages/forgot-password';
-import ResetPassword from '@/pages/reset-password';
-import UsageLogPage from '@/pages/usage-log';
-import OrganizationPage from '@/pages/organization';
-import { UsageCounter } from '@/components/UsageCounter';
 import { QuotaConfirmProvider } from '@/components/QuotaConfirmModal';
+
+// Route-level loading keeps administration, document tools, and PDF libraries out
+// of the critical homepage bundle. Each route remains functionally identical.
+const Home = lazy(() => import('@/pages/home'));
+const Pricing = lazy(() => import('@/pages/pricing'));
+const Login = lazy(() => import('@/pages/login'));
+const Register = lazy(() => import('@/pages/register'));
+const Dashboard = lazy(() => import('@/pages/dashboard'));
+const Consultation = lazy(() => import('@/pages/consultation'));
+const PaymentFlow = lazy(() => import('@/pages/payment'));
+const PaymentCallback = lazy(() => import('@/pages/payment-callback'));
+const PaymentSuccess = lazy(async () => ({ default: (await import('@/pages/payment-status')).PaymentSuccess }));
+const PaymentFailed = lazy(async () => ({ default: (await import('@/pages/payment-status')).PaymentFailed }));
+const InvoiceDetail = lazy(() => import('@/pages/invoice'));
+const Contact = lazy(() => import('@/pages/contact'));
+const About = lazy(() => import('@/pages/about'));
+const FAQ = lazy(() => import('@/pages/faq'));
+const Appointment = lazy(() => import('@/pages/appointment'));
+const Privacy = lazy(() => import('@/pages/privacy'));
+const Terms = lazy(() => import('@/pages/terms'));
+const ForgotPassword = lazy(() => import('@/pages/forgot-password'));
+const ResetPassword = lazy(() => import('@/pages/reset-password'));
+const KnowledgeSearch = lazy(() => import('@/pages/knowledge-search'));
+const LegalSearchPage = lazy(() => import('@/pages/legal-search'));
+const ContractsPage = lazy(() => import('@/pages/contracts'));
+const LegalAssistant = lazy(() => import('@/pages/legal-assistant'));
+const ServiceDetails = lazy(() => import('@/pages/service-details'));
+const UsageLogPage = lazy(() => import('@/pages/usage-log'));
+const OrganizationPage = lazy(() => import('@/pages/organization'));
+const DevPanel = lazy(async () => ({ default: (await import('@/components/dev-panel')).DevPanel }));
+const UsageCounter = lazy(async () => ({ default: (await import('@/components/UsageCounter')).UsageCounter }));
+
+const AdminDashboard = lazy(() => import('@/pages/admin/dashboard'));
+const AdminUsers = lazy(() => import('@/pages/admin/users'));
+const AdminKnowledgeBase = lazy(() => import('@/pages/admin/knowledge-base'));
+const AdminPackages = lazy(() => import('@/pages/admin/packages'));
+const AdminCoupons = lazy(() => import('@/pages/admin/coupons'));
+const AdminPayments = lazy(() => import('@/pages/admin/payments'));
+const AdminConsultations = lazy(() => import('@/pages/admin/consultations'));
+const AdminAuditLog = lazy(() => import('@/pages/admin/audit-log'));
+const AdminNotifications = lazy(() => import('@/pages/admin/notifications'));
+const AdminMojContent = lazy(() => import('@/pages/admin/moj-content'));
+const AdminKnowledgeQuality = lazy(() => import('@/pages/admin/knowledge-quality'));
+const AdminSectionControl = lazy(() => import('@/pages/admin/section-control'));
+const AdminConversionReport = lazy(() => import('@/pages/admin/conversion-report'));
+const AdminSourceStatus = lazy(() => import('@/pages/admin/source-status'));
+const AdminEmailSettings = lazy(() => import('@/pages/admin/email-settings'));
+const AdminContactMessages = lazy(() => import('@/pages/admin/contact-messages'));
+const AdminLegalCodex = lazy(() => import('@/pages/admin/legal-codex'));
+const AdminWhatsAppSettings = lazy(() => import('@/pages/admin/whatsapp-settings'));
+const AdminInitiatives = lazy(() => import('@/pages/admin/initiatives'));
 
 const queryClient = new QueryClient();
 
@@ -417,12 +417,22 @@ function AppContent() {
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <TooltipProvider>
-        <Router />
+        <Suspense
+          fallback={
+            <main className="flex min-h-screen items-center justify-center bg-background px-4" role="status" aria-live="polite">
+              <p className="text-sm text-muted-foreground">جارٍ تحميل الصفحة…</p>
+            </main>
+          }
+        >
+          <Router />
+        </Suspense>
         <BackButton />
         <WhatsAppButton />
         <Toaster />
-        <DevPanel />
-        <UsageCounter />
+        <Suspense fallback={null}>
+          <DevPanel />
+          <UsageCounter />
+        </Suspense>
       </TooltipProvider>
     </div>
   );
