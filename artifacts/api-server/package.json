@@ -16,6 +16,8 @@
     "test:quota": "node ./test-build.mjs src/lib/quota.test.ts",
     "test:auth-middleware": "node ./test-build.mjs src/middlewares/auth.test.ts",
     "test:origin-policy": "node ./test-build.mjs src/lib/origin-policy.test.ts",
+    "test:owner-access": "node ./test-build.mjs src/lib/owner-test-access.test.ts",
+    "test:owner-access-integration": "node ./test-build.mjs src/lib/owner-test-access.integration.test.ts",
     "test:citation-cleanup": "node ./test-build.mjs src/lib/citation-cleanup.test.ts",
     "test:chat": "node ./test-build.mjs src/routes/chat.test.ts"
   },

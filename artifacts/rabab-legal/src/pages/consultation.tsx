@@ -1958,6 +1958,7 @@ function ChatScreen({
         return [...cleared, {
           role: 'assistant' as const,
           content: data.reply,
+          error: data.isError === true,
           messageId: data.messageId ?? undefined,
           verification: data.verification ?? undefined,
           usedLiveSearch: data.usedLiveSearch ?? false,
