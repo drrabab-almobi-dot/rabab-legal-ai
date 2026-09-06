@@ -179,7 +179,7 @@ function logJob(job: BulkJob, msg: string) {
 }
 
 
-const SUPPORTED_EXT = /\.(pdf|docx?|pptx?|xlsx?|txt|rtf|csv)$/i
+const SUPPORTED_EXT = /\.(pdf|docx?|pptx?|txt|rtf|csv)$/i
 ;
 
 
@@ -241,7 +241,7 @@ const upload = multer( {
     if (SUPPORTED_EXT.test(file.originalname)) cb(null, true)
 ;
 
-    else cb(new Error("نوع الملف غير مدعوم — المدعوم: PDF، Word، PowerPoint، Excel، TXT"))
+    else cb(new Error("نوع الملف غير مدعوم — المدعوم: PDF، Word، PowerPoint، TXT، RTF، CSV"))
 ;
 
   
