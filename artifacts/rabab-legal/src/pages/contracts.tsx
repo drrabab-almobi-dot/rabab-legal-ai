@@ -48,6 +48,34 @@ interface ContractTypeInfo {
 }
 
 type Tab = 'draft' | 'analyze' | 'extract';
+type ReviewModeKey = 'review' | 'enforce' | 'final';
+
+interface ContractRouteState {
+  activeTab: Tab;
+  analysisMode: ReviewModeKey;
+}
+
+/**
+ * روابط كتالوج الخدمات تستخدم ?tab=. يجب أن يفتح رابط المخاطر وضع
+ * المخاطر فعلاً، بينما يفتح رابط المراجعة وضع المراجعة الشاملة.
+ */
+function getInitialContractRouteState(search: string): ContractRouteState {
+  const requestedTab = new URLSearchParams(search).get('tab');
+
+  if (requestedTab === 'extract') {
+    return { activeTab: 'extract', analysisMode: 'enforce' };
+  }
+
+  if (requestedTab === 'review') {
+    return { activeTab: 'analyze', analysisMode: 'review' };
+  }
+
+  if (requestedTab === 'analyze') {
+    return { activeTab: 'analyze', analysisMode: 'enforce' };
+  }
+
+  return { activeTab: 'draft', analysisMode: 'enforce' };
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function copyText(text: string) {
@@ -77,14 +105,11 @@ export default function ContractsPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // قراءة tab من URL params عند أول تحميل (من روابط الخدمات)
-  const [activeTab, setActiveTab] = useState<Tab>(() => {
-    const p = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-    const t = p.get('tab');
-    if (t === 'analyze' || t === 'review') return 'analyze';
-    if (t === 'extract') return 'extract';
-    return 'draft';
-  });
+  // تثبيت حالة الرابط عند أول تحميل حتى لا تغيّر إعادة العرض اختيار المستفيد.
+  const initialRouteState = useRef<ContractRouteState>(
+    getInitialContractRouteState(typeof window !== 'undefined' ? window.location.search : ''),
+  );
+  const [activeTab, setActiveTab] = useState<Tab>(initialRouteState.current.activeTab);
   const { shouldShowPaywall, quota } = usePaywall();
 
   // Access: authenticated + has remaining quota (trial or paid)
@@ -154,7 +179,7 @@ export default function ContractsPage() {
       <div className="min-w-0 flex-1">
         <AnimatePresence mode="wait">
           {activeTab === 'draft'   && <DraftTab   key="draft"   hasAccess={hasAccess} toast={toast} />}
-          {activeTab === 'analyze' && <AnalyzeTab key="analyze" hasAccess={hasAccess} toast={toast} />}
+          {activeTab === 'analyze' && <AnalyzeTab key="analyze" hasAccess={hasAccess} toast={toast} initialMode={initialRouteState.current.analysisMode} />}
           {activeTab === 'extract' && <ExtractTab key="extract" hasAccess={hasAccess} toast={toast} />}
         </AnimatePresence>
       </div>
@@ -1006,7 +1031,6 @@ const REVIEW_MODES = [
     doneMsg: 'اكتملت المراجعة النهائية',
   },
 ] as const;
-type ReviewModeKey = typeof REVIEW_MODES[number]['key'];
 
 // ─── Scale icon for enforce mode ──────────────────────────────────────────────
 function Scale({ className }: { className?: string }) {
@@ -1134,10 +1158,10 @@ function FeedbackChat({ contractText, mode, priorResult, toast }: FeedbackChatPr
 }
 
 // ─── Tab 2: Analyze ───────────────────────────────────────────────────────────
-function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
+function AnalyzeTab({ hasAccess, toast, initialMode }: { hasAccess: boolean; toast: any; initialMode: ReviewModeKey }) {
   const { lang, t } = useLang();
   const [file, setFile] = useState<File | null>(null);
-  const [mode, setMode] = useState<ReviewModeKey>('review');
+  const [mode, setMode] = useState<ReviewModeKey>(initialMode);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [contractText, setContractText] = useState('');

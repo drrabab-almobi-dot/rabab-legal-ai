@@ -9,6 +9,7 @@ import { Router } from "express";
 import OpenAI from "openai";
 import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
+import { getTopicRoutingServices } from "../lib/service-registry";
 
 const router = Router();
 
@@ -18,21 +19,12 @@ function getOpenAIClient(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
-const SERVICES = [
-  { id: "consultation",  label: "استشارة قانونية عامة",        branches: [] },
-  { id: "judicial",      label: "استشارة قضائية",               branches: ["مذكرة دفاع", "مذكرة اعتراض", "جلسة استماع", "طعن", "تنفيذ"] },
-  { id: "pleadings",     label: "تحرير مذكرات قانونية",         branches: ["مذكرة دفاع", "مذكرة اعتراض", "مذكرة ابتدائية", "مذكرة استئناف", "مذكرة طعن"] },
-  { id: "contracts",     label: "صياغة ومراجعة العقود",         branches: ["صياغة عقد", "مراجعة عقد", "تحليل عقد", "استخراج بنود"] },
-  { id: "research",      label: "الباحثة الذكية القانونية",     branches: ["بحث تشريعي", "بحث قضائي", "بحث تنظيمي"] },
-] as const;
-
-const FIELDS_BY_SERVICE: Record<string, string[]> = {
-  consultation:  ["الموضوع", "الدولة والولاية القضائية", "صفة المستفيد", "التواريخ المؤثرة", "وجود مستندات"],
-  judicial:      ["نوع المذكرة", "المسار القضائي", "صفة الموكل", "الخصم", "الوقائع", "المستندات", "تاريخ التبليغ"],
-  pleadings:     ["نوع المذكرة", "المسار القضائي", "صفة الموكل", "الخصم", "الوقائع", "المستندات", "تاريخ التبليغ"],
-  contracts:     ["نوع العقد", "الأطراف وصفاتهم", "محل العقد", "القيمة", "المدة", "الولاية القضائية"],
-  research:      ["موضوع البحث", "الفرع القانوني"],
-};
+// الخدمات القابلة للتوجيه تُستمد من السجل المركزي. الخدمات المخططة، مثل
+// توزيع الميراث، لا تدخل هذا المسار قبل اكتمال معالجها وضوابطها واعتمادها.
+const SERVICES = getTopicRoutingServices();
+const FIELDS_BY_SERVICE: Record<string, readonly string[]> = Object.fromEntries(
+  SERVICES.map((service) => [service.id, service.topicRouting.intakeFields]),
+);
 
 // ── POST /api/topic/route ─────────────────────────────────────────────────────
 router.post("/topic/route", requireAuth, async (req, res): Promise<void> => {
@@ -46,7 +38,7 @@ router.post("/topic/route", requireAuth, async (req, res): Promise<void> => {
   const systemPrompt = `أنت مساعد توجيه قانوني. مهمتك تحديد الخدمة القانونية الأنسب لوصف المستخدم، وإعادة صياغة الموضوع بلغة قانونية موجزة، واستخراج المعطيات المتاحة.
 
 الخدمات المتاحة:
-${SERVICES.map(s => `- ${s.id}: ${s.label}`).join("\n")}
+  ${SERVICES.map(s => `- ${s.id}: ${s.labelAr} (${s.topicRouting.branches.join("، ") || "مسار عام"})`).join("\n")}
 
 أجب بـ JSON صارم بهذا الشكل:
 {

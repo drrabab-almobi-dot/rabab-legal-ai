@@ -29,6 +29,8 @@ tags:
     description: FAQ management
   - name: service-areas
     description: Service areas
+  - name: service-modules
+    description: Extensible service module catalog
 paths:
   /healthz:
     get:
@@ -461,6 +463,22 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ServiceArea"
+
+  # ─── SERVICE MODULES ───────────────────────────────────────────────────────
+  /service-modules:
+    get:
+      operationId: listServiceModules
+      tags: [service-modules]
+      summary: List service modules and their safe availability state
+      responses:
+        "200":
+          description: Public service module catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceModule"
 
   # ─── ADMIN ─────────────────────────────────────────────────────────────────
   /admin/stats:
@@ -1340,6 +1358,46 @@ components:
           type: string
         sortOrder:
           type: integer
+
+    # ─── SERVICE MODULE ─────────────────────────────────────────────────────
+    ServiceModule:
+      type: object
+      required: [id, labelAr, descriptionAr, status, requiresDedicatedWorkflow, supervision, capabilities, available]
+      properties:
+        id:
+          type: string
+        labelAr:
+          type: string
+        descriptionAr:
+          type: string
+        status:
+          type: string
+          enum: [active, planned, retired]
+        requiresDedicatedWorkflow:
+          type: boolean
+        available:
+          type: boolean
+          description: True only when the service may be entered by a beneficiary.
+        supervision:
+          type: object
+          required: [required, supervisor, humanConfirmationAvailable]
+          properties:
+            required:
+              type: boolean
+            supervisor:
+              type: string
+            humanConfirmationAvailable:
+              type: boolean
+        capabilities:
+          type: object
+          required: [acceptsBeneficiaryFiles, wordExport, humanConfirmation]
+          properties:
+            acceptsBeneficiaryFiles:
+              type: boolean
+            wordExport:
+              type: boolean
+            humanConfirmation:
+              type: boolean
 
     # ─── ADMIN STATS ──────────────────────────────────────────────────────
     AdminStats:

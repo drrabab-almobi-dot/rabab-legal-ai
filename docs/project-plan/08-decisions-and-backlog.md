@@ -12,6 +12,11 @@
 | الزائر يتصفح، وتسجيل الدخول مطلوب عند بدء الخدمة المحمية. | Visitors browse freely; sign-in is required when a protected action begins. |
 | الصلاحيات والحصص على الخادم. | Authorization and quotas are server-side. |
 | لا نشر قبل الموافقة الصريحة. | No production release before explicit approval. |
+| جميع خدمات المنصة، لا الباحثة الذكية وحدها، تعمل تحت إشراف المحامية والمحكّم التجاري د. رباب أحمد المعبي. | Every platform service, not only the smart researcher, operates under the supervision of lawyer and commercial arbitrator Dr. Rabab Ahmed Almoaibi. |
+| السرية التامة للوقائع والملفات والمخرجات شرط تصميمي وتشغيلي؛ لا تستخدم البيانات للتدريب أو التسويق. | Strict confidentiality for facts, files, and outputs is a product and operations requirement; data is never used for training or marketing. |
+| يحق للمستفيد طلب تأكيد المحامية من أي خدمة، ولا تشارك للمراجعة إلا الحزمة التي اختارها صراحة. | A beneficiary may request lawyer confirmation from any service; only the explicitly selected case package is shared for review. |
+| كل خدمة نشطة تدعم رفع المستفيد للملفات ذات الصلة وتسليم Word ضمن الصيغ والحدود والصلاحيات المعتمدة. | Every active service supports beneficiary uploads and Word delivery within approved formats, limits, and entitlements. |
+| الخدمات الجديدة تضاف كوحدات مستقلة بحالة مخططة، ومنها توزيع الميراث؛ ولا تفعل قبل اكتمال واعتماد نطاقها وملفاتها ومصادرها ومخرجاتها واختباراتها. | Future services are independent planned modules, including inheritance distribution; they remain unavailable until scope, files, sources, outputs, and tests are complete and approved. |
 
 ## الأعمال ذات الأولوية | Priority work
 
@@ -25,6 +30,8 @@
 6. تغطية اختبارات المصادقة والحصص والدفع والتذكيرات.
 7. استكمال توحيد عقود API للجوال.
 8. تنفيذ مسارات الجوال الأساسية بعد بوابة الويب.
+9. توحيد طبقة المرفقات وإتاحة Word وطلب تأكيد المحامية في جميع الخدمات النشطة.
+10. إكمال نموذج وحدات الخدمة قبل بدء تنفيذ توزيع الميراث أو أي خدمة مستقبلية.
 
 ### English
 
@@ -36,6 +43,8 @@
 6. Expand auth, quota, billing, and reminder coverage.
 7. Finalize shared mobile API contracts.
 8. Implement core mobile flows after the web quality gate.
+9. Unify attachments, Word delivery, and lawyer-confirmation requests across active services.
+10. Complete the service-module model before implementing inheritance distribution or another future service.
 
 ## قائمة منع التوسع | Scope guard
 

@@ -24,7 +24,11 @@ const SERVICE_LABELS: Record<string, string> = {
   pleadings: 'تحرير المذكرات',
   contracts: 'صياغة ومراجعة العقود',
   intellectual_property: 'الملكية الفكرية',
+  'intellectual-property': 'خدمات الملكية الفكرية',
   corporate_governance_compliance: 'حوكمة وامتثال الشركات',
+  'corporate-governance-compliance': 'حوكمة وامتثال الشركات',
+  'commercial-arbitration': 'التحكيم التجاري والوساطة',
+  conciliation: 'الصلح والتراضي',
   research: 'الباحثة الذكية',
 };
 const SERVICE_LABELS_EN: Record<string, string> = {
@@ -34,7 +38,11 @@ const SERVICE_LABELS_EN: Record<string, string> = {
   pleadings: 'Pleadings',
   contracts: 'Contracts',
   intellectual_property: 'Intellectual Property',
+  'intellectual-property': 'Intellectual Property Services',
   corporate_governance_compliance: 'Corporate Governance & Compliance',
+  'corporate-governance-compliance': 'Corporate Governance & Compliance',
+  'commercial-arbitration': 'Commercial Arbitration & Mediation',
+  conciliation: 'Conciliation & Settlement',
   research: 'Smart Researcher',
 };
 
@@ -269,6 +277,10 @@ export default function LegalAssistant() {
       judicial:     `/consultation?type=judicial&${params}`,
       pleadings:    `/legal-assistant?service=pleadings&${params}`,
       contracts:    `/contracts?tab=draft&${params}`,
+      'intellectual-property': `/consultation?type=legal_opinion&service=intellectual-property&${params}`,
+      'corporate-governance-compliance': `/consultation?type=legal_opinion&service=corporate-governance-compliance&${params}`,
+      'commercial-arbitration': `/consultation?type=arbitration&${params}`,
+      conciliation: `/consultation?type=settlement&${params}`,
       research:     `/legal-search?${params}`,
     };
     window.location.href = urls[service] ?? `/consultation?${params}`;

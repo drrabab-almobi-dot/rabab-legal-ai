@@ -8,11 +8,11 @@
 
 ### العربية
 
-RABAB LEGAL AI هي منصة قانونية عربية تساعد الأفراد والأعمال والمحامين على فهم المسائل القانونية، البحث في المصادر، إعداد المسودات، وتحليل العقود والمستندات. المنصة لا تستبدل المحامي ولا تضمن نتيجة؛ كل مخرج مساعد يحتاج إلى مراجعة مهنية عند اللزوم.
+RABAB LEGAL AI هي منصة قانونية عربية تساعد الأفراد والأعمال والمحامين على فهم المسائل القانونية، البحث في المصادر، إعداد المسودات، وتحليل العقود والمستندات. تعمل جميع خدماتها ضمن الإطار المهني وتحت إشراف المحامية والمحكّم التجاري د. رباب أحمد المعبي، مع سرية تامة للوقائع والملفات والمخرجات. المنصة لا تستبدل المحامي ولا تضمن نتيجة؛ ويمكن للمستفيد طلب تأكيد المحامية عندما تستلزم حالته مراجعة مهنية مباشرة.
 
 ### English
 
-RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, and legal professionals understand legal issues, search trusted sources, prepare drafts, and analyze contracts and documents. It does not replace a lawyer or guarantee an outcome; assisted outputs require professional review when appropriate.
+RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, and legal professionals understand legal issues, search trusted sources, prepare drafts, and analyze contracts and documents. Every service operates within a professional framework under the supervision of lawyer and commercial arbitrator Dr. Rabab Ahmed Almoaibi, with strict confidentiality for facts, files, and outputs. The platform does not replace a lawyer or guarantee an outcome; a beneficiary may request the lawyer's confirmation when direct professional review is needed.
 
 ## 2. Product scope | نطاق المنتج
 
@@ -26,6 +26,7 @@ RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, a
 - الحسابات والباقات والحصص والدفع والفواتير.
 - لوحة إدارة المصادر والمستخدمين والجودة.
 - تطبيق جوال للمستخدم النهائي مرتبط بنفس الحساب والـ API.
+- بنية وحدات خدمات قابلة للتوسع، تسمح بإضافة خدمات قانونية مستقلة مستقبلاً بعد اعتمادها، ومنها خدمة توزيع الميراث.
 
 ### English
 
@@ -37,6 +38,7 @@ RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, a
 - Accounts, plans, quotas, payments, and invoices.
 - Admin tools for sources, users, and quality.
 - An end-user mobile app using the same account and API.
+- An extensible service-module architecture for adding approved future legal services, including inheritance distribution.
 
 ## 3. Platforms | المنصات
 
@@ -56,20 +58,22 @@ RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, a
 1. زائر يتصفح الخدمات بدون تسجيل دخول.
 2. يحدد الخدمة والدولة والاختصاص.
 3. يسجل الدخول عند بدء خدمة محمية ويعود إلى المسار نفسه.
-4. يرسل الوقائع أو المستند.
+4. يرسل الوقائع أو يرفع المستندات ذات الصلة في أي خدمة متاحة، ضمن الضوابط الفنية وصلاحيات حسابه.
 5. يحصل على تحليل واضح بمراجع قابلة للتحقق.
-6. يحفظ النتيجة أو يصدرها حسب الباقة.
-7. يعود لاحقاً من الويب أو الجوال إلى السجل نفسه.
+6. يحفظ النتيجة أو يستلمها بصيغة Word أو PDF حسب الباقة.
+7. يطلب، عند الحاجة، تأكيد المحامية د. رباب المعبي؛ ولا يشارك للمراجعة إلا ملخص الحالة ومرفقاتها التي اختارها للطلب.
+8. يعود لاحقاً من الويب أو الجوال إلى السجل نفسه.
 
 ### English
 
 1. A visitor browses public service descriptions.
 2. The user selects a service, country, and jurisdiction.
 3. Protected actions require sign-in and preserve the return path.
-4. The user submits facts or a document.
+4. The user submits facts or uploads relevant documents in any available service, subject to technical limits and account permissions.
 5. The platform returns a clear analysis with verifiable references.
-6. The user saves or exports the result according to plan permissions.
-7. The same history is available later on web or mobile.
+6. The user saves the result or receives it as a Word or PDF file according to plan permissions.
+7. When needed, the user requests confirmation from Dr. Rabab Almoaibi; only the case summary and attachments selected for that request are shared for review.
+8. The same history is available later on web or mobile.
 
 ## 5. Delivery roadmap | خارطة التنفيذ
 
@@ -97,6 +101,7 @@ RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, a
 - الذكاء الاصطناعي: نماذج اقتصادية للفرز والتلخيص، ونماذج أقوى للتحليل المهم.
 - البحث: استرجاع حرفي ودلالي وإعادة ترتيب والتحقق البرمجي.
 - مشاركة الويب والجوال: API واحد، عقود واضحة، وعدم وضع مفاتيح مزودين داخل الجوال.
+- وحدات الخدمة: سجل خادمي مركزي للحالة والقدرات، بحيث لا تدخل خدمة مخططة إلى التوجيه أو التحصيل أو واجهة الاستخدام قبل اكتمال معالجها واختبارها واعتمادها.
 
 ### English
 
@@ -108,6 +113,7 @@ RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, a
 - AI: economical models for triage/summaries and stronger models for important analysis.
 - Search: literal and semantic retrieval, reranking, and programmatic verification.
 - Web/mobile sharing: one API, explicit contracts, and no provider keys in the app.
+- Service modules: a central server registry for lifecycle and capabilities, ensuring a planned service cannot enter routing, billing, or user journeys until its handler, tests, and approval are complete.
 
 ## 7. Trust and compliance | الثقة والامتثال
 
@@ -119,6 +125,9 @@ RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, a
 - عدم استخدام بيانات العملاء لتدريب النماذج.
 - عزل بيانات المستخدمين والقضايا.
 - روابط ملفات آمنة ومؤقتة وسجل عمليات.
+- روابط ملفات آمنة ومؤقتة وسجل عمليات.
+- جميع الخدمات تحت إشراف د. رباب أحمد المعبي، وطلب تأكيد المحامية يخضع لموافقة صريحة من المستفيد وسجل مراجعة محدود بالضرورة.
+- سرية تامة للملفات والمخرجات؛ لا تستخدم للتدريب أو التسويق، ولا تظهر إلا لصاحب الصلاحية أو ضمن طلب المراجعة الذي بدأه المستفيد.
 - إخلاء مسؤولية ثابت ومراجعة بشرية عند الحاجة.
 
 ### English
@@ -129,6 +138,8 @@ RABAB LEGAL AI is an Arabic legal platform that helps individuals, businesses, a
 - Customer documents are not used to train models.
 - User and case data are isolated.
 - Secure temporary file links and audit trails.
+- Every service is supervised by Dr. Rabab Ahmed Almoaibi. A lawyer-confirmation request requires the beneficiary's explicit action and creates a necessity-limited audit trail.
+- Strict confidentiality for files and outputs; they are not used for model training or marketing and are accessible only to authorized owners or through a beneficiary-initiated review request.
 - A fixed disclaimer and human review when needed.
 
 ## 8. Definition of done | تعريف الإنجاز
