@@ -50,10 +50,19 @@ const allowedOrigins = new Set(
     .filter(Boolean),
 );
 
+// The frontend is deployed independently, so Vercel generates a unique preview
+// domain for every branch. Restrict the dynamic allowance to this exact project
+// naming prefix and team suffix instead of accepting arbitrary *.vercel.app.
+const vercelFrontendPreviewOrigin = /^https:\/\/rabab-legal(?:-ai)?(?:-[a-z0-9-]+)?-drrabab-almobi-2417s-projects\.vercel\.app$/;
+
+function isAllowedOrigin(origin: string): boolean {
+  return allowedOrigins.has(origin) || vercelFrontendPreviewOrigin.test(origin);
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.has(origin)) {
+      if (!origin || isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
@@ -163,7 +172,7 @@ app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
     }
   })();
 
-  if (requestOrigin && allowedOrigins.has(requestOrigin)) {
+  if (requestOrigin && isAllowedOrigin(requestOrigin)) {
     next();
     return;
   }
