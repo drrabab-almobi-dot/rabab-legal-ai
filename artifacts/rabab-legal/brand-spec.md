@@ -1,28 +1,17 @@
-# RABAB LEGAL AI — Public Domain Brand Specification
+# RABAB LEGAL AI — Domain Identity and Home Hero Assets
 
 ## Scope
 
-This identity is intentionally limited to the public domain landing page at `/` and the domain-level favicon/structured metadata. It must not be imported into shared navigation, dashboards, consultation workflows, administration screens, or other internal platform pages.
+The public home page preserves its existing content, layout, navigation, calls to action, and second image. The only visual change to the home page is the **first Hero image**. Internal platform routes, dashboards, consultation workflows, and administration screens are outside this scope.
 
-## Approved asset
+## Approved assets
 
 | Use | Asset | Notes |
 |---|---|---|
-| Public domain header and footer | `src/assets/brand/domain-rabab-legal-ai-mark.webp` | Cropped R mark from the latest approved RABAB LEGAL AI artwork. |
-| Public domain Hero | `src/assets/rabab-legal-ai-hero.webp` | Approved square RABAB LEGAL AI artwork shown in the existing Hero image slot on `/`. |
-| Google Search and browser identity | `public/favicon-48.png`, `public/favicon-192.png`, `public/favicon-512.png` | Square PNG icons generated from the approved artwork. |
+| Public home Hero — first image only | `src/assets/rabab-legal-ai-hero.webp` | Latest approved square RABAB LEGAL AI artwork. Replaces only the previous `launch-hero.jpg` import in `home.tsx`. |
+| Google Search and browser identity | `public/favicon-48.png`, `public/favicon-192.png`, `public/favicon-512.png` | Square PNG icons generated from the approved RABAB LEGAL AI artwork. |
 | iOS/browser shortcut | `public/apple-touch-icon.png` | 180×180 PNG generated from the approved artwork. |
-
-## Domain colors
-
-| Token | Value | Use |
-|---|---:|---|
-| Ink | `#071529` | Header, footer, high-contrast public sections |
-| Navy | `#12335B` | Public-domain support surfaces |
-| Paper | `#F6F2E9` | Editorial reading surfaces |
-| Gold | `#D6A447` | Primary action and title accent |
-| Blue | `#2BB9ED` | Numbering and secondary accent |
 
 ## Guardrails
 
-The existing Hero and lawyer imagery remain unchanged. The public domain uses `home-domain.css`, whose selectors are scoped beneath `.domain-home`; new domain styles must not be added to shared global styles or shared layout components.
+Do not rewrite the home-page copy, remove or replace the second `lawyer-hero.png` image, change the existing navigation, or introduce a new landing-page layout when changing the Hero image. The Hero asset is shown in the existing image slot at its current responsive dimensions.
