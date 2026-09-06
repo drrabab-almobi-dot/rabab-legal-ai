@@ -621,6 +621,7 @@ function SetupScreen({
   requestedTaskType,
   serviceTitle,
   requestedServiceMode,
+  requestedServiceContext,
 }: {
   onStart: (
     area: string,
@@ -636,6 +637,7 @@ function SetupScreen({
   requestedTaskType?: string;
   serviceTitle?: string;
   requestedServiceMode?: string;
+  requestedServiceContext?: Record<string, string>;
 }) {
   type SetupPhase = 'type-select' | 'country-select' | 'legal-intake' | 'task-select' | 'task-form';
   const { lang } = useLang();
@@ -679,8 +681,8 @@ function SetupScreen({
     setTitle(task.name);
     setParams(
       task.id === 'settlement' && requestedServiceMode
-        ? { settlement_service: requestedServiceMode }
-        : {},
+        ? { ...requestedServiceContext, settlement_service: requestedServiceMode }
+        : requestedServiceContext ?? {},
     );
     setErrors({});
     setPhase('task-form');
@@ -2551,10 +2553,22 @@ export default function Consultation() {
   );
   const requestedTaskType = consultationSearchParams.get('type') ?? undefined;
   const requestedServiceMode = consultationSearchParams.get('settlementService') ?? undefined;
+  // ينقل موجّه الموضوع الذكي حقولاً صريحة في رابط البداية. تحفظ هنا مع
+  // سياق الخدمة حتى تصل إلى ملف الاستشارة ومحرك الصياغة، ولا تضيع بعد اختيار الدولة.
+  const requestedServiceContext: Record<string, string> = {};
+  ['service', 'ipType', 'governanceType'].forEach((key) => {
+    const value = consultationSearchParams.get(key);
+    if (value) requestedServiceContext[key] = value;
+  });
+  consultationSearchParams.forEach((value, key) => {
+    if (key.startsWith('field_') && value) {
+      requestedServiceContext[key.slice('field_'.length)] = value;
+    }
+  });
   const serviceTitle = getServiceTitle(
     requestedTaskType,
-    consultationSearchParams.get('service') ?? undefined,
-    consultationSearchParams.has('ipType'),
+    requestedServiceContext.service,
+    Boolean(requestedServiceContext.ipType),
   );
 
   useEffect(() => {
@@ -2627,6 +2641,7 @@ export default function Consultation() {
           requestedTaskType={requestedTaskType}
           serviceTitle={serviceTitle}
           requestedServiceMode={requestedServiceMode}
+          requestedServiceContext={requestedServiceContext}
         />
       );
     }
@@ -2698,6 +2713,7 @@ export default function Consultation() {
           requestedTaskType={requestedTaskType}
           serviceTitle={serviceTitle}
           requestedServiceMode={requestedServiceMode}
+          requestedServiceContext={requestedServiceContext}
         />
         <QuotaExhaustedModal onGoToPricing={() => setLocation('/pricing')} />
       </>
@@ -2731,6 +2747,7 @@ export default function Consultation() {
       requestedTaskType={requestedTaskType}
       serviceTitle={serviceTitle}
       requestedServiceMode={requestedServiceMode}
+      requestedServiceContext={requestedServiceContext}
     />
   );
 }

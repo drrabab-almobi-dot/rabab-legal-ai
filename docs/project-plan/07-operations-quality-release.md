@@ -20,6 +20,10 @@
 8. حفظ النتائج وإعادة فتحها والتصدير.
 9. الصلاحيات الإدارية وسجل التدقيق.
 10. الجوال: Android وiOS، RTL، انقطاع الشبكة، الإشعارات، والعودة من الدفع.
+11. قبول الملفات في كل خدمة نشطة، وفحص النوع والحجم واستخراج النص وخصوصية السجل.
+12. تصدير Word لكل مخرج قابل للحفظ، مع صحة RTL والمراجع والإخلاء وعدم تسريب بيانات داخلية.
+13. طلب تأكيد المحامية: موافقة صريحة من المستفيد، حزمة مراجعة محدودة، وعزل وسجل وصول.
+14. سجل وحدات الخدمات: لا تُوجّه أو تحصّل خدمة بحالة `planned` مثل توزيع الميراث، ولا تتأثر الخدمات النشطة بإضافة وحدة جديدة.
 
 ### مراقبة التشغيل
 
@@ -29,6 +33,8 @@
 - استهلاك النماذج والحصص.
 - فشل المهام المجدولة وتكرار الإشعارات.
 - جودة النص وعدد الوثائق والمقاطع المعتمدة.
+- محاولات الوصول غير المصرح بها إلى المرفقات وطلبات تأكيد المحامية.
+- معدلات فشل التصدير إلى Word وحالة وحدات الخدمات المخططة والنشطة.
 
 ### خطة الحوادث
 
@@ -53,11 +59,11 @@
 
 ### Test gate
 
-Cover public pages and returns; auth and recovery; sessions, quotas, and daily limits; billing and recovery; search and citation verification; PDF/DOCX/TXT/scanned uploads; contracts; saved results and exports; admin permissions and audit logs; and mobile Android/iOS, RTL, network loss, notifications, and payment return.
+Cover public pages and returns; auth and recovery; sessions, quotas, and daily limits; billing and recovery; search and citation verification; PDF/DOCX/TXT/scanned uploads in every active service; contracts; saved results and RTL Word/PDF exports; beneficiary-initiated lawyer-confirmation requests with scoped review access; admin permissions and audit logs; inactive/planned service-module guardrails; and mobile Android/iOS, RTL, network loss, notifications, and payment return.
 
 ### Monitoring
 
-Monitor server/database health, auth/billing/file errors, search latency, model and quota usage, scheduled jobs and notification deduplication, and knowledge-base quality.
+Monitor server/database health, auth/billing/file errors, search latency, model and quota usage, scheduled jobs and notification deduplication, knowledge-base quality, unauthorized attachment/review-access attempts, Word export failures, and planned-versus-active service-module states.
 
 ### Incident handling
 
