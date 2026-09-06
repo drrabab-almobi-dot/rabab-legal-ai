@@ -5,6 +5,7 @@ import connectPgSimple from "connect-pg-simple";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { isTrustedFrontendOrigin } from "./lib/origin-policy";
 
 const PgStore = connectPgSimple(session);
 
@@ -35,28 +36,11 @@ app.use(
   }),
 );
 
-const allowedOrigins = new Set(
-  [
-    "https://rabablegal.com",
-    "https://www.rabablegal.com",
-    "https://rabab-legal.vercel.app",
-    "https://rabab-legal-ai.vercel.app",
-    ...(process.env.CORS_ALLOWED_ORIGINS ?? "").split(","),
-    ...(process.env.NODE_ENV === "production"
-      ? []
-      : ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]),
-  ]
-    .map((origin) => origin.trim())
-    .filter(Boolean),
-);
-
-// The frontend is deployed independently, so Vercel generates a unique preview
-// domain for every branch. Restrict the dynamic allowance to this exact project
-// naming prefix and team suffix instead of accepting arbitrary *.vercel.app.
-const vercelFrontendPreviewOrigin = /^https:\/\/rabab-legal(?:-ai)?(?:-[a-z0-9-]+)?-drrabab-almobi-2417s-projects\.vercel\.app$/;
-
 function isAllowedOrigin(origin: string): boolean {
-  return allowedOrigins.has(origin) || vercelFrontendPreviewOrigin.test(origin);
+  if (process.env.NODE_ENV !== "production" && ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"].includes(origin)) {
+    return true;
+  }
+  return isTrustedFrontendOrigin(origin, process.env.CORS_ALLOWED_ORIGINS);
 }
 
 app.use(
