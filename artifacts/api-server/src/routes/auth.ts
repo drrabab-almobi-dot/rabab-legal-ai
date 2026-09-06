@@ -17,6 +17,7 @@ import { sendSms, generateOtpCode, maskPhone, normalizePhoneE164 } from "../lib/
 import { RegisterBody, LoginBody, UpdateMeBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
 import { getEmailConfig } from "../lib/email-config";
+import { isAdminOnlyTestingEnabled } from "../lib/owner-test-access";
 
 const JWT_EXPIRES_IN = "30d";
 const JWT_EXPIRES_SECONDS = 30 * 24 * 60 * 60;
@@ -293,6 +294,10 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
     if (!email || !profile.email_verified) throw new Error("Google account email is unavailable or unverified");
 
     let [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+    if (isAdminOnlyTestingEnabled() && !user) {
+      res.redirect(302, oauthFrontendUrl(returnTo, "owner_test_only"));
+      return;
+    }
     if (!user) {
       const passwordHash = await bcryptjs.hash(crypto.randomBytes(32).toString("base64url"), 12);
       [user] = await db.insert(usersTable).values({
@@ -318,6 +323,10 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
 
     if (!user.isActive) {
       res.redirect(302, oauthFrontendUrl(returnTo, "account_inactive"));
+      return;
+    }
+    if (isAdminOnlyTestingEnabled() && user.role !== "admin") {
+      res.redirect(302, oauthFrontendUrl(returnTo, "owner_test_only"));
       return;
     }
 
@@ -730,6 +739,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
   if (!user.isActive) {
     res.status(401).json({ error: "الحساب موقوف" });
+    return;
+  }
+  if (isAdminOnlyTestingEnabled() && user.role !== "admin") {
+    res.status(403).json({
+      error: "المنصة في مرحلة اختبار خاصة ولا يتاح الدخول إلا للمسؤول المخول.",
+      code: "OWNER_TEST_ONLY",
+    });
     return;
   }
 

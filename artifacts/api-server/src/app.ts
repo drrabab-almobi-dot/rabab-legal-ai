@@ -6,6 +6,8 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { isTrustedFrontendOrigin } from "./lib/origin-policy";
+import { requireAdmin } from "./middlewares/auth";
+import { getOwnerTestMode, isAdminOnlyTestingEnabled, isOwnerTestingPublicPath } from "./lib/owner-test-access";
 
 const PgStore = connectPgSimple(session);
 
@@ -163,6 +165,22 @@ app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
 
   logger.warn({ origin: requestOrigin, path: req.path }, "Rejected cookie-authenticated cross-site request");
   res.status(403).json({ error: "طلب غير مصرح", code: "CSRF_REJECTED" });
+});
+
+// During a closed test, production traffic remains online for the owner without
+// permitting visitors to register, consume services, or access platform data.
+// The mode is disabled unless OWNER_TEST_MODE is explicitly set to admin_only.
+app.use("/api", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  if (!isAdminOnlyTestingEnabled() || isOwnerTestingPublicPath(req.path)) {
+    next();
+    return;
+  }
+  await requireAdmin(req, res, next);
+});
+
+router.get("/access-mode", (_req, res): void => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ mode: getOwnerTestMode() });
 });
 
 app.use("/api", router);

@@ -288,6 +288,27 @@ await test("OpenAI 429 → isError:true, user message removed, session deleted",
   assert.equal(sessions.length, 0, `service_session should be deleted on 429, found ${sessions.length} rows`);
 });
 
+await test("OpenAI connection failure → explicit non-billable error", async () => {
+  const { token, userId } = await registerTestUser();
+  const { consultationId, sessionId, packageId } = await setupConsultation(userId);
+  cleanupActions.push(() => teardown(userId, packageId));
+
+  mockMode = "close";
+  const res = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
+    token,
+    body: { message: "مرحبا" },
+  });
+
+  assert.equal(res.status, 200, `expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
+  assert.equal(res.body.isError, true);
+  assert.equal(res.body.code, "AI_PROVIDER_FAILURE");
+  assert.match(res.body.reply, /لم تُحتسب/);
+
+  const sessions = await db.select().from(serviceSessionsTable)
+    .where(eq(serviceSessionsTable.id, sessionId));
+  assert.equal(sessions.length, 0, "service session must be released when the provider connection fails");
+});
+
 // ─── Test 3: missing verifier must be no-charge ────────────────────────────────
 
 await test("Missing live legal verifier → 503, message removed, session released", async () => {
