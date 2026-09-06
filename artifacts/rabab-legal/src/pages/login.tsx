@@ -11,6 +11,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Scale, Loader2, Eye, EyeOff, Mail, RefreshCw, CheckCircle2, ShieldCheck, Phone, Timer, MessageSquare } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import { useLang } from '@/hooks/use-language';
+import { AuthDivider, SocialSignIn } from '@/components/google-auth-button';
+import { EmailVerificationStep } from '@/components/email-verification-step';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -85,7 +87,7 @@ function OtpStep({ email, onVerified }: { email: string; onVerified: (token: str
   };
 
   return (
-    <Card className="w-full max-w-md border-2 border-secondary/60 shadow-lg shadow-secondary/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <CardHeader className="text-center pb-6 pt-10">
         <div className="w-16 h-16 bg-secondary/10 border-2 border-secondary rounded-2xl flex items-center justify-center text-secondary mx-auto mb-6">
           <Mail className="w-8 h-8" />
@@ -119,7 +121,7 @@ function OtpStep({ email, onVerified }: { email: string; onVerified: (token: str
           </button>
         </div>
       </CardContent>
-    </Card>
+    </div>
   );
 }
 
@@ -136,10 +138,11 @@ export default function Login() {
   const { toast } = useToast();
   const isDevelopmentPreview = import.meta.env.DEV;
 
-  // OTP challenge state — shown when server returns 403 + pendingVerification
-  const [step, setStep] = useState<'form' | 'otp'>('form');
+  // Verification challenge state — shown only when the API has delivered a code.
+  const [step, setStep] = useState<'form' | 'otp' | 'emailOtp'>('form');
   const [verifyToken, setVerifyToken] = useState('');
   const [maskedPhone, setMaskedPhone] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
@@ -189,6 +192,20 @@ export default function Login() {
     } catch { return null; }
   })();
 
+  const oauthError = (() => {
+    const code = new URLSearchParams(window.location.search).get('authError');
+    if (!code) return null;
+    const messages: Record<string, string> = {
+      google_cancelled: t('تم إلغاء تسجيل الدخول عبر Google. يمكنك المحاولة مجدداً أو استخدام البريد الإلكتروني.', 'Google sign-in was cancelled. Try again or use email.'),
+      google_state_invalid: t('انتهت جلسة تسجيل Google أو لم تعد صالحة. ابدئي مرة أخرى.', 'The Google sign-in session expired. Please start again.'),
+      google_session_error: t('تعذر حفظ جلسة الدخول الآمنة. حاولي مرة أخرى.', 'The secure sign-in session could not be saved. Please try again.'),
+      google_unavailable: t('تسجيل Google غير مهيأ حالياً. استخدمي البريد الإلكتروني وكلمة المرور.', 'Google sign-in is not configured yet. Please use email and password.'),
+      google_failed: t('تعذر إكمال تسجيل Google. حاولي مرة أخرى أو استخدمي البريد الإلكتروني.', 'Google sign-in could not be completed. Please try again or use email.'),
+      account_inactive: t('هذا الحساب موقوف. تواصلي مع إدارة المنصة للمساعدة.', 'This account is inactive. Contact platform support for help.'),
+    };
+    return messages[code] ?? t('تعذر إكمال تسجيل الدخول. حاولي مرة أخرى.', 'Sign-in could not be completed. Please try again.');
+  })();
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' }
@@ -228,6 +245,10 @@ export default function Login() {
         setOtpDigits(Array(6).fill(''));
         setStep('otp');
         toast({ title: t("يلزم التحقق من الجوال", "Phone verification required"), description: t(`أُرسل رمز SMS إلى ${errBody.maskedPhone}`, `An SMS code was sent to ${errBody.maskedPhone}`) });
+      } else if (errBody?.error === 'emailNotVerified' && errBody?.email) {
+        setVerificationEmail(errBody.email);
+        setStep('emailOtp');
+        toast({ title: t("يلزم تأكيد البريد", "Email confirmation required"), description: t("أرسلنا رمز تحقق إلى بريدك الإلكتروني.", "We sent a verification code to your email.") });
       } else {
         toast({
           variant: "destructive",
@@ -328,6 +349,15 @@ export default function Login() {
                     </p>
                   </div>
                 )}
+                {oauthError && (
+                  <div className="mb-5 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm leading-6 text-destructive" role="alert">
+                    {oauthError}
+                  </div>
+                )}
+                <div className="mb-6 space-y-4">
+                  <SocialSignIn returnTo={returnTo} />
+                  <AuthDivider />
+                </div>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="email">{t("البريد الإلكتروني", "Email address")}</Label>
@@ -491,6 +521,18 @@ export default function Login() {
                 </div>
               </CardContent>
             </>
+          )}
+
+          {step === 'emailOtp' && verificationEmail && (
+            <EmailVerificationStep
+              email={verificationEmail}
+              onVerified={(_token, user) => {
+                contextLogin(user);
+                toast({ title: t("تم تأكيد البريد وتسجيل الدخول", "Email confirmed and signed in") });
+                redirectAfterLogin(user);
+              }}
+              onBack={() => setStep('form')}
+            />
           )}
 
         </Card>

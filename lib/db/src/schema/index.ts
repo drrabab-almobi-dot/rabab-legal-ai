@@ -34,3 +34,4 @@ export * from "./usage-log";
 export * from "./whatsapp-log";
 export * from "./service-permissions";
 export * from "./organizations";
+export * from "./session-store";
