@@ -11,6 +11,8 @@ import React, { useState } from 'react';
 import { Scale, Loader2, ShieldCheck, Phone, Eye, EyeOff, User, Building2 } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import { useLang } from '@/hooks/use-language';
+import { AuthDivider, SocialSignIn } from '@/components/google-auth-button';
+import { EmailVerificationStep } from '@/components/email-verification-step';
 
 type RegisterFormValues = { name: string; email: string; phone: string; password: string; confirmPassword: string };
 
@@ -31,10 +33,11 @@ export default function Register() {
   const { login: contextLogin } = useAuth();
   const { toast } = useToast();
 
-  // Step 1: registration form  |  Step 2: OTP entry
-  const [step, setStep] = useState<'form' | 'otp'>('form');
+  // Step 1: registration form  |  Step 2: phone or email verification
+  const [step, setStep] = useState<'form' | 'otp' | 'emailOtp'>('form');
   const [verifyToken, setVerifyToken] = useState('');
   const [maskedPhone, setMaskedPhone] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -61,15 +64,19 @@ export default function Register() {
       ...(accountType === 'entity' ? { entityName, entityCrNumber: entityCr, entityTaxNumber: entityTax || undefined } : {}),
     };
     try {
-      const res = await customFetch<{ pendingVerification: boolean; verifyToken: string; maskedPhone: string }>(
+      const res = await customFetch<{ pendingVerification?: boolean; needsVerification?: boolean; verifyToken?: string; maskedPhone?: string; email?: string }>(
         '/api/auth/register',
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fullData) }
       );
-      if (res.pendingVerification) {
+      if (res.pendingVerification && res.verifyToken) {
         setVerifyToken(res.verifyToken);
-        setMaskedPhone(res.maskedPhone);
+        setMaskedPhone(res.maskedPhone ?? '');
         setStep('otp');
-        toast({ title: t("تم إرسال رمز التحقق", "Verification code sent"), description: t(`أُرسل رمز SMS إلى ${res.maskedPhone}`, `An SMS code was sent to ${res.maskedPhone}`) });
+        toast({ title: t("تم إرسال رمز التحقق", "Verification code sent"), description: t(`أُرسل رمز SMS إلى ${res.maskedPhone ?? ''}`, `An SMS code was sent to ${res.maskedPhone ?? ''}`) });
+      } else if (res.needsVerification && res.email) {
+        setVerificationEmail(res.email);
+        setStep('emailOtp');
+        toast({ title: t("تم إرسال رمز التحقق", "Verification code sent"), description: t("تحققي من بريدك الإلكتروني لإكمال إنشاء الحساب.", "Check your email to complete account creation.") });
       }
     } catch (err: any) {
       toast({ variant: "destructive", title: t("فشل إنشاء الحساب", "Account creation failed"), description: err?.error || err?.message || t("حدث خطأ غير متوقع", "An unexpected error occurred.") });
@@ -138,6 +145,10 @@ export default function Register() {
                 <p className="text-muted-foreground text-base leading-relaxed">{t('انضم إلى رباب محاميتك الرقمية في الأنظمة السعودية والخليجية', 'Join Rabab, your digital lawyer for Saudi and GCC laws')}<br />RABAB LEGAL AI {t('وابدأ استشاراتك', 'and start your consultations')}</p>
               </CardHeader>
               <CardContent className="pb-10">
+                <div className="mb-6 space-y-4">
+                  <SocialSignIn returnTo="/dashboard" />
+                  <AuthDivider />
+                </div>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
                    {/* ── نوع الحساب ── */}
@@ -381,6 +392,18 @@ export default function Register() {
                 </div>
               </CardContent>
             </>
+          )}
+
+          {step === 'emailOtp' && verificationEmail && (
+            <EmailVerificationStep
+              email={verificationEmail}
+              onVerified={(_token, user) => {
+                contextLogin(user);
+                toast({ title: t("تم تأكيد البريد وتسجيل الدخول", "Email confirmed and signed in") });
+                setLocation(user.role === 'admin' ? '/admin' : '/dashboard');
+              }}
+              onBack={() => setStep('form')}
+            />
           )}
 
         </Card>

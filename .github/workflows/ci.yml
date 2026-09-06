@@ -21,6 +21,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: rabab_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rabab_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rabab_test
+      NODE_ENV: test
+      SESSION_SECRET: ci-auth-session-secret
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,6 +67,15 @@ jobs:
 
       - name: Validate Vercel configuration
         run: pnpm run check:vercel-config
+
+      - name: Test trusted frontend origin policy
+        run: pnpm --filter @workspace/api-server run test:origin-policy
+
+      - name: Provision isolated authentication test database
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Test authentication flow against isolated PostgreSQL
+        run: pnpm --filter @workspace/api-server run test:auth
 
       - name: Build production artifacts
         run: pnpm run build
