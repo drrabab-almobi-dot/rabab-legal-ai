@@ -1,0 +1,25 @@
+{
+  "name": "RABAB LEGAL AI",
+  "short_name": "RABAB LEGAL AI",
+  "description": "منصة الاستشارات القانونية الذكية في السعودية والخليج",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#071529",
+  "theme_color": "#071529",
+  "icons": [
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

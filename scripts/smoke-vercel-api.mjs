@@ -7,7 +7,7 @@ delete process.env.DATABASE_URL;
 delete process.env.OPENAI_API_KEY;
 delete process.env.OPENAI_ADMIN_KEY;
 
-const { default: handler } = await import("../api/index.mjs");
+const { default: handler } = await import("../artifacts/api-server/api/index.mjs");
 const server = createServer((request, response) => {
   Promise.resolve(handler(request, response)).catch((error) => {
     response.statusCode = 500;

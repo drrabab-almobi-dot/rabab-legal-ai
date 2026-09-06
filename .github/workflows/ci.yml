@@ -48,6 +48,9 @@ jobs:
       - name: Validate Vercel configuration
         run: pnpm run check:vercel-config
 
+      - name: Test trusted frontend origin policy
+        run: pnpm --filter @workspace/api-server run test:origin-policy
+
       - name: Build production artifacts
         run: pnpm run build
 

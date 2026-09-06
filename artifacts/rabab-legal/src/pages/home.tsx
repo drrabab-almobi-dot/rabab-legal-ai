@@ -5,7 +5,7 @@ import { Navbar, Footer } from '@/components/layout';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Scale, CheckCircle2, Star, ChevronDown, ChevronUp, MessageSquare, Shield, Clock, Phone, FileText, FileSignature, Handshake, Building, Gavel, Lightbulb, Briefcase, Landmark, Search, Loader2, Lock, PenLine, FileSearch, Bot, ArrowLeft, BookOpen, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import launchHeroImg from '@/assets/launch-hero.jpg';
+import launchHeroImg from '@/assets/rabab-legal-ai-hero.webp';
 import lawyerHeroImg from '@/assets/lawyer-hero.png';
 import { buildWhatsAppContactLink } from '@/lib/whatsapp-contact';
 import { SERVICE_CATALOG } from '@/lib/service-catalog';
@@ -281,7 +281,7 @@ export default function Home() {
                 {t('رباب محاميتك الرقمية — RABAB LEGAL AI', 'Rabab, your digital lawyer — RABAB LEGAL AI')}
               </motion.span>
               <motion.h1 variants={fadeInUp} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6 leading-snug">
-                {t('رباب مستشارتك القانونية طوال 24 ساعة', 'Rabab, your legal consultant around the clock')}
+                {t('رباب مستشارتك القانونية 24/24 ساعة', 'Rabab, your legal consultant 24/24')}
               </motion.h1>
               <motion.p variants={fadeInUp} className="text-sm md:text-base text-white mb-4 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 {t('استشارات قانونية دقيقة وفق الأنظمة السعودية ودول مجلس التعاون، باستخدام أحدث تقنيات الذكاء الاصطناعي، مع إمكانية طلب تأكيد الاستشارة من المحامية د. رباب المعبي.', 'Accurate legal guidance under Saudi and GCC laws, powered by advanced AI, with the option to request confirmation from Lawyer Dr. Rabab Almoaibi.')}

@@ -1,8 +1,9 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
 import {
   db, usersTable, subscriptionsTable, packagesTable,
   tokenBlocklistTable, passwordResetTokensTable,
@@ -15,9 +16,58 @@ import { logAction } from "./audit-log";
 import { sendSms, generateOtpCode, maskPhone, normalizePhoneE164 } from "../lib/sms";
 import { RegisterBody, LoginBody, UpdateMeBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
+import { getEmailConfig } from "../lib/email-config";
 
 const JWT_EXPIRES_IN = "30d";
 const JWT_EXPIRES_SECONDS = 30 * 24 * 60 * 60;
+const DEFAULT_FRONTEND_ORIGIN = "https://rabablegal.com";
+const GOOGLE_SCOPES = ["openid", "email", "profile"];
+
+declare module "express-session" {
+  interface SessionData {
+    googleOAuthState?: string;
+    googleOAuthReturnTo?: string;
+  }
+}
+
+interface GoogleOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+}
+
+function getGoogleOAuthConfig(): GoogleOAuthConfig | null {
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  if (!clientId || !clientSecret) return null;
+
+  return {
+    clientId,
+    clientSecret,
+    // Register this exact production URL in Google Cloud. The same-domain Vercel
+    // rewrite keeps the callback cookie first-party for the browser.
+    redirectUri: process.env.GOOGLE_REDIRECT_URI?.trim() || `${DEFAULT_FRONTEND_ORIGIN}/api/auth/google/callback`,
+  };
+}
+
+function safeReturnTo(value: unknown, fallback = "/dashboard"): string {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/api/")) {
+    return fallback;
+  }
+  return value;
+}
+
+function sameValue(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function oauthFrontendUrl(path: string, error?: string): string {
+  const target = new URL(safeReturnTo(path), process.env.FRONTEND_URL?.trim() || DEFAULT_FRONTEND_ORIGIN);
+  if (error) target.searchParams.set("authError", error);
+  return target.toString();
+}
 
 // ── Phone OTP constants ───────────────────────────────────────────────────────
 /** Max wrong OTP attempts before the phone token is locked (DB-tracked) */
@@ -107,8 +157,8 @@ function hashOtp(code: string): string {
 }
 
 /** Send email verification OTP */
-async function sendVerificationEmail(email: string, name: string, code: string): Promise<void> {
-  await sendEmail({
+async function sendVerificationEmail(email: string, name: string, code: string): Promise<boolean> {
+  return sendEmail({
     to: email,
     subject: "تأكيد البريد الإلكتروني — رباب",
     html: `
@@ -125,6 +175,28 @@ async function sendVerificationEmail(email: string, name: string, code: string):
   });
 }
 
+function isSmsConfigured(): boolean {
+  return Boolean(
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_PHONE_NUMBER,
+  );
+}
+
+async function hasEmailVerificationChannel(): Promise<boolean> {
+  return (await getEmailConfig()).provider !== "unconfigured";
+}
+
+async function rollbackUndeliverableRegistration(userId: number): Promise<void> {
+  // A user cannot complete registration without a delivered verification code.
+  // Roll back the just-created account so correcting an external delivery issue
+  // never leaves an email or phone number permanently blocked from retrying.
+  await db.delete(phoneOtpTokensTable).where(eq(phoneOtpTokensTable.userId, userId));
+  await db.delete(emailVerificationTokensTable).where(eq(emailVerificationTokensTable.userId, userId));
+  await db.delete(subscriptionsTable).where(eq(subscriptionsTable.userId, userId));
+  await db.delete(usersTable).where(eq(usersTable.id, userId));
+}
+
 function userResponse(user: typeof usersTable.$inferSelect) {
   return {
     id: user.id,
@@ -139,6 +211,133 @@ function userResponse(user: typeof usersTable.$inferSelect) {
   };
 }
 
+function persistSession(req: Request): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session!.save((error) => error ? reject(error) : resolve());
+  });
+}
+
+// ── Google OAuth ────────────────────────────────────────────────────────────
+// The provider status endpoint lets the web UI avoid presenting a button that
+// would fail until the organisation has added its Google Cloud credentials.
+router.get("/auth/providers", (_req, res): void => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ google: getGoogleOAuthConfig() !== null });
+});
+
+router.get("/auth/google", (req, res): void => {
+  const config = getGoogleOAuthConfig();
+  if (!config) {
+    res.redirect(302, oauthFrontendUrl(safeReturnTo(req.query.returnTo), "google_unavailable"));
+    return;
+  }
+
+  const state = crypto.randomBytes(32).toString("hex");
+  req.session!.googleOAuthState = state;
+  req.session!.googleOAuthReturnTo = safeReturnTo(req.query.returnTo);
+
+  req.session!.save((sessionError) => {
+    if (sessionError) {
+      logger.error({ err: sessionError }, "Unable to persist Google OAuth state");
+      res.redirect(302, oauthFrontendUrl(safeReturnTo(req.query.returnTo), "google_session_error"));
+      return;
+    }
+
+    const client = new OAuth2Client(config.clientId, config.clientSecret, config.redirectUri);
+    const authorizationUrl = client.generateAuthUrl({
+      access_type: "online",
+      scope: GOOGLE_SCOPES,
+      prompt: "select_account",
+      state,
+      include_granted_scopes: true,
+    });
+    res.redirect(302, authorizationUrl);
+  });
+});
+
+router.get("/auth/google/callback", async (req, res): Promise<void> => {
+  const returnTo = safeReturnTo(req.session?.googleOAuthReturnTo);
+  const expectedState = req.session?.googleOAuthState;
+  const suppliedState = typeof req.query.state === "string" ? req.query.state : "";
+  delete req.session?.googleOAuthState;
+  delete req.session?.googleOAuthReturnTo;
+
+  if (typeof req.query.error === "string") {
+    res.redirect(302, oauthFrontendUrl(returnTo, "google_cancelled"));
+    return;
+  }
+  if (!expectedState || !suppliedState || !sameValue(expectedState, suppliedState)) {
+    res.redirect(302, oauthFrontendUrl(returnTo, "google_state_invalid"));
+    return;
+  }
+
+  const config = getGoogleOAuthConfig();
+  const code = typeof req.query.code === "string" ? req.query.code : "";
+  if (!config || !code) {
+    res.redirect(302, oauthFrontendUrl(returnTo, "google_unavailable"));
+    return;
+  }
+
+  try {
+    const client = new OAuth2Client(config.clientId, config.clientSecret, config.redirectUri);
+    const { tokens } = await client.getToken(code);
+    if (!tokens.id_token) throw new Error("Google OAuth response did not include an ID token");
+
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: config.clientId,
+    });
+    const profile = ticket.getPayload();
+    if (!profile) throw new Error("Google OAuth response did not include a profile");
+    const email = profile?.email?.toLowerCase().trim();
+    if (!email || !profile.email_verified) throw new Error("Google account email is unavailable or unverified");
+
+    let [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+    if (!user) {
+      const passwordHash = await bcryptjs.hash(crypto.randomBytes(32).toString("base64url"), 12);
+      [user] = await db.insert(usersTable).values({
+        name: profile.name?.trim() || email.split("@")[0],
+        email,
+        passwordHash,
+        emailVerified: true,
+        phoneVerified: false,
+        trialExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      }).returning();
+
+      const [freePackage] = await db.select().from(packagesTable).where(eq(packagesTable.type, "free"));
+      if (freePackage) {
+        await db.insert(subscriptionsTable).values({
+          userId: user.id,
+          packageId: freePackage.id,
+          questionsAllowed: freePackage.questionsAllowed,
+          questionsUsed: 0,
+          status: "active",
+        });
+      }
+    }
+
+    if (!user.isActive) {
+      res.redirect(302, oauthFrontendUrl(returnTo, "account_inactive"));
+      return;
+    }
+
+    req.session!.userId = user.id;
+    req.session!.userRole = user.role;
+    req.session!.save((sessionError) => {
+      if (sessionError) {
+        logger.error({ err: sessionError, userId: user.id }, "Unable to save Google OAuth session");
+        res.redirect(302, oauthFrontendUrl(returnTo, "google_session_error"));
+        return;
+      }
+      logAction({ userId: user.id, action: "google_login", details: {}, ip: req.ip, userAgent: req.get("user-agent") });
+      res.redirect(302, oauthFrontendUrl(returnTo));
+    });
+  } catch (error) {
+    logger.error({ err: error }, "Google OAuth callback failed");
+    res.redirect(302, oauthFrontendUrl(returnTo, "google_failed"));
+  }
+});
+
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 router.post("/auth/register", async (req, res): Promise<void> => {
   const parsed = RegisterBody.safeParse(req.body);
@@ -148,6 +347,16 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }
   const { name, email: rawEmail, password, phone } = parsed.data;
   const email = rawEmail.toLowerCase().trim();
+  const canVerifyBySms = Boolean(phone) && (isSmsConfigured() || process.env.NODE_ENV !== "production");
+  const canVerifyByEmail = await hasEmailVerificationChannel();
+
+  if (!canVerifyBySms && !canVerifyByEmail) {
+    res.status(503).json({
+      error: "التسجيل غير متاح مؤقتاً لأن خدمة التحقق غير مهيأة. يرجى المحاولة لاحقاً أو التواصل مع إدارة المنصة.",
+      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+    });
+    return;
+  }
 
   // حقول نوع الحساب (اختيارية — لا تُتحقق في RegisterBody الأساسية)
   const accountType    = req.body.accountType    === "entity" ? "entity" : "individual";
@@ -228,7 +437,12 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       await db.insert(emailVerificationTokensTable).values({
         userId: user.id, code: hashOtp(emailOtpCode), expiresAt: emailOtpExpiry,
       });
-      sendVerificationEmail(user.email, user.name, emailOtpCode).catch(() => {});
+      const delivered = await sendVerificationEmail(user.email, user.name, emailOtpCode);
+      if (!delivered) {
+        await rollbackUndeliverableRegistration(user.id);
+        res.status(503).json({ error: "تعذر إرسال رمز التحقق. يرجى المحاولة لاحقاً.", code: "VERIFICATION_DELIVERY_UNAVAILABLE" });
+        return;
+      }
       logAction({ userId: user.id, action: "register", details: { email, smsFallbackToEmail: true }, ip: req.ip, userAgent: req.get("user-agent") });
       res.status(201).json({ needsVerification: true, email: user.email });
       return;
@@ -241,7 +455,12 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   await db.delete(emailVerificationTokensTable)
     .where(eq(emailVerificationTokensTable.userId, user.id));
   await db.insert(emailVerificationTokensTable).values({ userId: user.id, code: hashOtp(code), expiresAt });
-  sendVerificationEmail(user.email, user.name, code).catch(() => {});
+  const delivered = await sendVerificationEmail(user.email, user.name, code);
+  if (!delivered) {
+    await rollbackUndeliverableRegistration(user.id);
+    res.status(503).json({ error: "تعذر إرسال رمز التحقق. يرجى المحاولة لاحقاً.", code: "VERIFICATION_DELIVERY_UNAVAILABLE" });
+    return;
+  }
 
   logAction({ userId: user.id, action: "register", details: { email }, ip: req.ip, userAgent: req.get("user-agent") });
   res.status(201).json({ needsVerification: true, email: user.email });
@@ -288,7 +507,13 @@ router.post("/auth/phone-verify/confirm", async (req, res): Promise<void> => {
   const token = issueToken(user.id, user.role, user.tokenVersion ?? 1);
   req.session!.userId = user.id;
   req.session!.userRole = user.role;
-  await new Promise<void>((resolve) => req.session!.save(() => resolve()));
+  try {
+    await persistSession(req);
+  } catch (error) {
+    logger.error({ err: error, userId: user.id }, "Unable to save phone verification session");
+    res.status(500).json({ error: "خطأ في حفظ الجلسة" });
+    return;
+  }
 
   logAction({ userId: user.id, action: "phone_verified", details: {}, ip: req.ip, userAgent: req.get("user-agent") });
   res.json({ token, user: userResponse({ ...user, phoneVerified: true }) });
@@ -424,6 +649,14 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
   req.session!.userId = user.id;
   req.session!.userRole = user.role;
 
+  try {
+    await persistSession(req);
+  } catch (error) {
+    logger.error({ err: error, userId: user.id }, "Unable to save email verification session");
+    res.status(500).json({ error: "خطأ في حفظ الجلسة" });
+    return;
+  }
+
   logAction({ userId: user.id, action: "email_verified", details: { email: normalizedEmail }, ip, userAgent: req.get("user-agent") });
 
   // Issue a real JWT so the blocklist can protect it
@@ -465,7 +698,11 @@ router.post("/auth/resend-verification", async (req, res): Promise<void> => {
     .where(eq(emailVerificationTokensTable.userId, user.id));
   await db.insert(emailVerificationTokensTable).values({ userId: user.id, code: hashOtp(code), expiresAt });
 
-  sendVerificationEmail(user.email, user.name, code).catch(() => {});
+  const delivered = await sendVerificationEmail(user.email, user.name, code);
+  if (!delivered) {
+    res.status(503).json({ error: "تعذر إرسال رمز التحقق. يرجى المحاولة لاحقاً.", code: "VERIFICATION_DELIVERY_UNAVAILABLE" });
+    return;
+  }
 
   res.json({ success: true });
 });
@@ -532,13 +769,24 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   // ── Email not yet verified (no phone on account): resend email OTP ────────
   if (!user.emailVerified && !user.phone) {
+    if (!await hasEmailVerificationChannel()) {
+      res.status(503).json({
+        error: "خدمة تأكيد البريد غير متاحة مؤقتاً. يرجى المحاولة لاحقاً.",
+        code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+      });
+      return;
+    }
     const code = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     clearOtpFailures(user.email);
     await db.delete(emailVerificationTokensTable)
       .where(eq(emailVerificationTokensTable.userId, user.id));
     await db.insert(emailVerificationTokensTable).values({ userId: user.id, code: hashOtp(code), expiresAt });
-    sendVerificationEmail(user.email, user.name, code).catch(() => {});
+    const delivered = await sendVerificationEmail(user.email, user.name, code);
+    if (!delivered) {
+      res.status(503).json({ error: "تعذر إرسال رمز التحقق. يرجى المحاولة لاحقاً.", code: "VERIFICATION_DELIVERY_UNAVAILABLE" });
+      return;
+    }
 
     res.status(403).json({ error: "emailNotVerified", email: user.email });
     return;

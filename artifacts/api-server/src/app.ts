@@ -5,6 +5,7 @@ import connectPgSimple from "connect-pg-simple";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { isTrustedFrontendOrigin } from "./lib/origin-policy";
 
 const PgStore = connectPgSimple(session);
 
@@ -35,25 +36,17 @@ app.use(
   }),
 );
 
-const allowedOrigins = new Set(
-  [
-    "https://rabablegal.com",
-    "https://www.rabablegal.com",
-    "https://rabab-legal.vercel.app",
-    "https://rabab-legal-ai.vercel.app",
-    ...(process.env.CORS_ALLOWED_ORIGINS ?? "").split(","),
-    ...(process.env.NODE_ENV === "production"
-      ? []
-      : ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]),
-  ]
-    .map((origin) => origin.trim())
-    .filter(Boolean),
-);
+function isAllowedOrigin(origin: string): boolean {
+  if (process.env.NODE_ENV !== "production" && ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"].includes(origin)) {
+    return true;
+  }
+  return isTrustedFrontendOrigin(origin, process.env.CORS_ALLOWED_ORIGINS);
+}
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.has(origin)) {
+      if (!origin || isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
@@ -163,7 +156,7 @@ app.use("/api", (req: Request, res: Response, next: NextFunction): void => {
     }
   })();
 
-  if (requestOrigin && allowedOrigins.has(requestOrigin)) {
+  if (requestOrigin && isAllowedOrigin(requestOrigin)) {
     next();
     return;
   }

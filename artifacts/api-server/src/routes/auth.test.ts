@@ -130,6 +130,12 @@ const { port } = server.address() as AddressInfo;
 const BASE = `http://127.0.0.1:${port}`;
 console.log(`\n🔐 Auth integration tests (server on :${port})\n`);
 
+await test("provider discovery never advertises Google without OAuth credentials", async () => {
+  const providers = await api(BASE, "GET", "/api/auth/providers");
+  assert.equal(providers.status, 200);
+  assert.equal(providers.body.google, false);
+});
+
 await test("valid login issues a session cookie the server accepts on the next request", async () => {
   const { email } = await registerVerifiedUser(BASE);
 
