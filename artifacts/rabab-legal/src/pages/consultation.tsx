@@ -1934,6 +1934,17 @@ function ChatScreen({
         const err = await resp.json().catch(() => ({}));
         if (err.code === 'QUOTA_EXHAUSTED' || err.code === 'TRIAL_EXHAUSTED' || err.code === 'NO_SUBSCRIPTION') {
           setQuota(0);
+        } else if (err.code === 'LEGAL_VERIFICATION_UNAVAILABLE' || err.code === 'LEGAL_SOURCES_INSUFFICIENT') {
+          // The API has discarded the provisional message and released its
+          // reservation, so keep the UI in sync and make the no-charge result clear.
+          setMessages(prev => [
+            ...prev.slice(0, -1),
+            {
+              role: 'assistant',
+              content: err.error || t('تعذّر التحقق من المصادر النظامية الرسمية الآن؛ لم تُحتسب الاستشارة.', 'Official legal-source verification is unavailable; this consultation was not charged.'),
+              error: true,
+            },
+          ]);
         } else {
           throw new Error(err.error || t('خطأ في الخادم', 'Server error'));
         }

@@ -11,7 +11,7 @@ import {
 import { eq, and, asc, desc, sql } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
 import { retrieveRelevantChunks } from "../lib/rag";
-import { searchLegalSources, formatSearchContext } from "../lib/legal-search";
+import { searchLegalSources, formatSearchContext, isSubstantiveLegalQuery } from "../lib/legal-search";
 import { verifyResponse, type SourceChunk, type TavilyResult } from "../lib/verification";
 import { getTaskPromptBuilder } from "../lib/task-types";
 import { getSectionVisibility } from "./platform-settings";
@@ -242,7 +242,11 @@ function getOpenAI() {
       `It must start with "sk-" and contain only ASCII characters.`
     );
   }
-  return new OpenAI({ apiKey });
+  const baseURL = process.env.OPENAI_BASE_URL?.trim();
+  return new OpenAI({
+    apiKey,
+    ...(baseURL ? { baseURL } : {}),
+  });
 }
 
 // ── GET /api/consultations/:id/chat-status  (SSE — web clients) ──────────────
@@ -423,14 +427,16 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     }
   }
 
-  // Save user message immediately
+  // Save the message provisionally. If live-source verification cannot run, the
+  // row and any first-message quota reservation are released before responding.
+  let savedUserMessage: typeof consultationMessagesTable.$inferSelect;
   try {
-    await db.insert(consultationMessagesTable).values({
+    [savedUserMessage] = await db.insert(consultationMessagesTable).values({
       consultationId: id,
       role: "user",
       content: parsed.data.message,
       attachmentName: parsedAttachmentName,
-    });
+    }).returning();
   } catch (error) {
     if (isFirstUserMessage && reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
     throw error;
@@ -699,9 +705,13 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
         : "Tavily live skip not applicable (follow-up message or no proactive results)",
   );
 
+  const hasSufficientSourcesBeforeLiveSearch =
+    highQualityKBPre.length >= 3 ||
+    (highQualityKBPre.length >= 1 && webResults.length >= 2) ||
+    webResults.length >= 3;
   const shouldRunLiveTavily =
     proactiveRelevance.shouldRunLiveSearch ||
-    (!hasSufficientProactive && highQualityKBPre.length < 1 && proactiveTavilyResults.length < 1);
+    !hasSufficientSourcesBeforeLiveSearch;
 
   if (shouldRunLiveTavily) {
     // An irrelevant cached result must never suppress a fresh search, even if
@@ -734,6 +744,8 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
           { tavilyStatus: searchErr.tavilyStatus, err: searchErr?.message },
           "Tavily HTTP error — live sources unavailable",
         );
+      } else if (searchErr?.tavilyConfigurationError) {
+        req.log.error("Live legal verification is not configured");
       } else {
         req.log.warn({ err: searchErr?.message }, "Tavily fallback search failed — continuing without web context");
       }
@@ -746,26 +758,39 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ── Tavily failure: hard-block on any substantive analysis, no quota consumed ─
-  if (tavilyFailed) {
+  const sufficientSources =
+    highQualityKBPre.length >= 3 ||
+    (highQualityKBPre.length >= 1 && webResults.length >= 2) ||
+    webResults.length >= 3;
+  const requiresVerifiedLegalSources = isSubstantiveLegalQuery(parsed.data.message);
+  const verificationUnavailable = tavilyFailed || (requiresVerifiedLegalSources && !sufficientSources);
+
+  // ── Verification gate: never produce or charge for an unverified legal analysis ─
+  if (verificationUnavailable) {
+    const unavailableBecause = tavilyFailed ? "verifier_outage" : "insufficient_sources";
+    const noChargeNotice = isFirstUserMessage
+      ? "لم تُحتسب الاستشارة ولم يُخصم من رصيدك"
+      : "لم يُحتسب هذا الطلب كاستهلاك إضافي";
     req.log.error(
-      { tavilyFailed: true },
-      "⛔ Tavily verification unavailable — injecting strict refusal guard, quota will NOT be committed",
+      { unavailableBecause },
+      "Live legal verification unavailable — releasing provisional message and quota",
     );
-    contextMessages.push({
-      role: "system",
-      content:
-        `[تنبيه حرج — فشل التحقق من النصوص النظامية]\n` +
-        `تعذّر الاتصال بخدمة التحقق الفوري. هذه التعليمات إلزامية وغير قابلة للتجاوز:\n\n` +
-        `١. ابدأ ردّك بهذا التحذير الحرفي فقط (لا تعدّله):\n` +
-        `---\n` +
-        `⚠️ تعذّر التحقق من النصوص النظامية اللازمة للإجابة على سؤالك — لن تُستهلك من رصيدك.\n` +
-        `---\n\n` +
-        `٢. يُحظر تماماً تقديم أي تحليل أو إطار قانوني عام — حتى الإطار العام يُضلّل حين تعذّر التحقق.\n` +
-        `٣. اذكر تحديداً المصادر الرسمية التي يجد فيها المستخدم الإجابة (روابط من قائمة المنصات الرسمية المعتمدة).\n` +
-        `٤. اعرض خيارين: (١) إعادة المحاولة لاحقاً، (٢) التواصل مع المراجعة البشرية عبر المنصة على rabablegal.com.\n` +
-        `٥. الرد بأكمله لا يتجاوز ٦ أسطر — لا حشو، لا شرح للأسباب التقنية.`,
+    await db.delete(consultationMessagesTable)
+      .where(eq(consultationMessagesTable.id, savedUserMessage.id))
+      .catch((error) => req.log.warn({ error }, "Failed to remove provisional message after verifier outage"));
+    if (isFirstUserMessage && reservedSessionId) {
+      await releaseService(reservedSessionId)
+        .catch((error) => req.log.warn({ error }, "Failed to release reservation after verifier outage"));
+    }
+    emitChatPhase(id, "done");
+    res.status(503).json({
+      error: tavilyFailed
+        ? `تعذّر التحقق من المصادر النظامية الرسمية الآن؛ ${noChargeNotice}. يرجى إعادة المحاولة لاحقاً أو طلب مراجعة بشرية عبر المنصة.`
+        : `لم تُسترجع مصادر نظامية رسمية كافية لهذه المسألة؛ ${noChargeNotice}. يرجى إعادة صياغة السؤال بوقائع أدق أو طلب مراجعة بشرية عبر المنصة.`,
+      code: tavilyFailed ? "LEGAL_VERIFICATION_UNAVAILABLE" : "LEGAL_SOURCES_INSUFFICIENT",
+      retryable: tavilyFailed,
     });
+    return;
   }
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -790,11 +815,6 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   // ── Source-sufficiency gate: warn the model if combined sources still < 3 ───
   // highQualityKBPre was computed before Tavily; reuse it here.
   const highQualityKB = highQualityKBPre;
-  const sufficientSources =
-    highQualityKB.length >= 3 ||
-    (highQualityKB.length >= 1 && webResults.length >= 2) ||
-    webResults.length >= 3;
-
   if (!sufficientSources) {
     contextMessages.push({
       role: "system",

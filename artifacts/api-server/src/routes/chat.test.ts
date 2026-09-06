@@ -7,7 +7,8 @@
  * Covered scenarios:
  *   1. OpenAI network error (ECONNREFUSED) → session released, user message removed, isError:true
  *   2. OpenAI 429 → session released, user message removed, isError:true
- *   3. Successful reply → session committed (counted=true), user message kept
+ *   3. Missing live legal verifier → session released and no charge
+ *   4. Successful reply → session committed (counted=true), user message kept
  */
 
 import assert from "node:assert/strict";
@@ -119,6 +120,7 @@ const {
   serviceSessionsTable,
 } = await import("@workspace/db");
 const { eq, and, desc } = await import("drizzle-orm");
+const { loadServiceModule } = await import("../lib/legal-charter.js");
 
 const appServer = http.createServer(app);
 await new Promise<void>((resolve) => appServer.listen(0, "127.0.0.1", resolve));
@@ -135,9 +137,10 @@ console.log(`\n💳 Chat quota-safety tests  (app :${port}  mock-openai :${mockP
 async function registerTestUser(): Promise<{ token: string; userId: number }> {
   const email = `chat-test-${uuidv4()}@quota-test.local`;
   const password = "TestPass123!";
+  const phone = `05${uuidv4().replace(/\D/g, "").slice(0, 8)}`;
 
   const regRes = await api(BASE, "POST", "/api/auth/register", {
-    body: { name: "Chat Test User", email, password, phone: "0501234567" },
+    body: { name: "Chat Test User", email, password, phone },
   });
   assert.equal(regRes.status, 201, `register failed: ${JSON.stringify(regRes.body)}`);
   const verifyToken: string = regRes.body.verifyToken;
@@ -208,6 +211,9 @@ async function setupConsultation(userId: number): Promise<{
     counted: false,
     graceEnd,
   }).returning();
+  await db.update(consultationsTable)
+    .set({ serviceSessionId: session.id })
+    .where(eq(consultationsTable.id, cons.id));
 
   return { consultationId: cons.id, sessionId: session.id, subscriptionId: sub.id, packageId: pkg.id };
 }
@@ -217,6 +223,13 @@ async function teardown(userId: number, packageId: number) {
   await db.delete(usersTable).where(eq(usersTable.id, userId)).catch(() => {});
   await db.delete(packagesTable).where(eq(packagesTable.id, packageId)).catch(() => {});
 }
+
+await test("Judicial consultation module is authored and available to the agent", async () => {
+  const module = loadServiceModule("judicial");
+  assert.ok(module, "judicial service module must be available");
+  assert.ok(module.includes("مقابلة قضائية"), "judicial module must contain service instructions");
+  assert.ok(!module.includes("قيد التحرير"), "judicial module must not be a placeholder");
+});
 
 // ─── Test 1: OpenAI network error (ECONNREFUSED) ──────────────────────────────
 
@@ -229,7 +242,7 @@ await test("OpenAI network error → isError:true, user message removed, session
 
   const res = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
     token,
-    body: { message: "ما حكم الفسخ في عقد الإيجار؟" },
+    body: { message: "مرحبا" },
   });
 
   // Response must still be HTTP 200 with isError flag
@@ -258,7 +271,7 @@ await test("OpenAI 429 → isError:true, user message removed, session deleted",
 
   const res = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
     token,
-    body: { message: "ما حكم الفسخ في عقد الإيجار؟" },
+    body: { message: "مرحبا" },
   });
 
   assert.equal(res.status, 200, `expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
@@ -275,7 +288,42 @@ await test("OpenAI 429 → isError:true, user message removed, session deleted",
   assert.equal(sessions.length, 0, `service_session should be deleted on 429, found ${sessions.length} rows`);
 });
 
-// ─── Test 3: Successful reply ─────────────────────────────────────────────────
+// ─── Test 3: missing verifier must be no-charge ────────────────────────────────
+
+await test("Missing live legal verifier → 503, message removed, session released", async () => {
+  const { token, userId } = await registerTestUser();
+  const { consultationId, sessionId, subscriptionId, packageId } = await setupConsultation(userId);
+  cleanupActions.push(() => teardown(userId, packageId));
+
+  const originalVerifierKey = process.env.TAVILY_API_KEY;
+  delete process.env.TAVILY_API_KEY;
+  try {
+    const res = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
+      token,
+      body: { message: "ما هي الإجراءات النظامية لفسخ عقد الإيجار السكني عند إخلال المستأجر؟" },
+    });
+    assert.equal(res.status, 503, `expected 503, got ${res.status}: ${JSON.stringify(res.body)}`);
+    assert.equal(res.body.code, "LEGAL_VERIFICATION_UNAVAILABLE");
+    assert.equal(res.body.retryable, true);
+
+    const messages = await db.select().from(consultationMessagesTable)
+      .where(eq(consultationMessagesTable.consultationId, consultationId));
+    assert.equal(messages.length, 0, "provisional user message must be removed when verification is unavailable");
+
+    const sessions = await db.select().from(serviceSessionsTable)
+      .where(eq(serviceSessionsTable.id, sessionId));
+    assert.equal(sessions.length, 0, "service session must be released when verification is unavailable");
+
+    const [sub] = await db.select().from(subscriptionsTable)
+      .where(eq(subscriptionsTable.id, subscriptionId));
+    assert.equal(sub.consultationsUsed, 0, "unverified consultation must not consume a quota unit");
+  } finally {
+    if (originalVerifierKey === undefined) delete process.env.TAVILY_API_KEY;
+    else process.env.TAVILY_API_KEY = originalVerifierKey;
+  }
+});
+
+// ─── Test 4: Successful reply ─────────────────────────────────────────────────
 
 await test("Successful OpenAI reply → session committed (counted=true), user message kept", async () => {
   const { token, userId } = await registerTestUser();
@@ -286,7 +334,7 @@ await test("Successful OpenAI reply → session committed (counted=true), user m
 
   const res = await api(BASE, "POST", `/api/consultations/${consultationId}/chat`, {
     token,
-    body: { message: "ما حكم الفسخ في عقد الإيجار؟" },
+    body: { message: "مرحبا" },
   });
 
   assert.equal(res.status, 200, `expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);

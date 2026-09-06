@@ -77,6 +77,9 @@ jobs:
       - name: Test authentication flow against isolated PostgreSQL
         run: pnpm --filter @workspace/api-server run test:auth
 
+      - name: Test consultation quota safety against isolated PostgreSQL
+        run: pnpm --filter @workspace/api-server run test:chat
+
       - name: Build production artifacts
         run: pnpm run build
 
