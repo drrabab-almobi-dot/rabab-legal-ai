@@ -962,7 +962,9 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     }
 
     // Build a friendly Arabic error message that explains the reason
-    const httpStatus: number = err?.status ?? 0;
+    const httpStatus: number = err?.status ?? err?.cause?.status ?? 0;
+    const networkCode = err?.code ?? err?.cause?.code;
+    const providerMessage = String(err?.message ?? err?.cause?.message ?? "").toLowerCase();
     let friendlyError: string;
     if (!process.env.OPENAI_API_KEY || !(process.env.OPENAI_API_KEY.replace(/[^\x20-\x7E]/g, "").trim())) {
       friendlyError = "عذرًا، لم يتم تكوين مفتاح الذكاء الاصطناعي بعد. يرجى التواصل مع الدعم الفني.";
@@ -972,10 +974,12 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       friendlyError = "عذرًا، خدمة الذكاء الاصطناعي مشغولة حاليًا بسبب الطلبات الكثيرة. يرجى الانتظار دقيقة والمحاولة مرة أخرى.";
     } else if (httpStatus === 503 || httpStatus === 502) {
       friendlyError = "عذرًا، خدمة الذكاء الاصطناعي غير متاحة مؤقتًا. يرجى المحاولة بعد قليل.";
-    } else if (err?.code === "ECONNREFUSED" || err?.code === "ENOTFOUND" || err?.code === "ETIMEDOUT") {
-      friendlyError = "عذرًا، تعذّر الاتصال بخدمة الذكاء الاصطناعي. يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.";
+    } else if (httpStatus === 404 || providerMessage.includes("model")) {
+      friendlyError = "عذرًا، نموذج الذكاء الاصطناعي المطلوب غير متاح في إعدادات المنصة حالياً. لم تُحتسب هذه الاستشارة، ويجري تصحيح الإعداد قبل إعادة المحاولة.";
+    } else if (networkCode === "ECONNREFUSED" || networkCode === "ENOTFOUND" || networkCode === "ETIMEDOUT" || providerMessage.includes("connection error")) {
+      friendlyError = "عذرًا، تعذّر الاتصال بخدمة الذكاء الاصطناعي. لم تُحتسب هذه الاستشارة؛ يرجى إعادة المحاولة بعد قليل.";
     } else {
-      friendlyError = "عذرًا، حدث خطأ غير متوقع في خدمة الذكاء الاصطناعي. يرجى المحاولة مرة أخرى، وإن تكرّر الخطأ يرجى التواصل مع الدعم الفني.";
+      friendlyError = "عذرًا، تعذّر إتمام طلب الذكاء الاصطناعي الآن. لم تُحتسب هذه الاستشارة، ويجري تسجيل العطل للتحقق منه قبل إعادة المحاولة.";
     }
 
     // Return the friendly message as the assistant reply so it appears in the chat bubble
@@ -985,6 +989,8 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       messageId: null,
       questionsRemaining: null,
       isError: true,
+      code: "AI_PROVIDER_FAILURE",
+      retryable: httpStatus !== 401 && httpStatus !== 404,
     });
     return;
   }

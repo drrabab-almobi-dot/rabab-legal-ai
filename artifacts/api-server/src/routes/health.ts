@@ -35,7 +35,8 @@ router.get("/diagnostics", requireAdmin, async (req, res): Promise<void> => {
   // 2. OpenAI connectivity
   try {
     const start = Date.now();
-    const resp = await fetch("https://api.openai.com/v1/models", {
+    const configuredBase = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
+    const resp = await fetch(`${configuredBase}/models`, {
       headers: { Authorization: `Bearer ${cleanKey}` },
       signal: AbortSignal.timeout(8000),
     });
@@ -43,6 +44,7 @@ router.get("/diagnostics", requireAdmin, async (req, res): Promise<void> => {
       status: resp.status,
       ok: resp.ok,
       latencyMs: Date.now() - start,
+      usingCustomEndpoint: Boolean(process.env.OPENAI_BASE_URL),
       error:
         !resp.ok
           ? resp.status === 401

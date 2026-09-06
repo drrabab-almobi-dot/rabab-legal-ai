@@ -71,6 +71,12 @@ jobs:
       - name: Test trusted frontend origin policy
         run: pnpm --filter @workspace/api-server run test:origin-policy
 
+      - name: Test owner-only access policy
+        run: pnpm --filter @workspace/api-server run test:owner-access
+
+      - name: Test owner-only access gate
+        run: pnpm --filter @workspace/api-server run test:owner-access-integration
+
       - name: Provision isolated authentication test database
         run: pnpm --filter @workspace/db run push-force
 
