@@ -1,66 +1,74 @@
 import { Route, Switch, Router as WouterRouter, useLocation, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ArrowRight } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/hooks/use-auth';
 import { LangProvider, useLang } from '@/hooks/use-language';
 import { ThemeProvider } from '@/hooks/use-theme';
 import { ProtectedRoute, GuestOnlyRoute } from '@/components/protected-route';
-
-// Pages
-import Home from '@/pages/home';
-import Pricing from '@/pages/pricing';
-import Login from '@/pages/login';
-import Register from '@/pages/register';
-import Dashboard from '@/pages/dashboard';
-import Consultation from '@/pages/consultation';
-import PaymentFlow from '@/pages/payment';
-import PaymentCallback from '@/pages/payment-callback';
-import { PaymentSuccess, PaymentFailed } from '@/pages/payment-status';
-import InvoiceDetail from '@/pages/invoice';
-import Contact from '@/pages/contact';
-import About from '@/pages/about';
-import FAQ from '@/pages/faq';
-import Appointment from '@/pages/appointment';
-import Privacy from '@/pages/privacy';
-import Terms from '@/pages/terms';
-
-// Admin Pages
-import AdminDashboard from '@/pages/admin/dashboard';
-import AdminUsers from '@/pages/admin/users';
-import AdminKnowledgeBase from '@/pages/admin/knowledge-base';
-import AdminPackages from '@/pages/admin/packages';
-import AdminCoupons from '@/pages/admin/coupons';
-import AdminPayments from '@/pages/admin/payments';
-import AdminConsultations from '@/pages/admin/consultations';
-import AdminAuditLog from '@/pages/admin/audit-log';
-import AdminNotifications from '@/pages/admin/notifications';
-// [DISABLED Aug-2026] import AdminTelegramSync from '@/pages/admin/telegram-sync';
-import AdminMojContent from '@/pages/admin/moj-content';
-import AdminKnowledgeQuality from '@/pages/admin/knowledge-quality';
-import AdminSectionControl from '@/pages/admin/section-control';
-import AdminConversionReport from '@/pages/admin/conversion-report';
-import AdminSourceStatus from '@/pages/admin/source-status';
-import AdminEmailSettings from '@/pages/admin/email-settings';
-import AdminContactMessages from '@/pages/admin/contact-messages';
-import AdminLegalCodex from '@/pages/admin/legal-codex';
-import AdminWhatsAppSettings from '@/pages/admin/whatsapp-settings';
-import KnowledgeSearch from '@/pages/knowledge-search';
-import LegalSearchPage from '@/pages/legal-search';
-import AdminInitiatives from '@/pages/admin/initiatives';
-import { DevPanel } from '@/components/dev-panel';
-import ContractsPage from '@/pages/contracts';
-import LegalAssistant from '@/pages/legal-assistant';
-import ServiceDetails from '@/pages/service-details';
-import ForgotPassword from '@/pages/forgot-password';
-import ResetPassword from '@/pages/reset-password';
-import UsageLogPage from '@/pages/usage-log';
-import OrganizationPage from '@/pages/organization';
-import { UsageCounter } from '@/components/UsageCounter';
 import { QuotaConfirmProvider } from '@/components/QuotaConfirmModal';
 import { OwnerTestGate } from '@/components/owner-test-gate';
+
+// Route-level loading keeps administration, document tools, and PDF libraries out
+// of the critical homepage bundle. Each route remains functionally identical.
+const Home = lazy(() => import('@/pages/home'));
+const Pricing = lazy(() => import('@/pages/pricing'));
+const Login = lazy(() => import('@/pages/login'));
+const Register = lazy(() => import('@/pages/register'));
+const Dashboard = lazy(() => import('@/pages/dashboard'));
+const Consultation = lazy(() => import('@/pages/consultation'));
+const PaymentFlow = lazy(() => import('@/pages/payment'));
+const PaymentCallback = lazy(() => import('@/pages/payment-callback'));
+const PaymentSuccess = lazy(async () => ({
+  default: (await import('@/pages/payment-status')).PaymentSuccess,
+}));
+const PaymentFailed = lazy(async () => ({
+  default: (await import('@/pages/payment-status')).PaymentFailed,
+}));
+const InvoiceDetail = lazy(() => import('@/pages/invoice'));
+const Contact = lazy(() => import('@/pages/contact'));
+const About = lazy(() => import('@/pages/about'));
+const FAQ = lazy(() => import('@/pages/faq'));
+const Appointment = lazy(() => import('@/pages/appointment'));
+const Privacy = lazy(() => import('@/pages/privacy'));
+const Terms = lazy(() => import('@/pages/terms'));
+const ForgotPassword = lazy(() => import('@/pages/forgot-password'));
+const ResetPassword = lazy(() => import('@/pages/reset-password'));
+const KnowledgeSearch = lazy(() => import('@/pages/knowledge-search'));
+const LegalSearchPage = lazy(() => import('@/pages/legal-search'));
+const ContractsPage = lazy(() => import('@/pages/contracts'));
+const LegalAssistant = lazy(() => import('@/pages/legal-assistant'));
+const ServiceDetails = lazy(() => import('@/pages/service-details'));
+const UsageLogPage = lazy(() => import('@/pages/usage-log'));
+const OrganizationPage = lazy(() => import('@/pages/organization'));
+const DevPanel = lazy(async () => ({
+  default: (await import('@/components/dev-panel')).DevPanel,
+}));
+const UsageCounter = lazy(async () => ({
+  default: (await import('@/components/UsageCounter')).UsageCounter,
+}));
+
+const AdminDashboard = lazy(() => import('@/pages/admin/dashboard'));
+const AdminUsers = lazy(() => import('@/pages/admin/users'));
+const AdminKnowledgeBase = lazy(() => import('@/pages/admin/knowledge-base'));
+const AdminPackages = lazy(() => import('@/pages/admin/packages'));
+const AdminCoupons = lazy(() => import('@/pages/admin/coupons'));
+const AdminPayments = lazy(() => import('@/pages/admin/payments'));
+const AdminConsultations = lazy(() => import('@/pages/admin/consultations'));
+const AdminAuditLog = lazy(() => import('@/pages/admin/audit-log'));
+const AdminNotifications = lazy(() => import('@/pages/admin/notifications'));
+const AdminMojContent = lazy(() => import('@/pages/admin/moj-content'));
+const AdminKnowledgeQuality = lazy(() => import('@/pages/admin/knowledge-quality'));
+const AdminSectionControl = lazy(() => import('@/pages/admin/section-control'));
+const AdminConversionReport = lazy(() => import('@/pages/admin/conversion-report'));
+const AdminSourceStatus = lazy(() => import('@/pages/admin/source-status'));
+const AdminEmailSettings = lazy(() => import('@/pages/admin/email-settings'));
+const AdminContactMessages = lazy(() => import('@/pages/admin/contact-messages'));
+const AdminLegalCodex = lazy(() => import('@/pages/admin/legal-codex'));
+const AdminWhatsAppSettings = lazy(() => import('@/pages/admin/whatsapp-settings'));
+const AdminInitiatives = lazy(() => import('@/pages/admin/initiatives'));
 
 const queryClient = new QueryClient();
 
@@ -70,12 +78,21 @@ const SimplePage = () => {
   const title = t('إخلاء المسؤولية القانوني', 'Legal Disclaimer');
 
   return (
-    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen flex flex-col bg-muted/20">
+    <div
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      className="min-h-screen flex flex-col bg-muted/20"
+    >
       <div className="p-4 bg-primary text-white">
         <h1 className="text-xl font-bold">{title}</h1>
       </div>
+
       <div className="container mx-auto p-12 max-w-3xl prose prose-slate rtl:prose-invert">
-        <p>{t('محتوى صفحة إخلاء المسؤولية القانوني باللغة العربية...', 'The Legal Disclaimer page content is available in Arabic...')}</p>
+        <p>
+          {t(
+            'محتوى صفحة إخلاء المسؤولية القانوني باللغة العربية...',
+            'The Legal Disclaimer page content is available in Arabic...'
+          )}
+        </p>
       </div>
     </div>
   );
@@ -85,11 +102,24 @@ function NotFound() {
   const { lang, t } = useLang();
 
   return (
-    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen flex items-center justify-center bg-muted/20 text-center px-4">
+    <div
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      className="min-h-screen flex items-center justify-center bg-muted/20 text-center px-4"
+    >
       <div>
         <h1 className="text-6xl font-bold text-primary mb-4">404</h1>
-        <p className="text-xl text-muted-foreground mb-8">{t('عذراً، الصفحة التي تبحث عنها غير موجودة.', 'Sorry, the page you are looking for does not exist.')}</p>
-        <button onClick={() => (window.location.href = '/')} className="bg-primary text-white px-6 py-3 rounded-md font-bold">
+
+        <p className="text-xl text-muted-foreground mb-8">
+          {t(
+            'عذراً، الصفحة التي تبحث عنها غير موجودة.',
+            'Sorry, the page you are looking for does not exist.'
+          )}
+        </p>
+
+        <button
+          onClick={() => (window.location.href = '/')}
+          className="bg-primary text-white px-6 py-3 rounded-md font-bold"
+        >
           {t('العودة للرئيسية', 'Back to home')}
         </button>
       </div>
@@ -121,6 +151,7 @@ function BackButton() {
 
   const handleBack = () => {
     const previousLocation = navigationStack.current.at(-2);
+
     if (previousLocation) {
       isReturning.current = true;
       navigate(previousLocation);
@@ -135,7 +166,9 @@ function BackButton() {
       onClick={handleBack}
       aria-label={t('العودة للصفحة السابقة', 'Go back')}
       title={t('العودة للصفحة السابقة', 'Go back')}
-      className={`fixed top-[4.5rem] ${lang === 'ar' ? 'right-4 md:right-6' : 'left-4 md:left-6'} z-40 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+      className={`fixed top-[4.5rem] ${
+        lang === 'ar' ? 'right-4 md:right-6' : 'left-4 md:left-6'
+      } z-40 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
     >
       <ArrowRight className="h-4 w-4" aria-hidden="true" />
       <span>{t('رجوع', 'Back')}</span>
@@ -147,16 +180,25 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+
       <Route path="/pricing" component={Pricing} />
+
       <Route path="/packages">
         <Redirect to="/pricing" />
       </Route>
+
       <Route path="/contact" component={Contact} />
+
       <Route path="/about" component={About} />
+
       <Route path="/faq" component={FAQ} />
+
       <Route path="/appointment" component={Appointment} />
+
       <Route path="/privacy" component={Privacy} />
+
       <Route path="/terms" component={Terms} />
+
       <Route path="/disclaimer">
         <SimplePage />
       </Route>
@@ -166,16 +208,19 @@ function Router() {
           <Login />
         </GuestOnlyRoute>
       </Route>
+
       <Route path="/register">
         <GuestOnlyRoute>
           <Register />
         </GuestOnlyRoute>
       </Route>
+
       <Route path="/forgot-password">
         <GuestOnlyRoute>
           <ForgotPassword />
         </GuestOnlyRoute>
       </Route>
+
       <Route path="/reset-password" component={ResetPassword} />
 
       {/* Protected Client Routes */}
@@ -184,32 +229,39 @@ function Router() {
           <Dashboard />
         </ProtectedRoute>
       </Route>
+
       <Route path="/consultation">
         <Consultation />
       </Route>
+
       <Route path="/consultation/:id">
         <Consultation />
       </Route>
+
       <Route path="/payment">
         <ProtectedRoute>
           <PaymentFlow />
         </ProtectedRoute>
       </Route>
+
       <Route path="/payment/callback">
         <ProtectedRoute>
           <PaymentCallback />
         </ProtectedRoute>
       </Route>
+
       <Route path="/payment/success">
         <ProtectedRoute>
           <PaymentSuccess />
         </ProtectedRoute>
       </Route>
+
       <Route path="/payment/failed">
         <ProtectedRoute>
           <PaymentFailed />
         </ProtectedRoute>
       </Route>
+
       <Route path="/invoices/:id">
         <ProtectedRoute>
           <InvoiceDetail />
@@ -222,41 +274,49 @@ function Router() {
           <AdminDashboard />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/users">
         <ProtectedRoute adminOnly>
           <AdminUsers />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/knowledge-base">
         <ProtectedRoute adminOnly>
           <AdminKnowledgeBase />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/packages">
         <ProtectedRoute adminOnly>
           <AdminPackages />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/coupons">
         <ProtectedRoute adminOnly>
           <AdminCoupons />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/payments">
         <ProtectedRoute adminOnly>
           <AdminPayments />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/consultations">
         <ProtectedRoute adminOnly>
           <AdminConsultations />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/audit-log">
         <ProtectedRoute adminOnly>
           <AdminAuditLog />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/notifications">
         <ProtectedRoute adminOnly>
           <AdminNotifications />
@@ -264,55 +324,68 @@ function Router() {
       </Route>
 
       {/* [DISABLED Aug-2026] بوت تلجرام معطَّل — الصفحة محفوظة في telegram-sync.tsx */}
-      {/* <Route path="/admin/telegram-sync">
-        <ProtectedRoute adminOnly><AdminTelegramSync /></ProtectedRoute>
-      </Route> */}
+      {/*
+      <Route path="/admin/telegram-sync">
+        <ProtectedRoute adminOnly>
+          <AdminTelegramSync />
+        </ProtectedRoute>
+      </Route>
+      */}
 
       <Route path="/admin/moj-content">
         <ProtectedRoute adminOnly>
           <AdminMojContent />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/knowledge-quality">
         <ProtectedRoute adminOnly>
           <AdminKnowledgeQuality />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/section-control">
         <ProtectedRoute adminOnly>
           <AdminSectionControl />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/conversion-report">
         <ProtectedRoute adminOnly>
           <AdminConversionReport />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/source-status">
         <ProtectedRoute adminOnly>
           <AdminSourceStatus />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/email-settings">
         <ProtectedRoute adminOnly>
           <AdminEmailSettings />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/contact-messages">
         <ProtectedRoute adminOnly>
           <AdminContactMessages />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/legal-codex">
         <ProtectedRoute adminOnly>
           <AdminLegalCodex />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/initiatives">
         <ProtectedRoute adminOnly>
           <AdminInitiatives />
         </ProtectedRoute>
       </Route>
+
       <Route path="/admin/whatsapp">
         <ProtectedRoute adminOnly>
           <AdminWhatsAppSettings />
@@ -356,6 +429,7 @@ function Router() {
           <OrganizationPage />
         </ProtectedRoute>
       </Route>
+
       <Route path="/join-org">
         <OrganizationPage />
       </Route>
@@ -390,11 +464,30 @@ function AppContent() {
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <TooltipProvider>
         <OwnerTestGate>
-          <Router />
+          <Suspense
+            fallback={
+              <main
+                className="flex min-h-screen items-center justify-center bg-background px-4"
+                role="status"
+                aria-live="polite"
+              >
+                <p className="text-sm text-muted-foreground">
+                  جارٍ تحميل الصفحة…
+                </p>
+              </main>
+            }
+          >
+            <Router />
+          </Suspense>
+
           <BackButton />
+
           <Toaster />
-          <DevPanel />
-          <UsageCounter />
+
+          <Suspense fallback={null}>
+            <DevPanel />
+            <UsageCounter />
+          </Suspense>
         </OwnerTestGate>
       </TooltipProvider>
     </div>

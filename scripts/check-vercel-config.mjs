@@ -18,6 +18,20 @@ assert(rootConfig.headers?.some(
     (entry) => entry.key === "x-vercel-enable-rewrite-caching" && entry.value === "0",
   ),
 ), "root Vercel config must disable proxy caching for API responses");
+assert(rootConfig.headers?.some(
+  (header) => header.source === "/assets/:path*" && header.headers?.some(
+    (entry) => entry.key === "Cache-Control" && entry.value === "public, max-age=31536000, immutable",
+  ),
+), "hashed frontend assets must use immutable caching");
+const securityHeaders = rootConfig.headers?.find((header) => header.source === "/:path*")?.headers ?? [];
+for (const [key, value] of [
+  ["X-Content-Type-Options", "nosniff"],
+  ["Referrer-Policy", "strict-origin-when-cross-origin"],
+  ["X-Frame-Options", "DENY"],
+]) {
+  assert(securityHeaders.some((entry) => entry.key === key && entry.value === value), `root frontend config must set ${key}`);
+}
+assert(securityHeaders.some((entry) => entry.key === "Content-Security-Policy-Report-Only"), "root frontend config must ship a CSP report-only baseline before enforcing CSP");
 assert.equal(rootConfig.functions, undefined, "root frontend deployment must not include a local API function");
 
 assert.equal(apiConfig.framework, null);
