@@ -118,11 +118,16 @@ export interface LegalSearchResult {
   score: number;
 }
 
+/** Returns readiness only; it never exposes an API key or its content. */
+export function isLiveLegalVerificationConfigured(): boolean {
+  return typeof process.env.TAVILY_API_KEY === "string" && process.env.TAVILY_API_KEY.trim().length > 0;
+}
+
 /**
  * Detects if a message is a substantive legal question worth searching for.
  * Avoids wasting Tavily credits on greetings or very short messages.
  */
-function isSubstantiveLegalQuery(message: string): boolean {
+export function isSubstantiveLegalQuery(message: string): boolean {
   const msg = message.trim();
   if (msg.length < 25) return false;
 
@@ -157,8 +162,15 @@ export async function searchLegalSources(
   maxResults = 4
 ): Promise<LegalSearchResult[]> {
   const apiKey = process.env.TAVILY_API_KEY;
-  if (!apiKey) return [];
   if (!isSubstantiveLegalQuery(query)) return [];
+  if (!apiKey?.trim()) {
+    // A missing key must not look like a valid zero-result search: callers use
+    // this condition to release the provisional message and any quota hold.
+    throw Object.assign(
+      new Error("Live legal verification is not configured"),
+      { tavilyConfigurationError: true },
+    );
+  }
 
   // ── L1 cache lookup (in-process) ─────────────────────────────────────────
   evictExpiredL1();

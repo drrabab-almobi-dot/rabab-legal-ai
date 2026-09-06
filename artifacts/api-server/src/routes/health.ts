@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, packagesTable, subscriptionsTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
-import { getTavilyStats } from "../lib/legal-search";
+import { getTavilyStats, isLiveLegalVerificationConfigured } from "../lib/legal-search";
 import { requireAdmin } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -111,7 +111,8 @@ router.get("/diagnostics", requireAdmin, async (req, res): Promise<void> => {
   // 6. Tavily health — failure counters (never expose the API key)
   const tavilyStatsSnap = getTavilyStats();
   checks.tavily = {
-    keyPresent: !!process.env.TAVILY_API_KEY,
+    keyPresent: isLiveLegalVerificationConfigured(),
+    liveVerificationReady: isLiveLegalVerificationConfigured(),
     httpErrorCount: tavilyStatsSnap.httpErrorCount,
     networkErrorCount: tavilyStatsSnap.networkErrorCount,
     lastErrorAt: tavilyStatsSnap.lastErrorAt,
@@ -131,7 +132,8 @@ router.get("/diagnostics", requireAdmin, async (req, res): Promise<void> => {
     (checks.openai as any).keyValidFormat &&
     (checks.openaiConnectivity as any).ok &&
     (checks.database as any).ok &&
-    (checks.packages as any).freePackageExists;
+    (checks.packages as any).freePackageExists &&
+    (checks.tavily as any).liveVerificationReady;
 
   res.status(allOk ? 200 : 500).json({ allOk, checks });
 });
