@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { setPageSEO } from '@/lib/seo';
-import { Link, useLocation } from 'wouter';
-import { Navbar, Footer } from '@/components/layout';
+import { Link } from 'wouter';
 import { Button } from '@/components/ui';
 import { Scale, CheckCircle2, ChevronDown, ChevronUp, MessageSquare, Shield, Clock, Phone, FileText, FileSignature, Handshake, Building, Gavel, Lightbulb, Briefcase, Landmark, Search, Loader2, Lock, PenLine, FileSearch, Bot, ArrowLeft, BookOpen, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import launchHeroImg from '@/assets/launch-hero.jpg';
 import lawyerHeroImg from '@/assets/lawyer-hero.png';
+import domainBrandMark from '@/assets/brand/domain-rabab-legal-ai-mark.webp';
 import { buildWhatsAppContactLink } from '@/lib/whatsapp-contact';
 import { SERVICE_CATALOG } from '@/lib/service-catalog';
 import { useLang } from '@/hooks/use-language';
 import { translateArabicText } from '@/lib/translations';
+import './home-domain.css';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -35,6 +36,76 @@ const staggerContainer = {
     }
   }
 };
+
+function DomainHeader() {
+  const { lang, t } = useLang();
+  const links = [
+    { label: t('الخدمات', 'Services'), href: '#services' },
+    { label: t('الباحثة الذكية', 'Smart researcher'), href: 'https://smart-legal-researcher.s3t3-9306.chatgpt.site/', external: true },
+    { label: t('عن المنصة', 'About'), href: '/about' },
+    { label: t('تواصل', 'Contact'), href: '/contact' },
+  ];
+
+  return (
+    <header dir={lang === 'ar' ? 'rtl' : 'ltr'} className="border-b border-white/10 bg-[#071529] text-white">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label={t('الصفحة الرئيسية', 'Home')}>
+          <img src={domainBrandMark} alt="RABAB LEGAL AI" className="h-10 w-10 shrink-0 object-contain" />
+          <span className="truncate text-xs font-extrabold tracking-[0.14em] text-white" dir="ltr">RABAB LEGAL AI</span>
+        </Link>
+
+        <nav className="hidden items-center gap-6 lg:flex" aria-label={t('تنقل الدومين', 'Domain navigation')}>
+          {links.map((link) => link.external ? (
+            <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-white/75 transition-colors hover:text-[#D6A447]">{link.label}</a>
+          ) : (
+            <a key={link.href} href={link.href} className="text-sm font-semibold text-white/75 transition-colors hover:text-[#D6A447]">{link.label}</a>
+          ))}
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <Link href="/login" className="hidden text-sm font-semibold text-white/80 hover:text-white sm:inline-flex">{t('دخول', 'Log in')}</Link>
+          <Link href="/register">
+            <Button size="sm" className="h-9 rounded-md bg-[#D6A447] px-3 text-xs font-extrabold text-[#071529] hover:bg-[#e2b65d]">{t('ابدأ الآن', 'Get started')}</Button>
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function DomainFooter() {
+  const { lang, t } = useLang();
+  return (
+    <footer dir={lang === 'ar' ? 'rtl' : 'ltr'} className="border-t-2 border-[#D6A447] bg-[#071529] text-white">
+      <div className="mx-auto grid max-w-[1440px] gap-8 px-5 py-10 sm:px-8 md:grid-cols-[1.3fr_1fr_1fr] lg:px-12">
+        <div>
+          <div className="flex items-center gap-3">
+            <img src={domainBrandMark} alt="RABAB LEGAL AI" className="h-11 w-11 object-contain" />
+            <span className="text-sm font-extrabold tracking-[0.14em]" dir="ltr">RABAB LEGAL AI</span>
+          </div>
+          <p className="mt-4 max-w-lg text-sm leading-7 text-white/70">{t('منصة عامة للتعريف بالخدمات القانونية الذكية والانتقال إلى أدوات الاستشارة والبحث والمستندات.', 'A public domain for discovering legal-intelligence services and accessing consultation, research, and document tools.')}</p>
+        </div>
+        <div>
+          <h2 className="!text-[#D6A447] text-base font-extrabold">{t('استكشف', 'Explore')}</h2>
+          <div className="mt-4 flex flex-col gap-2 text-sm text-white/70">
+            <a href="#services" className="hover:text-white">{t('الخدمات', 'Services')}</a>
+            <a href="https://smart-legal-researcher.s3t3-9306.chatgpt.site/" target="_blank" rel="noopener noreferrer" className="hover:text-white">{t('الباحثة الذكية', 'Smart researcher')}</a>
+            <Link href="/pricing" className="hover:text-white">{t('الباقات', 'Plans')}</Link>
+          </div>
+        </div>
+        <div>
+          <h2 className="!text-[#D6A447] text-base font-extrabold">{t('قانوني', 'Legal')}</h2>
+          <div className="mt-4 flex flex-col gap-2 text-sm text-white/70">
+            <Link href="/privacy" className="hover:text-white">{t('سياسة الخصوصية', 'Privacy policy')}</Link>
+            <Link href="/terms" className="hover:text-white">{t('شروط الاستخدام', 'Terms of use')}</Link>
+            <Link href="/disclaimer" className="hover:text-white">{t('إخلاء المسؤولية', 'Disclaimer')}</Link>
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-white/10 px-5 py-5 text-center text-xs text-white/55">© {new Date().getFullYear()} RABAB LEGAL AI. {t('جميع الحقوق محفوظة.', 'All rights reserved.')}</div>
+    </footer>
+  );
+}
 
 interface PreviewResult { excerpt: string; similarity: number; }
 
@@ -229,12 +300,12 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden font-sans">
-      <Navbar />
+    <div className="domain-home min-h-screen flex flex-col overflow-x-hidden font-sans">
+      <DomainHeader />
       
       {/* Hero — contemporary legal editorial system */}
       <section className="relative overflow-hidden bg-[#071529] py-12 text-white sm:py-16 lg:py-20">
-        <div className="legal-editorial-grid absolute inset-0 opacity-60" aria-hidden="true" />
+        <div className="domain-editorial-grid absolute inset-0 opacity-60" aria-hidden="true" />
         <div className="absolute inset-x-0 top-0 h-1 bg-[#D6A447]" aria-hidden="true" />
         <div className="container relative z-10 mx-auto px-5 sm:px-8 lg:px-12">
           <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(340px,0.75fr)] lg:gap-16">
@@ -277,7 +348,7 @@ export default function Home() {
               <div className="border border-white/20 bg-white/[0.03] p-3 sm:p-4">
                 <img src={launchHeroImg} alt={t('RABAB LEGAL AI — الإطلاق التجريبي', 'RABAB LEGAL AI — Launch Preview')} className="aspect-square w-full object-cover" />
               </div>
-              <figcaption className="legal-wordmark-rule mt-5 text-xs leading-6 text-white/60">
+              <figcaption className="domain-wordmark-rule mt-5 text-xs leading-6 text-white/60">
                 {t('ذكاء قانوني دقيق وموثوق، مهيأ لعرض التحليل والمصدر والخطوة التالية بوضوح.', 'Precise, trusted legal intelligence designed around analysis, source, and next step.')}
               </figcaption>
             </motion.figure>
@@ -286,7 +357,7 @@ export default function Home() {
       </section>
 
       {/* Trust and reviewability */}
-      <section id="why-rabab" className="legal-paper-surface legal-paper-grid border-b border-[#12335B]/15 bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
+      <section id="why-rabab" className="domain-paper domain-paper-grid border-b border-[#12335B]/15 bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
         <div className="container mx-auto px-5 sm:px-8 lg:px-12">
           <p className="mb-3 text-center text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">TRUST / REVIEW / CONTINUITY</p>
           <h2 className="mb-10 text-center text-3xl font-extrabold leading-tight sm:text-4xl md:text-5xl">
@@ -322,7 +393,7 @@ export default function Home() {
       </section>
 
       {/* Primary action */}
-      <section className="legal-ink-surface bg-[#12335B] py-14">
+      <section className="domain-ink bg-[#12335B] py-14">
         <div className="container mx-auto px-5 text-center sm:px-8">
           <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
             <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">BEGIN WITH CONTEXT</p>
@@ -347,7 +418,7 @@ export default function Home() {
       </section>
 
       {/* Primary services */}
-      <section id="services" className="legal-paper-grid bg-[#F6F2E9] py-14 text-[#071529] sm:py-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <section id="services" className="domain-paper domain-paper-grid bg-[#F6F2E9] py-14 text-[#071529] sm:py-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="mb-10 grid gap-5 border-b border-[#12335B]/20 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className={lang === 'ar' ? 'text-right' : 'text-left'}>
@@ -574,7 +645,7 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="legal-paper-surface bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
+      <section className="domain-paper bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
         <div className="container mx-auto px-5 sm:px-8 lg:px-12">
           <div className="mb-10 grid gap-4 border-b border-[#12335B]/20 pb-7 md:grid-cols-[1fr_auto] md:items-end">
             <div>
@@ -606,7 +677,7 @@ export default function Home() {
       </section>
 
       {/* Smart legal researcher */}
-      <section className="legal-ink-surface bg-[#071529] py-14 text-white sm:py-16">
+      <section className="domain-ink bg-[#071529] py-14 text-white sm:py-16">
         <div className="container mx-auto grid items-end gap-7 px-5 sm:px-8 lg:grid-cols-[1fr_auto] lg:px-12">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="max-w-3xl">
             <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">RESEARCH / SOURCE-LED</p>
@@ -783,7 +854,7 @@ export default function Home() {
 
 
       {/* Professional service standard */}
-      <section className="legal-paper-surface bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
+      <section className="domain-paper bg-[#F6F2E9] py-14 text-[#071529] sm:py-16">
         <div className="container mx-auto px-5 sm:px-8 lg:px-12">
           <div className="mb-10 max-w-3xl">
             <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">SERVICE STANDARD</p>
@@ -809,7 +880,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="legal-ink-surface bg-[#071529] py-14 text-white sm:py-16">
+      <section className="domain-ink bg-[#071529] py-14 text-white sm:py-16">
         <div className="container mx-auto max-w-4xl px-5 sm:px-8">
           <div className="mb-10 border-b border-white/15 pb-7 text-right">
             <p className="mb-3 text-xs font-extrabold tracking-[0.16em] text-[#2BB9ED]" dir="ltr">FAQ / CLARITY</p>
@@ -846,7 +917,7 @@ export default function Home() {
         </div>
       </section>
 
-      <Footer />
+      <DomainFooter />
       
     </div>
   );
