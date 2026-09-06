@@ -48,7 +48,7 @@ async function api(
   base: string,
   method: string,
   path: string,
-  opts: { token?: string; body?: unknown; cookie?: string } = {},
+  opts: { token?: string; body?: unknown; cookie?: string; origin?: string } = {},
 ): Promise<{ status: number; body: any; setCookie: string | null }> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -56,6 +56,7 @@ async function api(
   };
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
   if (opts.cookie) headers.Cookie = opts.cookie;
+  if (opts.origin) headers.Origin = opts.origin;
 
   const response = await fetch(`${base}${path}`, {
     method,
@@ -77,11 +78,12 @@ async function api(
   };
 }
 
-const { db, usersTable, phoneOtpTokensTable } = await import("@workspace/db");
-const { eq } = await import("drizzle-orm");
+const { db, usersTable, phoneOtpTokensTable, passwordResetTokensTable, sessionStoreTable } = await import("@workspace/db");
+const { eq, sql } = await import("drizzle-orm");
 const { default: app } = await import("../app.js");
 
 async function cleanupUser(userId: number): Promise<void> {
+  await db.delete(sessionStoreTable).where(sql`${sessionStoreTable.sess} ->> 'userId' = ${String(userId)}`);
   await db.update(usersTable).set({ isActive: true }).where(eq(usersTable.id, userId));
   await db.delete(usersTable).where(eq(usersTable.id, userId));
 }
@@ -150,6 +152,61 @@ await test("valid login issues a session cookie the server accepts on the next r
   });
   assert.equal(me.status, 200, `session cookie was rejected: ${JSON.stringify(me.body)}`);
   assert.equal(me.body.email, email);
+});
+
+await test("each login rotates the browser session identifier", async () => {
+  const { email } = await registerVerifiedUser(BASE);
+
+  const firstLogin = await api(BASE, "POST", "/api/auth/login", {
+    body: { email, password: TEST_PASSWORD },
+  });
+  assert.equal(firstLogin.status, 200);
+  const firstCookie = sessionCookie(firstLogin.setCookie);
+
+  const secondLogin = await api(BASE, "POST", "/api/auth/login", {
+    cookie: firstCookie,
+    origin: "http://localhost:3000",
+    body: { email, password: TEST_PASSWORD },
+  });
+  assert.equal(secondLogin.status, 200);
+  const secondCookie = sessionCookie(secondLogin.setCookie);
+  assert.notEqual(secondCookie, firstCookie, "login must replace the pre-authentication session ID");
+
+  const me = await api(BASE, "GET", "/api/auth/me", { cookie: secondCookie });
+  assert.equal(me.status, 200);
+  assert.equal(me.body.email, email);
+});
+
+await test("password reset invalidates every existing session and JWT", async () => {
+  const { email, userId } = await registerVerifiedUser(BASE);
+  const login = await api(BASE, "POST", "/api/auth/login", {
+    body: { email, password: TEST_PASSWORD },
+  });
+  assert.equal(login.status, 200);
+  const oldCookie = sessionCookie(login.setCookie);
+  const oldToken = login.body.token as string;
+
+  const resetToken = `reset-${uuidv4()}`;
+  await db.insert(passwordResetTokensTable).values({
+    userId,
+    token: resetToken,
+    expiresAt: new Date(Date.now() + 60_000),
+  });
+
+  const reset = await api(BASE, "POST", "/api/auth/reset-password", {
+    body: { token: resetToken, password: "ResetPass456!" },
+  });
+  assert.equal(reset.status, 200, `password reset failed: ${JSON.stringify(reset.body)}`);
+
+  const staleToken = await api(BASE, "GET", "/api/auth/me", { token: oldToken });
+  assert.equal(staleToken.status, 401, "JWT issued before reset must be rejected");
+  const staleSession = await api(BASE, "GET", "/api/auth/me", { cookie: oldCookie });
+  assert.equal(staleSession.status, 401, "session issued before reset must be rejected");
+
+  const freshLogin = await api(BASE, "POST", "/api/auth/login", {
+    body: { email, password: "ResetPass456!" },
+  });
+  assert.equal(freshLogin.status, 200, "new password must work after reset");
 });
 
 await test("logout revokes the JWT and rejects subsequent protected requests", async () => {

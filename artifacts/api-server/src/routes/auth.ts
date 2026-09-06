@@ -7,9 +7,9 @@ import { OAuth2Client } from "google-auth-library";
 import {
   db, usersTable, subscriptionsTable, packagesTable,
   tokenBlocklistTable, passwordResetTokensTable,
-  emailVerificationTokensTable, phoneOtpTokensTable,
+  emailVerificationTokensTable, phoneOtpTokensTable, sessionStoreTable,
 } from "@workspace/db";
-import { eq, and, gt, isNull, desc } from "drizzle-orm";
+import { eq, and, gt, isNull, desc, sql } from "drizzle-orm";
 import { sendEmail } from "../lib/email";
 import { requireAuth, JWT_SECRET, tokenFingerprint, type JwtPayload } from "../middlewares/auth";
 import { logAction } from "./audit-log";
@@ -218,6 +218,31 @@ function persistSession(req: Request): Promise<void> {
   });
 }
 
+function regenerateSession(req: Request): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session!.regenerate((error) => error ? reject(error) : resolve());
+  });
+}
+
+/**
+ * Rotate the server-side session identifier before granting an authenticated
+ * identity. This prevents a pre-authentication session from being fixed and
+ * reused after login, verification, or OAuth completion.
+ */
+async function establishUserSession(req: Request, user: typeof usersTable.$inferSelect): Promise<void> {
+  await regenerateSession(req);
+  req.session!.userId = user.id;
+  req.session!.userRole = user.role;
+  await persistSession(req);
+}
+
+/** Remove every persisted browser session for a user after credential rotation. */
+async function revokeUserSessions(userId: number): Promise<void> {
+  await db
+    .delete(sessionStoreTable)
+    .where(sql`${sessionStoreTable.sess} ->> 'userId' = ${String(userId)}`);
+}
+
 // ── Google OAuth ────────────────────────────────────────────────────────────
 // The provider status endpoint lets the web UI avoid presenting a button that
 // would fail until the organisation has added its Google Cloud credentials.
@@ -330,17 +355,16 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
       return;
     }
 
-    req.session!.userId = user.id;
-    req.session!.userRole = user.role;
-    req.session!.save((sessionError) => {
-      if (sessionError) {
-        logger.error({ err: sessionError, userId: user.id }, "Unable to save Google OAuth session");
-        res.redirect(302, oauthFrontendUrl(returnTo, "google_session_error"));
-        return;
-      }
-      logAction({ userId: user.id, action: "google_login", details: {}, ip: req.ip, userAgent: req.get("user-agent") });
-      res.redirect(302, oauthFrontendUrl(returnTo));
-    });
+    try {
+      await establishUserSession(req, user);
+    } catch (sessionError) {
+      logger.error({ err: sessionError, userId: user.id }, "Unable to save rotated Google OAuth session");
+      res.redirect(302, oauthFrontendUrl(returnTo, "google_session_error"));
+      return;
+    }
+
+    logAction({ userId: user.id, action: "google_login", details: {}, ip: req.ip, userAgent: req.get("user-agent") });
+    res.redirect(302, oauthFrontendUrl(returnTo));
   } catch (error) {
     logger.error({ err: error }, "Google OAuth callback failed");
     res.redirect(302, oauthFrontendUrl(returnTo, "google_failed"));
@@ -514,12 +538,10 @@ router.post("/auth/phone-verify/confirm", async (req, res): Promise<void> => {
   if (!user) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
 
   const token = issueToken(user.id, user.role, user.tokenVersion ?? 1);
-  req.session!.userId = user.id;
-  req.session!.userRole = user.role;
   try {
-    await persistSession(req);
+    await establishUserSession(req, user);
   } catch (error) {
-    logger.error({ err: error, userId: user.id }, "Unable to save phone verification session");
+    logger.error({ err: error, userId: user.id }, "Unable to save rotated phone verification session");
     res.status(500).json({ error: "خطأ في حفظ الجلسة" });
     return;
   }
@@ -655,13 +677,10 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
   await db.delete(emailVerificationTokensTable)
     .where(eq(emailVerificationTokensTable.userId, user.id));
 
-  req.session!.userId = user.id;
-  req.session!.userRole = user.role;
-
   try {
-    await persistSession(req);
+    await establishUserSession(req, user);
   } catch (error) {
-    logger.error({ err: error, userId: user.id }, "Unable to save email verification session");
+    logger.error({ err: error, userId: user.id }, "Unable to save rotated email verification session");
     res.status(500).json({ error: "خطأ في حفظ الجلسة" });
     return;
   }
@@ -808,17 +827,17 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  req.session!.userId = user.id;
-  req.session!.userRole = user.role;
+  const token = issueToken(user.id, user.role, user.tokenVersion ?? 1);
+  try {
+    await establishUserSession(req, user);
+  } catch (error) {
+    logger.error({ err: error, userId: user.id }, "Unable to save rotated login session");
+    res.status(500).json({ error: "خطأ في حفظ الجلسة" });
+    return;
+  }
 
   logAction({ userId: user.id, action: "login", ip: req.ip, userAgent: req.get("user-agent") });
-
-  const token = issueToken(user.id, user.role, user.tokenVersion ?? 1);
-
-  req.session!.save((err) => {
-    if (err) { res.status(500).json({ error: "خطأ في حفظ الجلسة" }); return; }
-    res.json({ token, user: userResponse(user) });
-  });
+  res.json({ token, user: userResponse(user) });
 });
 
 // ── POST /api/auth/logout ─────────────────────────────────────────────────────
@@ -831,7 +850,15 @@ router.post("/auth/logout", async (req, res): Promise<void> => {
       await revokeVerifiedToken(rawToken, payload.exp);
     } catch { /* invalid/expired token — skip blocklist */ }
   }
-  req.session!.destroy(() => { res.json({ success: true, message: "تم تسجيل الخروج" }); });
+  req.session!.destroy((sessionError) => {
+    if (sessionError) {
+      logger.error({ err: sessionError }, "Unable to destroy logout session");
+      res.status(500).json({ error: "تعذر إنهاء الجلسة. يرجى المحاولة مرة أخرى." });
+      return;
+    }
+    res.clearCookie("connect.sid");
+    res.json({ success: true, message: "تم تسجيل الخروج" });
+  });
 });
 
 // ── GET /api/auth/me ──────────────────────────────────────────────────────────
@@ -933,8 +960,29 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
   }
 
   const passwordHash = await bcryptjs.hash(password, 12);
-  await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, record.userId));
-  await db.update(passwordResetTokensTable).set({ usedAt: new Date() }).where(eq(passwordResetTokensTable.id, record.id));
+  try {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(usersTable)
+        .set({
+          passwordHash,
+          tokenVersion: sql`${usersTable.tokenVersion} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(usersTable.id, record.userId));
+      await tx
+        .delete(sessionStoreTable)
+        .where(sql`${sessionStoreTable.sess} ->> 'userId' = ${String(record.userId)}`);
+      await tx
+        .update(passwordResetTokensTable)
+        .set({ usedAt: new Date() })
+        .where(eq(passwordResetTokensTable.id, record.id));
+    });
+  } catch (error) {
+    logger.error({ err: error, userId: record.userId }, "Unable to complete password reset transaction");
+    res.status(500).json({ error: "تعذر إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى." });
+    return;
+  }
 
   res.json({ success: true });
 });
@@ -979,15 +1027,16 @@ router.post("/auth/dev-login", async (req, res): Promise<void> => {
     return;
   }
 
-  req.session!.userId   = user.id;
-  req.session!.userRole = user.role;
-
   const token = issueToken(user.id, user.role, user.tokenVersion ?? 1);
+  try {
+    await establishUserSession(req, user);
+  } catch (error) {
+    logger.error({ err: error, userId: user.id }, "Unable to save rotated development session");
+    res.status(500).json({ error: "خطأ في حفظ الجلسة" });
+    return;
+  }
 
-  req.session!.save((err) => {
-    if (err) { res.status(500).json({ error: "خطأ في حفظ الجلسة" }); return; }
-    res.json({ token, user: userResponse(user) });
-  });
+  res.json({ token, user: userResponse(user) });
 });
 
 export default router;
