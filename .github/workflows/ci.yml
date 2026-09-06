@@ -4,6 +4,12 @@ on:
   pull_request:
     branches:
       - main
+    # A PR retargeted to main must receive a fresh protected quality check.
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
   push:
     branches:
       - main
