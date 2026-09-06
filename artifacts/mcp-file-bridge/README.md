@@ -7,10 +7,10 @@ Private, read-only MCP access for approved Claude connections. The bridge expose
 Use the Streamable HTTP endpoint:
 
 ```text
-https://<your-Replit-domain>/mcp-files/mcp
+https://<your-deployment-domain>/mcp-files/mcp
 ```
 
-For local Replit preview testing, use the active development domain with the same `/mcp-files/mcp` path. For an external Claude connection, use the published deployment domain only after publishing is explicitly approved.
+For local testing, use the active development domain with the same `/mcp-files/mcp` path. For an external connection, use the published deployment domain only after publishing is explicitly approved.
 
 Configure the connector to send:
 
@@ -47,7 +47,7 @@ Every request is authenticated and rate-limited. Audit records contain the opera
 
 ## Token operations
 
-Set `MCP_FILES_TOKEN` in Replit Secrets to a random value of at least 32 characters. Never place it in a repository file or frontend configuration.
+Set `MCP_FILES_TOKEN` in the deployment environment to a random value of at least 32 characters. Never place it in a repository file or frontend configuration.
 
 For a timed rotation window:
 

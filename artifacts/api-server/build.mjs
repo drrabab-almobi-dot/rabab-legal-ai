@@ -16,7 +16,7 @@ async function buildAll() {
 
   await esbuild({
     // Build two ESM entrypoints:
-    // - index.mjs starts the always-on Replit service.
+    // - index.mjs starts the standalone Node API service.
     // - app.mjs exports the Express application without starting a listener,
     //   which is the entrypoint consumed by the Vercel function.
     entryPoints: {

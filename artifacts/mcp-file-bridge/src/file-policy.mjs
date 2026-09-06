@@ -21,13 +21,10 @@ const ALLOWED_DIRECTORIES = [
 const ALLOWED_ROOT_FILES = new Set([
   ".gitignore",
   ".gitattributes",
-  ".replit",
-  ".replitignore",
   ".npmrc",
   "package.json",
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",
-  "replit.md",
   "tsconfig.base.json",
   "tsconfig.json",
 ]);

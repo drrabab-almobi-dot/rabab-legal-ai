@@ -13,7 +13,7 @@
 - تطبيق الجوال: `artifacts/rabab-mobile`
 - مكتبات قاعدة البيانات ومواصفات API: `lib`
 - السكربتات المساعدة: `scripts`
-- ملفات المشروع العامة: `package.json` و`pnpm-workspace.yaml` و`pnpm-lock.yaml` و`replit.md`
+- ملفات المشروع العامة: `package.json` و`pnpm-workspace.yaml` و`pnpm-lock.yaml`
 - الأصول المرفوعة الموجودة داخل `attached_assets`
 
 مستبعدة عمداً لأسباب أمنية وحجمية:

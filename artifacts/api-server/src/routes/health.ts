@@ -64,12 +64,12 @@ router.get("/diagnostics", requireAdmin, async (req, res): Promise<void> => {
   // 3. Session config
   checks.session = {
     secretSet: !!process.env.SESSION_SECRET,
-    isReplitEnv: !!process.env.REPL_ID,
+    secureDeployment: process.env.NODE_ENV === "production",
     nodeEnv: process.env.NODE_ENV ?? "unset",
     cookieSameSite:
-      process.env.REPL_ID || process.env.NODE_ENV === "production" ? "none" : "lax",
+      process.env.NODE_ENV === "production" ? "none" : "lax",
     cookieSecure:
-      !!(process.env.REPL_ID || process.env.NODE_ENV === "production"),
+      process.env.NODE_ENV === "production",
   };
 
   // 4. Database connectivity

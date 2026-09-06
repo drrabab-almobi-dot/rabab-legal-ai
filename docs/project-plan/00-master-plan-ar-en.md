@@ -2,7 +2,7 @@
 
 **Updated / آخر تحديث:** 23 August 2026  
 **Status / الحالة:** Development environment; web-first delivery with a planned mobile companion  
-**Source of truth / المرجع:** `replit.md` and the approved product rules
+**Source of truth / المرجع:** project-plan documentation and the approved product rules
 
 ## 1. Vision | الرؤية
 
