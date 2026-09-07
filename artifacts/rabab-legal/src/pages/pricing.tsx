@@ -79,7 +79,7 @@ const BORDER_MAP: Record<string, string> = {
   free:      'border-2 border-emerald-400/80 shadow-[0_0_0_1px_rgba(52,211,153,0.35),0_0_24px_rgba(52,211,153,0.18)]',
   questions: 'border-2 border-secondary/80 shadow-[0_0_0_1px_hsl(191_100%_50%_/_0.35),0_0_24px_hsl(191_100%_50%_/_0.16)]',
   monthly:   'border-2 border-blue-400/80 shadow-[0_0_0_1px_rgba(96,165,250,0.35),0_0_24px_rgba(96,165,250,0.16)]',
-  business:  'border-2 border-accent/80 shadow-[0_0_0_1px_hsl(263_87%_65%_/_0.35),0_0_28px_hsl(263_87%_65%_/_0.16)]',
+  business:  'border-2 border-accent/80 shadow-[0_0_0_1px_hsl(263_87%_65%_/_0.35),0_0_24px_hsl(263_87%_65%_/_0.16)]',
 };
 
 // ── Comparison Table features ──────────────────────────────────────────────────
