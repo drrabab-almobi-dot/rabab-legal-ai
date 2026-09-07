@@ -110,9 +110,19 @@ export default function Pricing() {
   const [showCompare, setShowCompare] = useState(false);
   const { data: apiPackages, isLoading, isError } = useListPackages();
 
-  const packages = (apiPackages && apiPackages.length > 0)
-    ? apiPackages.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-    : HARDCODED_PACKAGES;
+  // Regression guard: the public catalog must not collapse when the API returns
+  // only part of the approved package set. Preserve any live package values that
+  // are present, and fill only missing approved package types from the stable
+  // fallback catalog. This keeps pricing available without disabling admin/API
+  // package management.
+  const sortedApiPackages = apiPackages
+    ? [...apiPackages].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    : [];
+  const packages = HARDCODED_PACKAGES
+    .map((fallbackPackage) =>
+      sortedApiPackages.find((pkg) => pkg.type === fallbackPackage.type) ?? fallbackPackage
+    )
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   const handleSelectPackage = (pkgId: number) => setLocation(`/payment?packageId=${pkgId}`);
 
