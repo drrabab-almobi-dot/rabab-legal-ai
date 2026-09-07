@@ -1,5 +1,5 @@
 /**
- * Shared document indexing logic — supports PDF, DOCX, TXT, PPTX, XLSX, XLS, DOC, RTF
+ * Shared document indexing logic — supports PDF, DOCX, TXT, PPTX, DOC, RTF, and CSV.
  * Each file type has its own extraction strategy.
  */
 
@@ -433,8 +433,6 @@ export function detectMime(filename: string, declared: string): string {
   if (f.endsWith(".doc"))  return "application/msword";
   if (f.endsWith(".pptx")) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
   if (f.endsWith(".ppt"))  return "application/vnd.ms-powerpoint";
-  if (f.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-  if (f.endsWith(".xls"))  return "application/vnd.ms-excel";
   if (f.endsWith(".txt") || f.endsWith(".rtf")) return "text/plain";
   if (f.endsWith(".csv"))  return "text/csv";
   return declared || "application/octet-stream";
@@ -442,7 +440,7 @@ export function detectMime(filename: string, declared: string): string {
 
 /** True if we can attempt text extraction from this filename */
 export function isIndexable(filename: string): boolean {
-  return /\.(pdf|docx?|pptx?|xlsx?|txt|rtf|csv)$/i.test(filename);
+  return /\.(pdf|docx?|pptx?|txt|rtf|csv)$/i.test(filename);
 }
 
 // ─── Extractors ───────────────────────────────────────────────────────────────
@@ -490,20 +488,6 @@ function extractPptx(buffer: Buffer): string {
   }
 }
 
-/** Extract text from XLSX / XLS using the xlsx package */
-async function extractXlsx(buffer: Buffer): Promise<string> {
-  const XLSX = await import("xlsx" as any);
-  const lib = XLSX.default ?? XLSX;
-  const wb = lib.read(buffer, { type: "buffer" });
-  const lines: string[] = [];
-  for (const sheetName of wb.SheetNames) {
-    const ws = wb.Sheets[sheetName];
-    const csv: string = lib.utils.sheet_to_csv(ws, { blankrows: false });
-    if (csv.trim()) lines.push(`[${sheetName}]\n${csv}`);
-  }
-  return lines.join("\n\n");
-}
-
 /** Best-effort DOC extraction: if it starts with RTF markers extract; otherwise skip */
 function extractDoc(buffer: Buffer): string {
   const head = buffer.slice(0, 8).toString("ascii");
@@ -542,12 +526,6 @@ export async function extractText(
   if (mime === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || f.endsWith(".pptx"))
     return extractPptx(buffer);
 
-  if (
-    mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-    mime === "application/vnd.ms-excel" ||
-    f.endsWith(".xlsx") || f.endsWith(".xls")
-  ) return extractXlsx(buffer);
-
   if (mime === "application/msword" || f.endsWith(".doc"))
     return extractDoc(buffer);
 
@@ -565,8 +543,6 @@ export function fileTypeLabel(filename: string): string {
   if (f.endsWith(".doc"))  return "Word (قديم)";
   if (f.endsWith(".pptx")) return "PowerPoint";
   if (f.endsWith(".ppt"))  return "PowerPoint (قديم)";
-  if (f.endsWith(".xlsx")) return "Excel";
-  if (f.endsWith(".xls"))  return "Excel (قديم)";
   if (f.endsWith(".txt"))  return "نص";
   if (f.endsWith(".csv"))  return "CSV";
   if (f.endsWith(".rtf"))  return "RTF";
