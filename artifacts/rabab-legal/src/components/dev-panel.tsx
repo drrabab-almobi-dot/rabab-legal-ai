@@ -1,5 +1,5 @@
 /**
- * DevPanel — مرئي فقط في بيئة التطوير (Replit preview)
+ * DevPanel — مرئي فقط في بيئة التطوير
  * مخفي تماماً في الإنتاج لأن import.meta.env.DEV = false في build
  */
 import { useState } from 'react';

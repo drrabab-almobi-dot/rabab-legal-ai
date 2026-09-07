@@ -7,13 +7,12 @@
 --   shared_preload_libraries = 'pg_cron'
 --   cron.database_name = '<your-db-name>'
 --
--- In the current Replit-managed PostgreSQL instance pg_cron is NOT in
--- shared_preload_libraries (only timescaledb,helium are loaded), so this
--- script cannot be applied here.  The Node.js server uses a recursive-
--- setTimeout fallback instead (see artifacts/api-server/src/index.ts).
+-- If the managed PostgreSQL provider does not expose pg_cron through
+-- shared_preload_libraries, do not apply this script. Use a managed scheduled
+-- job instead of a process-local timer.
 --
--- If pg_cron ever becomes available, run this script once as a superuser and
--- then remove the setTimeout block from index.ts.
+-- If pg_cron becomes available, run this script once as a superuser and
+-- retire the managed scheduled job only after verifying cleanup continuity.
 -- ──────────────────────────────────────────────────────────────────────────
 
 CREATE EXTENSION IF NOT EXISTS pg_cron;

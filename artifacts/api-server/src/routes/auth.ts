@@ -880,8 +880,7 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
   await db.insert(passwordResetTokensTable).values({ userId: user.id, token, expiresAt });
 
   // In the development preview, keep reset links on the same preview host.
-  // FRONTEND_URL may intentionally point at production, which would show
-  // Replit's private-app page when a developer requests a reset locally.
+  // FRONTEND_URL may intentionally point at production during local testing.
   const forwardedProto = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
   const forwardedHost = req.get("x-forwarded-host")?.split(",")[0]?.trim();
   const requestOrigin = (forwardedHost || req.get("host"))

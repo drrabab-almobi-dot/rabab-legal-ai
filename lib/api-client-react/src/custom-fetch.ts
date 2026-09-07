@@ -362,7 +362,7 @@ export async function customFetch<T = unknown>(
 
   // Always send session cookies so the Express session middleware can
   // identify the caller. 'include' covers both same-origin and cross-origin
-  // requests, which is needed inside Replit's HTTPS proxy environment.
+  // requests through the approved HTTPS deployment origins.
   const credentials: RequestCredentials = init.credentials ?? "include";
 
   const response = await fetch(input, { ...init, method, headers, credentials });

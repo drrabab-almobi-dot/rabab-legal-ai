@@ -13,9 +13,8 @@ const PgStore = connectPgSimple(session);
 
 const app: Express = express();
 
-// ── Trust Replit's HTTPS reverse-proxy so session cookies and IP detection ──
-// work correctly. Without this, Express sees every request as HTTP even though
-// the browser is on HTTPS, and sameSite/secure cookie logic breaks.
+// Vercel terminates TLS before forwarding requests. Trust its first proxy so
+// Express can enforce secure cookies using the original HTTPS request context.
 app.set("trust proxy", 1);
 
 app.use(
@@ -111,11 +110,9 @@ if (!sessionSecret) {
   throw new Error("SESSION_SECRET environment variable is required");
 }
 
-// ── Cookie security: always use sameSite='none' + secure=true inside Replit ──
-// Replit serves the app over HTTPS through a reverse proxy even in development.
-// sameSite='lax' blocks cookies in cross-origin sub-requests (e.g. the iframe
-// preview), which silently breaks auth. REPL_ID is set in all Replit envs.
-const isReplitOrProd = !!process.env.REPL_ID || process.env.NODE_ENV === "production";
+// Production and Vercel preview deployments run over HTTPS. Local development
+// stays on lax, non-secure cookies so integration tests remain deterministic.
+const isSecureDeployment = process.env.NODE_ENV === "production";
 
 app.use(
   session({
@@ -130,9 +127,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isReplitOrProd,          // require HTTPS when behind proxy
+      secure: isSecureDeployment,      // require HTTPS in deployed environments
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: isReplitOrProd ? "none" : "lax",
+      sameSite: isSecureDeployment ? "none" : "lax",
     },
   }),
 );
