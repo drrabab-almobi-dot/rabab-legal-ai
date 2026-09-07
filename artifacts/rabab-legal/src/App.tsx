@@ -38,6 +38,7 @@ const ForgotPassword = lazy(() => import('@/pages/forgot-password'));
 const ResetPassword = lazy(() => import('@/pages/reset-password'));
 const KnowledgeSearch = lazy(() => import('@/pages/knowledge-search'));
 const LegalSearchPage = lazy(() => import('@/pages/legal-search'));
+const ProfessionalLegalArchiveSearch = lazy(() => import('@/pages/professional-legal-archive-search'));
 const ContractsPage = lazy(() => import('@/pages/contracts'));
 const LegalAssistant = lazy(() => import('@/pages/legal-assistant'));
 const ServiceDetails = lazy(() => import('@/pages/service-details'));
@@ -399,6 +400,9 @@ function Router() {
 
       {/* Standalone smart legal search */}
       <Route path="/legal-search">
+        <ProfessionalLegalArchiveSearch />
+      </Route>
+      <Route path="/legal-codex">
         <LegalSearchPage />
       </Route>
 

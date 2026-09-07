@@ -25,6 +25,7 @@ import communityInitiativesRouter from "./community-initiatives";
 import whatsappAdminRouter from "./whatsapp-admin";
 import { topicRouterRouter } from "./topic-router";
 import organizationsRouter from "./organizations";
+import legalArchiveRouter from "./legal-archive";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(communityInitiativesRouter);
 router.use(whatsappAdminRouter);
 router.use(topicRouterRouter);
 router.use(organizationsRouter);
+router.use(legalArchiveRouter);
 
 export default router;
