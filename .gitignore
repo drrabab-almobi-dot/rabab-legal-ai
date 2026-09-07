@@ -58,6 +58,7 @@ Thumbs.db
 
 # Local migration and transfer artifacts
 .agents/
+production-smoke-report.json
 exports/
 migration_export/
 docs/RABAB_LEGAL_AI_Project_Full_Plan_AR_EN_With_All_Attachments.zip
