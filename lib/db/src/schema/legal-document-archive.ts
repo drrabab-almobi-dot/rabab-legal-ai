@@ -133,7 +133,7 @@ export const legalDocumentsTable = pgTable(
     index("legal_documents_status_idx").on(table.status),
     check(
       "legal_documents_type_check",
-      sql`${table.documentType} in ('judgment','circular','decision','principle','precedent')`,
+      sql`${table.documentType} in ('judgment','deed','circular','decision','principle','precedent','blog_index')`,
     ),
     check(
       "legal_documents_status_check",
