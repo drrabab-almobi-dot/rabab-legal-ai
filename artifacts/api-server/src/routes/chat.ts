@@ -450,8 +450,8 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     }
   }
 
-  // Save the message provisionally. If live-source verification cannot run, the
-  // row and any first-message quota reservation are released before responding.
+  // Save the client message durably. Provider or verification failures release
+  // quota reservations but never erase client facts or attachments.
   let savedUserMessage: typeof consultationMessagesTable.$inferSelect;
   try {
     [savedUserMessage] = await db.insert(consultationMessagesTable).values({
@@ -539,6 +539,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
   let attachmentFactSummary = attachmentInterview.factSummary;
   let attachmentConversationIncluded = false;
   if (isAttachmentIntakeTurn) {
+    const intakeInstructionIndex = contextMessages.length;
     contextMessages.push({
       role: "system",
       content: attachmentFactIntakePrompt(isInitialAttachmentIntake),
@@ -562,7 +563,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       });
       const rawIntakeReply = completion.choices[0]?.message?.content ?? "";
       const intake = parseAttachmentIntakeResponse(rawIntakeReply);
-      const intakeState = isInitialAttachmentIntake ? "collecting" : intake.state;
+      const intakeState = intake.state;
       attachmentFactSummary = intake.text || attachmentFactSummary;
 
       if (intakeState === "collecting") {
@@ -590,6 +591,9 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
         return;
       }
 
+      // The intake-only instruction must not leak into final legal analysis.
+      contextMessages.splice(intakeInstructionIndex, 1);
+
       // Facts are now complete. Persist the hidden state for auditability and
       // pass its concise summary into the verified analysis that follows.
       await db.insert(consultationMessagesTable).values({
@@ -603,9 +607,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       });
     } catch (err: any) {
       req.log.error({ name: err?.constructor?.name, status: err?.status, code: err?.code }, "Attachment fact intake failed");
-      await db.delete(consultationMessagesTable)
-        .where(eq(consultationMessagesTable.id, savedUserMessage.id))
-        .catch(() => {});
+      // Preserve the client message and extracted facts for retry/resume.
       if (reservedSessionId) await releaseService(reservedSessionId).catch(() => {});
       emitChatPhase(id, "done");
       res.status(200).json({
@@ -893,9 +895,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       { unavailableBecause },
       "Live legal verification unavailable — releasing provisional message and quota",
     );
-    await db.delete(consultationMessagesTable)
-      .where(eq(consultationMessagesTable.id, savedUserMessage.id))
-      .catch((error) => req.log.warn({ error }, "Failed to remove provisional message after verifier outage"));
+    // Preserve the client message and facts; only release the quota reservation.
     if (reservedSessionId) {
       await releaseService(reservedSessionId)
         .catch((error) => req.log.warn({ error }, "Failed to release reservation after verifier outage"));
@@ -1055,20 +1055,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
       type: err?.type,
     }, "OpenAI API error");
 
-    // Remove the user message we saved so quota isn't wasted on a failed call.
-    // Wrapped in its own try/catch so a DB hiccup during cleanup does NOT convert
-    // the friendly Arabic OpenAI error into an opaque 500 for the user.
-    try {
-      const saved = await db.select().from(consultationMessagesTable)
-        .where(eq(consultationMessagesTable.consultationId, id))
-        .orderBy(asc(consultationMessagesTable.createdAt));
-      const last = saved[saved.length - 1];
-      if (last?.role === "user") {
-        await db.delete(consultationMessagesTable).where(eq(consultationMessagesTable.id, last.id));
-      }
-    } catch (cleanupErr) {
-      req.log.warn({ err: cleanupErr }, "Failed to remove stale user message after OpenAI error — continuing");
-    }
+    // Preserve the client message and facts so this consultation can resume after provider recovery.
 
     // Release the reserved (uncounted) service session so it doesn't become orphaned.
     // commitService is never called on this path, so we must clean up explicitly.
@@ -1151,7 +1138,7 @@ router.post("/consultations/:id/chat", requireAuth, async (req, res): Promise<vo
     .set({ status: "answered", updatedAt: new Date() })
     .where(eq(consultationsTable.id, id));
 
-  if (attachmentInterview.state === "ready") {
+  if (isAttachmentIntakeTurn || attachmentInterview.state === "ready") {
     await db.insert(consultationMessagesTable).values({
       consultationId: id,
       role: "system",
