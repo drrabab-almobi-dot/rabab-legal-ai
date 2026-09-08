@@ -1,0 +1,39 @@
+name: Repair PR22 once
+
+on:
+  push:
+    branches:
+      - fix/tavily-attachment-interview-20260906
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/tavily-attachment-interview-20260906
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply guarded repair
+        run: node scripts/repair-pr22.mjs
+      - name: Verify intended deltas only
+        run: |
+          git diff --check
+          git diff -- artifacts/api-server/src/routes/chat.ts
+      - name: Commit repair
+        run: |
+          if git diff --quiet -- artifacts/api-server/src/routes/chat.ts; then
+            echo "No repair changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/api-server/src/routes/chat.ts
+          git commit -m "fix(consultation): preserve facts and finish attachment intake safely"
+          git push origin HEAD:fix/tavily-attachment-interview-20260906
