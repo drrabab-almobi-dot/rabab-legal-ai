@@ -8,7 +8,7 @@ import { db, knowledgeDocumentsTable, knowledgeChunksTable, type CaseMetadata } 
 import { eq } from "drizzle-orm";
 import { chunkText, embedTexts } from "./rag";
 import { isNonLegalPage } from "./arabic-text-fix";
-import AdmZip from "adm-zip";
+import { readSafeZipEntries } from "./safe-zip";
 import { createHash } from "crypto";
 
 // ─── Page boundary tracking ───────────────────────────────────────────────────
@@ -466,10 +466,12 @@ async function extractDocx(buffer: Buffer): Promise<string> {
 /** Extract text from PPTX (Office Open XML — slides/*.xml) */
 function extractPptx(buffer: Buffer): string {
   try {
-    const zip = new AdmZip(buffer);
-    const entries = zip.getEntries().filter(e =>
-      e.entryName.match(/^ppt\/slides\/slide\d+\.xml$/i)
-    );
+    const entries = readSafeZipEntries(buffer, {
+      include: entryName => /^ppt\/slides\/slide\d+\.xml$/i.test(entryName),
+      maxEntries: 5_000,
+      maxEntryBytes: 10 * 1024 * 1024,
+      maxTotalBytes: 50 * 1024 * 1024,
+    });
     // Sort slide1, slide2 …
     entries.sort((a, b) => {
       const na = parseInt(a.entryName.replace(/\D/g, "") || "0");
@@ -478,7 +480,7 @@ function extractPptx(buffer: Buffer): string {
     });
     const texts: string[] = [];
     for (const e of entries) {
-      const xml = e.getData().toString("utf-8");
+      const xml = e.data.toString("utf-8");
       // Extract all <a:t>…</a:t> text runs
       const matches = xml.match(/<a:t[^>]*>([^<]*)<\/a:t>/g) ?? [];
       const slide = matches.map(m => m.replace(/<[^>]+>/g, "")).join(" ").trim();

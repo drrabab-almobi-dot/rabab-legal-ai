@@ -114,7 +114,7 @@ function ConsultationDetail({ consultationId }: { consultationId: number }) {
       .then(data => setMessages(data))
        .catch(e => setError(typeof e === 'string' ? e : t('فشل تحميل الرسائل', 'Failed to load messages')))
       .finally(() => setLoading(false));
-  }, [consultationId]);
+  }, [consultationId, t]);
 
   if (loading) return (
     <div className="m-4 space-y-2 rounded-2xl border-2 border-secondary/45 bg-secondary/5 p-4">

@@ -18,7 +18,7 @@ import {
 import multer from "multer"
 ;
 
-import AdmZip from "adm-zip"
+import { readSafeZipEntries } from "../lib/safe-zip"
 ;
 import OpenAI from "openai";
 
@@ -252,14 +252,14 @@ const upload = multer( {
 ;
 
 
-// Separate multer for ZIP (larger limit)
+// ZIP files are processed in memory; keep the compressed upload bounded.
 const uploadZip = multer( {
 
   storage: multer.memoryStorage(),
   limits: {
- fileSize: 500 * 1024 * 1024 
+ fileSize: 100 * 1024 * 1024
 }
-, // 500 MB
+, // 100 MB
   fileFilter: (_req, file, cb) => {
 
     if (file.mimetype === "application/zip" ||
@@ -761,18 +761,24 @@ router.post(
 }
 
 
-    let zip: AdmZip
+    let entries: ReturnType<typeof readSafeZipEntries>
 ;
 
     try {
- zip = new AdmZip(file.buffer)
+ entries = readSafeZipEntries(file.buffer, {
+   include: entryName =>
+     isIndexable(entryName) && !entryName.startsWith("__MACOSX/"),
+   maxEntries: 2_000,
+   maxEntryBytes: 50 * 1024 * 1024,
+   maxTotalBytes: 500 * 1024 * 1024,
+ })
 ;
  
 }
 
-    catch {
+    catch (error: any) {
  res.status(400).json( {
- error: "ملف ZIP تالف أو غير صالح" 
+ error: error?.message ?? "ملف ZIP تالف أو غير صالح"
 }
 )
 ;
@@ -780,12 +786,6 @@ router.post(
 ;
  
 }
-
-
-    const entries = zip.getEntries().filter(e =>
-      !e.isDirectory && isIndexable(e.entryName) && !e.entryName.startsWith("__MACOSX")
-    )
-;
 
 
     if (entries.length === 0) {
@@ -833,7 +833,7 @@ router.post(
 
         try {
 
-          const buf = entry.getData()
+          const buf = entry.data
 ;
 
           const mime = detectMime(name, "application/octet-stream")

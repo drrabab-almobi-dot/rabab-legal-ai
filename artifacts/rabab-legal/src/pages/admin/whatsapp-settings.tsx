@@ -2,7 +2,7 @@
  * صفحة إعدادات واتساب في لوحة الإدارة
  * تفعيل/تعطيل الإرسال + عرض سجل الرسائل
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar, Footer } from '@/components/layout';
 import { ToggleLeft, ToggleRight, MessageSquare, Loader2, RefreshCw, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,12 +31,12 @@ export default function AdminWhatsAppSettings() {
   const [saving, setSaving] = useState(false);
   const [loadingLog, setLoadingLog] = useState(false);
 
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     const res = await fetch(`${API_BASE}/api/admin/whatsapp/settings`, { credentials: 'include' });
     if (res.ok) setConfig(await res.json());
-  };
+  }, []);
 
-  const fetchLog = async (p = page) => {
+  const fetchLog = useCallback(async (p: number) => {
     setLoadingLog(true);
     try {
       const res = await fetch(`${API_BASE}/api/admin/whatsapp/log?page=${p}&limit=50`, { credentials: 'include' });
@@ -44,10 +44,10 @@ export default function AdminWhatsAppSettings() {
     } finally {
       setLoadingLog(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchConfig(); fetchLog(1); }, []);
-  useEffect(() => { fetchLog(page); }, [page]);
+  useEffect(() => { fetchConfig(); fetchLog(1); }, [fetchConfig, fetchLog]);
+  useEffect(() => { fetchLog(page); }, [fetchLog, page]);
 
   const toggle = async () => {
     if (!config) return;

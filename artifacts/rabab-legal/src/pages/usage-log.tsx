@@ -1,7 +1,7 @@
 /**
  * صفحة سجل الاستهلاك — تعرض تاريخ الخدمات المستهلكة مع إمكانية التصدير CSV
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar, Footer } from '@/components/layout';
 import { BarChart2, Download, RefreshCw, ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -53,7 +53,7 @@ export default function UsageLogPage() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const fetch_ = async (p = page) => {
+  const fetch_ = useCallback(async (p: number) => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/quota/usage-log?page=${p}&limit=${PAGE_SIZE}`, { credentials: 'include' });
@@ -61,9 +61,9 @@ export default function UsageLogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetch_(page); }, [page]);
+  useEffect(() => { fetch_(page); }, [fetch_, page]);
 
   const exportCsv = async () => {
     setExporting(true);

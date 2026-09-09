@@ -49,17 +49,17 @@ export default function AdminEmailSettings() {
         const res = await fetch(`${API_BASE}/api/admin/email-settings`, {
           credentials: 'include',
         });
-        if (!res.ok) throw new Error(t('فشل جلب الإعدادات', 'Failed to load settings'));
+        if (!res.ok) throw new Error(lang === 'ar' ? 'فشل جلب الإعدادات' : 'Failed to load settings');
         const data: EmailSettings = await res.json();
         setSettings(data);
         setFromAddress(data.fromAddress);
       } catch (err: any) {
-        toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: err.message });
+        toast({ variant: 'destructive', title: lang === 'ar' ? 'خطأ' : 'Error', description: err.message });
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [lang, toast]);
 
   // ── Save settings ──────────────────────────────────────────────────────────
   const handleSave = async (e: React.FormEvent) => {

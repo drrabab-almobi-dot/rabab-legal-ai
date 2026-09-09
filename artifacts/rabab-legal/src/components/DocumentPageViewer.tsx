@@ -170,7 +170,7 @@ export function DocumentPageViewer({
     ].filter(p => p >= 1 && p <= numPages && !renderedPages.has(p) && !renderingPages.has(p));
 
     pagesToRender.forEach(p => renderPage(p));
-  }, [currentPage, pdfDoc, numPages, loading, scale]);
+  }, [currentPage, pdfDoc, numPages, loading, scale, renderPage, renderedPages, renderingPages]);
 
   // ── Scroll to current page ────────────────────────────────────────────────
   useEffect(() => {

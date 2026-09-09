@@ -375,14 +375,14 @@ export default function Home() {
 
   useEffect(() => {
     setPageSEO({
-      title: t(
-        "استشارة قانونية بالذكاء الاصطناعي",
-        "AI-powered legal consultation",
-      ),
-      description: t(
-        "RABAB LEGAL AI — استشارة قانونية سعودية فورية ودقيقة مدعومة بالذكاء الاصطناعي. اطرح سؤالك في الأنظمة السعودية واحصل على إجابة موثّقة.",
-        "RABAB LEGAL AI — instant, accurate Saudi legal guidance powered by AI. Ask about Saudi laws and receive a source-based answer.",
-      ),
+      title:
+        lang === "ar"
+          ? "استشارة قانونية بالذكاء الاصطناعي"
+          : "AI-powered legal consultation",
+      description:
+        lang === "ar"
+          ? "RABAB LEGAL AI — استشارة قانونية سعودية فورية ودقيقة مدعومة بالذكاء الاصطناعي. اطرح سؤالك في الأنظمة السعودية واحصل على إجابة موثّقة."
+          : "RABAB LEGAL AI — instant, accurate Saudi legal guidance powered by AI. Ask about Saudi laws and receive a source-based answer.",
       canonical: "https://rabablegal.com/",
     });
   }, [lang]);

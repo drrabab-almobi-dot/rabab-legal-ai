@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 export type Lang = 'ar' | 'en';
 
@@ -21,14 +21,14 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     try { return (localStorage.getItem('lang') as Lang) || 'ar'; } catch { return 'ar'; }
   });
 
-  const setLang = (l: Lang) => {
+  const setLang = useCallback((l: Lang) => {
     setLangState(l);
     try { localStorage.setItem('lang', l); } catch {}
     document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = l;
     document.body.dir = l === 'ar' ? 'rtl' : 'ltr';
     document.body.lang = l;
-  };
+  }, []);
 
   useEffect(() => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -37,10 +37,11 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     document.body.lang = lang;
   }, [lang]);
 
-  const t = (ar: string, en: string) => lang === 'ar' ? ar : en;
+  const t = useCallback((ar: string, en: string) => lang === 'ar' ? ar : en, [lang]);
+  const value = useMemo(() => ({ lang, setLang, t, isAr: lang === 'ar' }), [lang, setLang, t]);
 
   return (
-    <LangContext.Provider value={{ lang, setLang, t, isAr: lang === 'ar' }}>
+    <LangContext.Provider value={value}>
       {children}
     </LangContext.Provider>
   );
