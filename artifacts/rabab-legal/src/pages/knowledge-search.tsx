@@ -2127,10 +2127,29 @@ function ContractDrafter() {
   </header>
   <pre>${escaped}</pre>
   <footer>هذه المسودة لأغراض المراجعة فقط — يُنصح بمراجعة محامٍ مرخّص قبل الاستخدام الرسمي.</footer>
-  <script>window.onload = function(){ window.print(); };<\/script>
 </body>
 </html>`);
       win.document.close();
+      let printed = false;
+      let fallbackTimer: number | undefined;
+      const print = () => {
+        if (printed || win.closed) return;
+        printed = true;
+        if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
+        win.focus();
+        win.print();
+      };
+      const printAfterFonts = () => {
+        const fontsReady = win.document.fonts?.ready;
+        if (fontsReady) {
+          void fontsReady.then(print, print);
+        } else {
+          print();
+        }
+      };
+      win.addEventListener('load', printAfterFonts, { once: true });
+      fallbackTimer = window.setTimeout(print, 5000);
+      if (win.document.readyState === 'complete') printAfterFonts();
     } finally {
       setExportingPdf(false);
     }

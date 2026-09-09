@@ -18,7 +18,7 @@ import {
 import multer from "multer"
 ;
 
-import { readSafeZipEntries } from "../lib/safe-zip"
+import { readSafeZipEntriesAsync } from "../lib/safe-zip"
 ;
 import OpenAI from "openai";
 
@@ -761,146 +761,133 @@ router.post(
 }
 
 
-    let entries: ReturnType<typeof readSafeZipEntries>
-;
-
-    try {
- entries = readSafeZipEntries(file.buffer, {
-   include: entryName =>
-     isIndexable(entryName) && !entryName.startsWith("__MACOSX/"),
-   maxEntries: 2_000,
-   maxEntryBytes: 50 * 1024 * 1024,
-   maxTotalBytes: 500 * 1024 * 1024,
- })
-;
- 
-}
-
-    catch (error: any) {
- res.status(400).json( {
- error: error?.message ?? "ملف ZIP تالف أو غير صالح"
-}
-)
-;
- return
-;
- 
-}
-
-
-    if (entries.length === 0) {
-
-      res.status(400).json( {
- error: "لا توجد ملفات PDF أو TXT أو DOCX داخل الـ ZIP" 
-}
-)
-;
-
-      return
-;
-
-    
-}
-
-
-    // Create a job ID and register all docs as pending
+    // Create the job before extracting so large archives never delay the response.
     const jobId = `zip_${Date.now()}`
 ;
 
     const job: BulkJob = {
- total: entries.length, done: 0, failed: 0, running: true, log: [] 
+ total: 0, done: 0, failed: 0, running: true, log: []
 };
 
     bulkJobs.set(jobId, job)
 ;
 
 
-    // Respond immediately so the client can start polling
+    // Respond immediately so the client can start polling.
     res.json( {
- jobId, total: entries.length 
+ jobId, total: job.total
 }
 )
 ;
 
 
-    // Process in background without blocking the response
-    (async () => {
-
-      for (const entry of entries) {
-
-        const name = entry.entryName.split("/").pop() ?? entry.entryName
+    const validCats = ["judicial","circular","regulation","contract","general"]
 ;
 
-        try {
-
-          const buf = entry.data
+    const zipCat = validCats.includes(req.body?.category ?? "") ? (req.body.category as any) : "general"
 ;
 
-          const mime = detectMime(name, "application/octet-stream")
+    // Process extraction and indexing in the background without retaining req/res.
+    void (async () => {
+
+      try {
+
+        const entries = await readSafeZipEntriesAsync(file.buffer, {
+          include: entryName =>
+            isIndexable(entryName) && !entryName.startsWith("__MACOSX/"),
+          maxEntries: 2_000,
+          maxEntryBytes: 50 * 1024 * 1024,
+          maxTotalBytes: 100 * 1024 * 1024,
+        });
+
+        job.total = entries.length;
+
+        if (entries.length === 0) {
+          job.failed = 1;
+          logJob(job, "❌ لا توجد ملفات مدعومة داخل ملف ZIP");
+          return;
+        }
+
+        for (const entry of entries) {
+
+          const name = entry.entryName.split("/").pop() ?? entry.entryName
+;
+
+          try {
+
+            const buf = entry.data
+;
+
+            const mime = detectMime(name, "application/octet-stream")
 ;
 
 
-          const validCats2 = ["judicial","circular","regulation","contract","general"]
-;
-
-          const zipCat = validCats2.includes(req.body?.category ?? "") ? (req.body.category as any) : "general"
-;
-
-          const [doc] = await db
-            .insert(knowledgeDocumentsTable)
-            .values( {
- filename: name, mimeType: mime, status: "pending", fileData: buf, fileSize: buf.length, category: zipCat 
+            const [doc] = await db
+              .insert(knowledgeDocumentsTable)
+              .values( {
+ filename: name, mimeType: mime, status: "pending", fileData: buf, fileSize: buf.length, category: zipCat
 }
 )
-            .returning()
+              .returning()
 ;
 
 
-          await indexDocument(doc.id, buf, mime, name)
+            await indexDocument(doc.id, buf, mime, name)
 ;
 
-          if (zipCat === "circular") {
-            void notifyNewCircular(doc.id, name);
-          }
+            if (zipCat === "circular") {
+              void notifyNewCircular(doc.id, name);
+            }
 
-          job.done++
+            job.done++
 ;
 
-          logJob(job, `✅ ${name}`)
+            logJob(job, `✅ ${name}`)
 ;
 
-        
+
 }
  catch (err: any) {
 
-          job.failed++
+            job.failed++
 ;
 
-          logJob(job, `❌ ${name}: ${err?.message?.slice(0, 60) ?? "خطأ"}`)
+            logJob(job, `❌ ${name}: ${err?.message?.slice(0, 60) ?? "خطأ"}`)
 ;
 
-        
+
 }
 
-      
+
 }
 
-      job.running = false
+        logJob(job, `🎉 اكتملت المعالجة: ${job.done} نجح، ${job.failed} فشل`)
 ;
 
-      logJob(job, `🎉 اكتملت المعالجة: ${job.done} نجح، ${job.failed} فشل`)
-;
 
-      // Clean up after 30 min
-      setTimeout(() => bulkJobs.delete(jobId), 30 * 60 * 1000)
-;
-
-    
 }
-)()
+ catch (error: any) {
+
+        job.failed++;
+        logJob(job, `❌ فشل فك ضغط ZIP: ${error?.message?.slice(0, 100) ?? "ملف ZIP تالف أو غير صالح"}`);
+
+
+}
+ finally {
+
+        job.running = false
 ;
 
-  
+        // Clean up after 30 min
+        setTimeout(() => bulkJobs.delete(jobId), 30 * 60 * 1000)
+;
+
+
+}
+    })()
+;
+
+
 }
 
 )

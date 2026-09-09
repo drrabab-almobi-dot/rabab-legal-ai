@@ -3,7 +3,7 @@
  * تعرض حالة البريد الحالية وتسمح بضبط مفتاح Resend API وعنوان المُرسِل
  * مع زر اختبار الإرسال للتحقق من الضبط.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AdminSidebar } from '@/components/layout';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -29,6 +29,11 @@ interface TestResult {
 export default function AdminEmailSettings() {
   const { toast } = useToast();
   const { lang, t } = useLang();
+  const langRef = useRef(lang);
+  const toastRef = useRef(toast);
+
+  langRef.current = lang;
+  toastRef.current = toast;
 
   const [settings, setSettings] = useState<EmailSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,17 +54,17 @@ export default function AdminEmailSettings() {
         const res = await fetch(`${API_BASE}/api/admin/email-settings`, {
           credentials: 'include',
         });
-        if (!res.ok) throw new Error(lang === 'ar' ? 'فشل جلب الإعدادات' : 'Failed to load settings');
+        if (!res.ok) throw new Error(langRef.current === 'ar' ? 'فشل جلب الإعدادات' : 'Failed to load settings');
         const data: EmailSettings = await res.json();
         setSettings(data);
         setFromAddress(data.fromAddress);
       } catch (err: any) {
-        toast({ variant: 'destructive', title: lang === 'ar' ? 'خطأ' : 'Error', description: err.message });
+        toastRef.current({ variant: 'destructive', title: langRef.current === 'ar' ? 'خطأ' : 'Error', description: err.message });
       } finally {
         setLoading(false);
       }
     })();
-  }, [lang, toast]);
+  }, []);
 
   // ── Save settings ──────────────────────────────────────────────────────────
   const handleSave = async (e: React.FormEvent) => {

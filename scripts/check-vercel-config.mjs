@@ -58,18 +58,10 @@ assert(
   ),
   "unknown frontend routes must not be rewritten to index.html; Vercel should return a real 404",
 );
-assert(
-  rootConfig.routes?.some((route) => route.handle === "filesystem"),
-  "Vercel routes must check generated files before applying the 404 fallback",
-);
-assert(
-  rootConfig.routes?.some(
-    (route) =>
-      route.src === "/(.*)" &&
-      route.status === 404 &&
-      route.dest === "/404.html",
-  ),
-  "unknown frontend routes must serve 404.html with an HTTP 404 status",
+assert.equal(
+  rootConfig.routes,
+  undefined,
+  "root Vercel config must rely on standard static 404.html handling; check-seo-output verifies the generated page",
 );
 assert(
   rootConfig.headers?.some(
