@@ -1,23 +1,27 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const frontendRoot = path.join(projectRoot, 'artifacts', 'rabab-legal');
-const outputRoot = path.join(frontendRoot, 'dist', 'public');
-const siteUrl = 'https://rabablegal.com';
-const indexingEnabled = false;
+const projectRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+const frontendRoot = path.join(projectRoot, "artifacts", "rabab-legal");
+const outputRoot = path.join(frontendRoot, "dist", "public");
+const siteUrl = "https://rabablegal.com";
+const indexingEnabled =
+  process.env.PUBLIC_INDEXING?.trim().toLowerCase() === "true";
 
 const faqCategories = JSON.parse(
-  await readFile(path.join(frontendRoot, 'src', 'content', 'faq.json'), 'utf8'),
+  await readFile(path.join(frontendRoot, "src", "content", "faq.json"), "utf8"),
 );
 
 const pages = [
   {
-    pathname: '/',
-    title: 'استشارة قانونية بالذكاء الاصطناعي | RABAB LEGAL AI',
+    pathname: "/",
+    title: "استشارة قانونية بالذكاء الاصطناعي | RABAB LEGAL AI",
     description:
-      'RABAB LEGAL AI منصة قانونية رقمية تقدم معلومات قانونية أولية موثقة في الأنظمة السعودية والخليجية، مع خدمات الاستشارات وتحليل العقود والبحث القانوني.',
+      "RABAB LEGAL AI منصة قانونية رقمية تقدم معلومات قانونية أولية موثقة في الأنظمة السعودية والخليجية، مع خدمات الاستشارات وتحليل العقود والبحث القانوني.",
     content: `
       <section>
         <p>منصة قانونية رقمية متخصصة تجمع بين الذكاء الاصطناعي والإشراف القانوني المهني لمساعدة الأفراد والمنشآت على فهم المسائل القانونية في المملكة العربية السعودية ودول مجلس التعاون الخليجي.</p>
@@ -33,30 +37,40 @@ const pages = [
       </section>`,
     schema: [
       {
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        '@id': `${siteUrl}/#organization`,
-        name: 'RABAB LEGAL AI',
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: "RABAB LEGAL AI",
         url: siteUrl,
         description:
-          'منصة قانونية رقمية تقدم معلومات قانونية أولية موثقة في الأنظمة السعودية والخليجية.',
+          "منصة قانونية رقمية تقدم معلومات قانونية أولية موثقة في الأنظمة السعودية والخليجية.",
+        email: "info@rabablegal.com",
+        telephone: "+966504647649",
+        sameAs: ["https://rabablawyer.sa"],
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          email: "info@rabablegal.com",
+          telephone: "+966504647649",
+          availableLanguage: ["Arabic", "English"],
+        },
       },
       {
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        '@id': `${siteUrl}/#website`,
-        name: 'RABAB LEGAL AI',
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        name: "RABAB LEGAL AI",
         url: siteUrl,
-        inLanguage: 'ar-SA',
-        publisher: { '@id': `${siteUrl}/#organization` },
+        inLanguage: "ar-SA",
+        publisher: { "@id": `${siteUrl}/#organization` },
       },
     ],
   },
   {
-    pathname: '/about',
-    title: 'من نحن | RABAB LEGAL AI',
+    pathname: "/about",
+    title: "من نحن | RABAB LEGAL AI",
     description:
-      'تعرّف على RABAB LEGAL AI، المنصة القانونية الرقمية المتخصصة في الأنظمة السعودية والخليجية تحت إشراف مهني مباشر.',
+      "تعرّف على RABAB LEGAL AI، المنصة القانونية الرقمية المتخصصة في الأنظمة السعودية والخليجية تحت إشراف مهني مباشر.",
     content: `
       <section>
         <p>RABAB LEGAL AI هي منصة قانونية رقمية متخصصة تقدم معلومات قانونية واضحة تساعد الأفراد والمنشآت على معرفة الحقوق والالتزامات وفق الأنظمة النافذة في المملكة العربية السعودية ودول مجلس التعاون الخليجي.</p>
@@ -67,10 +81,10 @@ const pages = [
       </section>`,
   },
   {
-    pathname: '/pricing',
-    title: 'الأسعار والباقات | RABAB LEGAL AI',
+    pathname: "/pricing",
+    title: "الأسعار والباقات | RABAB LEGAL AI",
     description:
-      'استعرض باقات RABAB LEGAL AI للاستشارات القانونية الرقمية وتحليل العقود والبحث القانوني قبل البدء بالخدمة.',
+      "استعرض باقات RABAB LEGAL AI للاستشارات القانونية الرقمية وتحليل العقود والبحث القانوني قبل البدء بالخدمة.",
     content: `
       <section>
         <p>تقدم RABAB LEGAL AI باقات رقمية متفاوتة لتناسب الاستخدام الشخصي واستخدام المنشآت. تُراجع تفاصيل الباقة وسعرها وشروطها المعروضة في التطبيق قبل إتمام أي عملية دفع.</p>
@@ -85,10 +99,10 @@ const pages = [
       </section>`,
   },
   {
-    pathname: '/contact',
-    title: 'تواصل معنا | RABAB LEGAL AI',
+    pathname: "/contact",
+    title: "تواصل معنا | RABAB LEGAL AI",
     description:
-      'تواصل مع فريق RABAB LEGAL AI للاستفسارات العامة والدعم المتعلق بالمنصة القانونية الرقمية.',
+      "تواصل مع فريق RABAB LEGAL AI للاستفسارات العامة والدعم المتعلق بالمنصة القانونية الرقمية.",
     content: `
       <section>
         <p>للاستفسارات العامة والدعم المتعلق بخدمات المنصة، يمكن التواصل مع فريق RABAB LEGAL AI عبر قنوات الاتصال المعروضة.</p>
@@ -102,63 +116,78 @@ const pages = [
       </section>`,
   },
   {
-    pathname: '/faq',
-    title: 'الأسئلة الشائعة | RABAB LEGAL AI',
+    pathname: "/faq",
+    title: "الأسئلة الشائعة | RABAB LEGAL AI",
     description:
-      'إجابات الأسئلة الشائعة حول RABAB LEGAL AI، ونطاق المعلومات القانونية الرقمية، والحسابات والباقات والخصوصية.',
+      "إجابات الأسئلة الشائعة حول RABAB LEGAL AI، ونطاق المعلومات القانونية الرقمية، والحسابات والباقات والخصوصية.",
     content: `<section><p>إجابات على الأسئلة المتكررة حول المنصة وخدماتها الرقمية.</p>${faqCategories
       .map(
-        (category) => `<section><h2>${escapeHtml(category.title)}</h2>${category.faqs
-          .map(
-            (faq) => `<details><summary>${escapeHtml(faq.q)}</summary><p>${escapeHtml(faq.a)}</p></details>`,
-          )
-          .join('')}</section>`,
+        (category) =>
+          `<section><h2>${escapeHtml(category.title)}</h2>${category.faqs
+            .map(
+              (faq) =>
+                `<details><summary>${escapeHtml(faq.q)}</summary><p>${escapeHtml(faq.a)}</p></details>`,
+            )
+            .join("")}</section>`,
       )
-      .join('')}</section>`,
+      .join("")}</section>`,
     schema: [
       {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        '@id': `${siteUrl}/faq#faqpage`,
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": `${siteUrl}/faq#faqpage`,
         mainEntity: faqCategories.flatMap((category) =>
           category.faqs.map((faq) => ({
-            '@type': 'Question',
+            "@type": "Question",
             name: faq.q,
-            acceptedAnswer: { '@type': 'Answer', text: faq.a },
+            acceptedAnswer: { "@type": "Answer", text: faq.a },
           })),
         ),
       },
     ],
   },
   {
-    pathname: '/privacy',
-    title: 'سياسة الخصوصية | RABAB LEGAL AI',
+    pathname: "/privacy",
+    title: "سياسة الخصوصية | RABAB LEGAL AI",
     description:
-      'سياسة خصوصية RABAB LEGAL AI المتعلقة بجمع بيانات الحساب والخدمة واستخدامها وحمايتها وحقوق المستخدم.',
+      "سياسة خصوصية RABAB LEGAL AI المتعلقة بجمع بيانات الحساب والخدمة واستخدامها وحمايتها وحقوق المستخدم.",
     content: `
       <section>
-        <p>توضح سياسة الخصوصية كيفية جمع بيانات الحساب والخدمة واستخدامها وحمايتها داخل RABAB LEGAL AI. يرجى مراجعة النسخة الكاملة في التطبيق قبل استخدام الخدمة.</p>
-        <h2>ملخص السياسة</h2>
-        <ul>
-          <li>تُستخدم بيانات الحساب والخدمة لتقديم المنصة وحماية الحساب ومعالجة الاشتراكات.</li>
-          <li>لا تُستخدم بيانات الاستشارات لتدريب نماذج الذكاء الاصطناعي وفق السياسة المعروضة.</li>
-          <li>يمكن طلب الوصول إلى البيانات أو تصحيحها أو حذفها عبر قنوات التواصل الرسمية.</li>
-        </ul>
-        <p><a href="mailto:info@rabablegal.com">تواصل بخصوص الخصوصية</a></p>
+        <p><strong>آخر تحديث: يوليو 2026.</strong> توضح هذه السياسة كيفية جمع بياناتك واستخدامها وحمايتها عند استخدام RABAB LEGAL AI.</p>
+        <h2>المعلومات التي نجمعها</h2>
+        <p>نجمع بيانات الحساب مثل الاسم والبريد الإلكتروني ورقم الجوال وكلمة المرور المشفرة، وبيانات الخدمة مثل محتوى الاستشارات والمستندات المرفوعة ونشاط الجلسات، وبيانات تقنية مثل عنوان IP ونوع المتصفح لأغراض الأمن والأداء.</p>
+        <h2>أغراض الاستخدام</h2>
+        <p>نستخدم البيانات لتقديم الخدمة وتحسينها، ومعالجة طلبات الاستشارة والاشتراكات والمدفوعات، وإرسال إشعارات الخدمة، وحماية الحساب. وفق السياسة المعلنة، لا تُستخدم بيانات الاستشارات لتدريب نماذج الذكاء الاصطناعي ولا تباع البيانات.</p>
+        <h2>المشاركة والأمن</h2>
+        <p>قد تُشارك البيانات بالحد الأدنى الضروري مع مزودي الخدمة، مثل الاستضافة والدفع، أو استجابةً لأمر قضائي ملزم. تستخدم المنصة HTTPS للاتصالات وتطبق ضوابط وصول ونسخاً احتياطية مشفرة وفق السياسة المعلنة.</p>
+        <h2>ملفات الارتباط والاحتفاظ</h2>
+        <p>تستخدم ملفات جلسة ضرورية للدخول وتقنيات لقياس الأداء. تُحفظ بيانات الحساب ما دام نشطاً، وتوضح السياسة أن طلب حذف الحساب ينفذ خلال 30 يوماً، مع إمكان الاحتفاظ بسجلات مالية وفق المتطلبات النظامية.</p>
+        <h2>حقوق المستخدم</h2>
+        <p>يمكن طلب الوصول إلى البيانات أو تصحيحها أو حذف الحساب والبيانات أو الاعتراض على المعالجة عبر <a href="mailto:info@rabablegal.com">info@rabablegal.com</a> أو الهاتف <a href="tel:+966504647649">+966 50 464 7649</a>.</p>
+        <h2>القاصرون والتحديثات</h2>
+        <p>الخدمة مخصصة لمن بلغوا 18 عاماً. تُحذف بيانات القاصر المقدمة دون إذن ولي الأمر عند العلم بها. تُرسل إشعارات التغييرات الجوهرية إلى البريد المسجل قبل نفاذها وفق السياسة.</p>
       </section>`,
   },
   {
-    pathname: '/terms',
-    title: 'الشروط والأحكام | RABAB LEGAL AI',
+    pathname: "/terms",
+    title: "الشروط والأحكام | RABAB LEGAL AI",
     description:
-      'شروط استخدام RABAB LEGAL AI ونطاق المعلومات القانونية الرقمية والحسابات والاشتراكات والوثائق.',
+      "شروط استخدام RABAB LEGAL AI ونطاق المعلومات القانونية الرقمية والحسابات والاشتراكات والوثائق.",
     content: `
       <section>
-        <p>تبيّن الشروط والأحكام نطاق استخدام منصة RABAB LEGAL AI، وأهلية التسجيل، واستخدام الاستشارات والخدمات الرقمية. يرجى قراءة النسخة الكاملة داخل التطبيق قبل استخدام أي خدمة مدفوعة.</p>
-        <h2>نطاق الخدمة</h2>
-        <p>تقدم المنصة معلومات قانونية أولية وبحثاً نظامياً لأغراض معرفية وإرشادية. لا تمثل المخرجات رأياً قانونياً ملزماً أو تمثيلاً رسمياً أمام المحاكم أو الجهات الرسمية.</p>
-        <h2>استخدام الحساب</h2>
-        <p>يلتزم المستخدم بصحة بيانات التسجيل والمحافظة على سرية كلمة المرور وعدم رفع مستندات لا يملك الحق في مشاركتها.</p>
+        <p><strong>آخر تحديث: يوليو 2026.</strong> باستخدام المنصة يوافق المستخدم على الشروط التالية، ويجب التوقف عن الاستخدام عند عدم الموافقة.</p>
+        <h2>وصف الخدمة وإخلاء المسؤولية</h2>
+        <p>تقدم المنصة معلومات قانونية أولية وبحثاً نظامياً في أنظمة دول مجلس التعاون الخليجي لأغراض معرفية وإرشادية. لا تمثل المخرجات رأياً قانونياً ملزماً أو تمثيلاً رسمياً أمام المحاكم أو الجهات الرسمية، ولا تغني عن الرجوع إلى محامٍ مرخص.</p>
+        <h2>الأهلية والحساب</h2>
+        <p>يجب أن يكون المستخدم بعمر 18 سنة أو أكثر، وأن يقدم بيانات صحيحة ويحافظ على سرية كلمة المرور ويبلغ فوراً عن أي استخدام غير مصرح.</p>
+        <h2>الاستخدام المقبول</h2>
+        <p>يُسمح بالاستخدام الشخصي والبحث والدراسة وتحليل المستندات التي يملك المستخدم حق رفعها. يُحظر الانتحال والمحتوى المخالف ومحاولات الاختراق والاستخراج الآلي وإعادة البيع أو التوزيع دون إذن.</p>
+        <h2>الاشتراكات والمدفوعات</h2>
+        <p>تتضمن الباقة التجريبية ثلاث تجارب مرة واحدة لكل مستخدم. يُحتسب الاستخدام بعد إجابة ناجحة. تراجع الإدارة طلبات الاسترداد وفق الحالات المحددة، وتجدد الباقات الشهرية تلقائياً ما لم تُلغ قبل 48 ساعة من التجديد. الأسعار المعروضة شاملة ضريبة القيمة المضافة وفق الشروط المنشورة.</p>
+        <h2>المستندات والملكية الفكرية</h2>
+        <p>يقر المستخدم بامتلاكه حق رفع المستندات أو حصوله على الإذن اللازم. لا يجوز رفع كلمات مرور أو بيانات بنكية أو معلومات شخصية حساسة لأطراف أخرى. تخضع محتويات وتصميم المنصة لحقوق الملكية الفكرية المبينة في الشروط.</p>
+        <h2>تعليق الحساب والتعديلات والاختصاص</h2>
+        <p>يجوز تعليق الحساب عند مخالفة الشروط. تُخطر التغييرات الجوهرية قبل نفاذها وفق الشروط. تخضع الشروط للأنظمة المعمول بها في المملكة العربية السعودية، وتبين الصفحة الكاملة مسار معالجة النزاعات.</p>
         <p><a href="mailto:info@rabablegal.com">استفسار عن الشروط</a></p>
       </section>`,
   },
@@ -166,15 +195,15 @@ const pages = [
 
 function escapeHtml(value) {
   return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function absoluteUrl(pathname) {
-  return `${siteUrl}${pathname === '/' ? '/' : pathname}`;
+  return `${siteUrl}${pathname === "/" ? "/" : pathname}`;
 }
 
 function pageSchema(page) {
@@ -182,22 +211,26 @@ function pageSchema(page) {
 
   return [
     {
-      '@context': 'https://schema.org',
-      '@type': 'WebPage',
-      '@id': `${absoluteUrl(page.pathname)}#webpage`,
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${absoluteUrl(page.pathname)}#webpage`,
       url: absoluteUrl(page.pathname),
-      name: page.title.replace(' | RABAB LEGAL AI', ''),
+      name: page.title.replace(" | RABAB LEGAL AI", ""),
       description: page.description,
-      inLanguage: 'ar-SA',
-      isPartOf: { '@id': `${siteUrl}/#website` },
+      inLanguage: "ar-SA",
+      isPartOf: { "@id": `${siteUrl}/#website` },
     },
   ];
 }
 
 function renderDocument(page, assetTags) {
   const canonical = absoluteUrl(page.pathname);
-  const robots = indexingEnabled ? 'index,follow,max-image-preview:large' : 'noindex,follow';
-  const schema = JSON.stringify(pageSchema(page)).replaceAll('<', '\\u003c');
+  const robots =
+    page.robots ??
+    (indexingEnabled
+      ? "index,follow,max-image-preview:large"
+      : "noindex,follow");
+  const schema = JSON.stringify(pageSchema(page)).replaceAll("<", "\\u003c");
 
   return `<!doctype html>
 <html lang="ar" dir="rtl">
@@ -241,7 +274,7 @@ function renderDocument(page, assetTags) {
         </nav>
       </header>
       <main class="container mx-auto max-w-4xl space-y-6 px-4 py-12 leading-loose text-foreground">
-        <h1 class="text-4xl font-bold text-primary">${escapeHtml(page.title.replace(' | RABAB LEGAL AI', ''))}</h1>
+        <h1 class="text-4xl font-bold text-primary">${escapeHtml(page.title.replace(" | RABAB LEGAL AI", ""))}</h1>
         ${page.content}
       </main>
       <footer class="border-t border-border px-4 py-8 text-center text-sm text-muted-foreground">
@@ -254,23 +287,63 @@ function renderDocument(page, assetTags) {
 </html>`;
 }
 
-const viteTemplate = await readFile(path.join(outputRoot, 'index.html'), 'utf8');
-const styles = viteTemplate.match(/<link[^>]+rel="stylesheet"[^>]*>/g)?.join('\n    ') ?? '';
-const scripts = viteTemplate.match(/<script[^>]+type="module"[^>]*><\/script>/g)?.join('\n    ') ?? '';
+const viteTemplate = await readFile(
+  path.join(outputRoot, "index.html"),
+  "utf8",
+);
+const styles =
+  viteTemplate.match(/<link[^>]+rel="stylesheet"[^>]*>/g)?.join("\n    ") ?? "";
+const scripts =
+  viteTemplate
+    .match(/<script[^>]+type="module"[^>]*><\/script>/g)
+    ?.join("\n    ") ?? "";
 
 if (!styles || !scripts) {
-  throw new Error('Vite asset tags were not found in the build output.');
+  throw new Error("Vite asset tags were not found in the build output.");
 }
 
 for (const page of pages) {
-  const relativeDirectory = page.pathname === '/' ? '' : page.pathname.slice(1);
+  const relativeDirectory = page.pathname === "/" ? "" : page.pathname.slice(1);
   const outputDirectory = path.join(outputRoot, relativeDirectory);
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(
-    path.join(outputDirectory, 'index.html'),
+    path.join(outputDirectory, "index.html"),
     renderDocument(page, { styles, scripts }),
-    'utf8',
+    "utf8",
   );
 }
 
-console.log(`Generated ${pages.length} public HTML pages with indexing=${indexingEnabled}.`);
+const notFoundPage = {
+  pathname: "/404",
+  title: "الصفحة غير موجودة | RABAB LEGAL AI",
+  description: "تعذر العثور على الصفحة المطلوبة في منصة RABAB LEGAL AI.",
+  robots: "noindex,follow",
+  content: `
+    <section>
+      <p>عذراً، الرابط الذي فتحته غير صحيح أو نُقلت الصفحة.</p>
+      <p><a href="/">العودة إلى الصفحة الرئيسية</a> · <a href="/contact">تواصل معنا</a></p>
+    </section>`,
+};
+
+await writeFile(
+  path.join(outputRoot, "404.html"),
+  renderDocument(notFoundPage, { styles, scripts }),
+  "utf8",
+);
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pages.map((page) => `  <url><loc>${absoluteUrl(page.pathname)}</loc></url>`).join("\n")}
+</urlset>
+`;
+
+const robots = indexingEnabled
+  ? `# Public marketing pages are approved for indexing.\nUser-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /account\nDisallow: /payment\nDisallow: /invoices\nDisallow: /organization\nDisallow: /usage-log\n\nSitemap: ${siteUrl}/sitemap.xml\n`
+  : `# Private testing mode: keep the site out of search results.\nUser-agent: *\nDisallow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
+
+await writeFile(path.join(outputRoot, "sitemap.xml"), sitemap, "utf8");
+await writeFile(path.join(outputRoot, "robots.txt"), robots, "utf8");
+
+console.log(
+  `Generated ${pages.length} public HTML pages with indexing=${indexingEnabled}.`,
+);

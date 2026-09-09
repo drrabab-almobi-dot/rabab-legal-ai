@@ -126,6 +126,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /auth/session:
+    get:
+      operationId: getSession
+      tags: [auth]
+      summary: Get the current browser session without treating guests as errors
+      responses:
+        "200":
+          description: Session state; user is null when the visitor is not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    oneOf:
+                      - $ref: "#/components/schemas/User"
+                      - type: "null"
+
   /auth/me/update:
     patch:
       operationId: updateMe
@@ -878,7 +897,8 @@ components:
     # ─── PACKAGE ──────────────────────────────────────────────────────────
     Package:
       type: object
-      required: [id, nameAr, nameEn, price, questionsAllowed, type, isActive, features]
+      required:
+        [id, nameAr, nameEn, price, questionsAllowed, type, isActive, features]
       properties:
         id:
           type: integer
@@ -959,7 +979,16 @@ components:
     # ─── SUBSCRIPTION ─────────────────────────────────────────────────────
     Subscription:
       type: object
-      required: [id, userId, packageId, status, questionsUsed, questionsAllowed, startDate]
+      required:
+        [
+          id,
+          userId,
+          packageId,
+          status,
+          questionsUsed,
+          questionsAllowed,
+          startDate,
+        ]
       properties:
         id:
           type: integer
@@ -997,7 +1026,17 @@ components:
     # ─── PAYMENT ──────────────────────────────────────────────────────────
     Payment:
       type: object
-      required: [id, userId, packageId, amount, vatAmount, totalAmount, status, createdAt]
+      required:
+        [
+          id,
+          userId,
+          packageId,
+          amount,
+          vatAmount,
+          totalAmount,
+          status,
+          createdAt,
+        ]
       properties:
         id:
           type: integer
@@ -1106,7 +1145,18 @@ components:
     # ─── INVOICE ──────────────────────────────────────────────────────────
     Invoice:
       type: object
-      required: [id, invoiceNumber, userId, paymentId, amount, vatAmount, totalAmount, status, createdAt]
+      required:
+        [
+          id,
+          invoiceNumber,
+          userId,
+          paymentId,
+          amount,
+          vatAmount,
+          totalAmount,
+          status,
+          createdAt,
+        ]
       properties:
         id:
           type: integer
@@ -1344,7 +1394,15 @@ components:
     # ─── ADMIN STATS ──────────────────────────────────────────────────────
     AdminStats:
       type: object
-      required: [totalUsers, activeSubscriptions, totalRevenue, consultationsToday, pendingPayments, totalConsultations]
+      required:
+        [
+          totalUsers,
+          activeSubscriptions,
+          totalRevenue,
+          consultationsToday,
+          pendingPayments,
+          totalConsultations,
+        ]
       properties:
         totalUsers:
           type: integer

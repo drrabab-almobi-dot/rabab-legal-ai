@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getGetMeQueryKey, useGetMe, User } from '@workspace/api-client-react';
-import { useLocation } from 'wouter';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { User } from "@workspace/api-client-react";
+import { useLocation } from "wouter";
+
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+interface AuthSessionResponse {
+  user: User | null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -17,11 +24,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [sessionCheckTimedOut, setSessionCheckTimedOut] = useState(false);
   const [location, setLocation] = useLocation();
-  const { data, isLoading, isError } = useGetMe({
-    query: {
-      queryKey: getGetMeQueryKey(),
-      retry: false,
-    }
+  const { data, isLoading, isError } = useQuery<AuthSessionResponse>({
+    queryKey: ["/api/auth/session"],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/api/auth/session`, {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok)
+        throw new Error(`Session check failed with ${response.status}`);
+      return response.json() as Promise<AuthSessionResponse>;
+    },
+    retry: false,
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -30,13 +45,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const timeout = window.setTimeout(() => setSessionCheckTimedOut(true), 5000);
+    const timeout = window.setTimeout(
+      () => setSessionCheckTimedOut(true),
+      5000,
+    );
     return () => window.clearTimeout(timeout);
   }, [isLoading]);
 
   useEffect(() => {
     if (data) {
-      setUser(data);
+      setUser(data.user);
     } else if (isError) {
       setUser(null);
     }
@@ -48,14 +66,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    setLocation('/');
+    setLocation("/");
   };
 
   const value = {
     user,
     isLoading: isLoading && !sessionCheckTimedOut,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.role === "admin",
     login,
     logout,
   };
@@ -66,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

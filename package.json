@@ -9,7 +9,9 @@
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck:libs && pnpm --filter @workspace/rabab-legal run build && pnpm run prerender:public && pnpm run check:seo-output && pnpm --filter @workspace/api-server run build",
-    "typecheck:libs": "tsc --build",
+    "build:private": "PUBLIC_INDEXING=false pnpm run build",
+    "build:public": "PUBLIC_INDEXING=true pnpm run build",
+    "typecheck:libs": "tsc --build --force",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "lint": "pnpm -r --filter \"./artifacts/**\" --if-present run lint",
     "check:vercel-config": "node ./scripts/check-vercel-config.mjs",

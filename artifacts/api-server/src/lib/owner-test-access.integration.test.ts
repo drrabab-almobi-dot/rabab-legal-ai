@@ -4,7 +4,8 @@ import type { AddressInfo } from "node:net";
 
 process.env.OWNER_TEST_MODE = "admin_only";
 process.env.SESSION_SECRET ??= "owner-access-integration-test-secret";
-process.env.DATABASE_URL ??= "postgresql://postgres:postgres@127.0.0.1:5432/rabab_test";
+process.env.DATABASE_URL ??=
+  "postgresql://postgres:postgres@127.0.0.1:5432/rabab_test";
 process.env.NODE_ENV ??= "test";
 
 const { default: app } = await import("../app.js");
@@ -15,7 +16,10 @@ const base = `http://127.0.0.1:${port}`;
 
 async function request(path: string, method = "GET") {
   const response = await fetch(`${base}${path}`, { method });
-  return { status: response.status, body: await response.json().catch(() => null) as any };
+  return {
+    status: response.status,
+    body: (await response.json().catch(() => null)) as any,
+  };
 }
 
 try {
@@ -25,6 +29,10 @@ try {
 
   const health = await request("/api/healthz");
   assert.equal(health.status, 200);
+
+  const guestSession = await request("/api/auth/session");
+  assert.equal(guestSession.status, 200);
+  assert.equal(guestSession.body.user, null);
 
   const registration = await request("/api/auth/register", "POST");
   assert.equal(registration.status, 403);
