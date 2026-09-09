@@ -17,6 +17,7 @@ try {
   assert.equal(isAdminOnlyTestingEnabled(), true);
 
   assert.equal(isOwnerTestingPublicPath("/auth/login"), true);
+  assert.equal(isOwnerTestingPublicPath("/auth/session"), true);
   assert.equal(isOwnerTestingPublicPath("/auth/google/callback"), true);
   assert.equal(isOwnerTestingPublicPath("/consultations/1/chat"), false);
 

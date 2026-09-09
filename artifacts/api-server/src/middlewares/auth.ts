@@ -20,7 +20,7 @@ const _jwtSecret = process.env.SESSION_SECRET;
 if (!_jwtSecret) {
   console.error(
     "FATAL: SESSION_SECRET environment variable is required for JWT signing. " +
-    "Set it to a cryptographically random string (≥ 64 characters)."
+      "Set it to a cryptographically random string (≥ 64 characters).",
   );
   process.exit(1);
 }
@@ -52,7 +52,9 @@ async function isTokenRevoked(rawToken: string): Promise<boolean> {
 }
 
 /** Extract userId/userRole from a Bearer JWT in the Authorization header, or from the session cookie. */
-async function resolveIdentity(req: Request): Promise<{ userId: number; userRole: string } | null> {
+export async function resolveIdentity(
+  req: Request,
+): Promise<{ userId: number; userRole: string } | null> {
   // 1. Try Bearer token (mobile / non-cookie clients)
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith("Bearer ")) {
@@ -103,7 +105,11 @@ async function resolveIdentity(req: Request): Promise<{ userId: number; userRole
   return null;
 }
 
-export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function requireAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   const identity = await resolveIdentity(req);
   if (!identity) {
     res.status(401).json({ error: "غير مصرح" });
@@ -114,7 +120,11 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   next();
 }
 
-export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   const identity = await resolveIdentity(req);
   if (!identity || identity.userRole !== "admin") {
     res.status(403).json({ error: "غير مسموح" });
@@ -137,7 +147,9 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
  * @param dbOverride  Optional DB instance injected by tests so the failure
  *   path can be exercised without touching the real database.
  */
-export async function assertBlocklistTableReachable(dbOverride?: typeof db): Promise<void> {
+export async function assertBlocklistTableReachable(
+  dbOverride?: typeof db,
+): Promise<void> {
   // A bare SELECT 1 FROM the table is enough: it will throw a PostgreSQL
   // "relation does not exist" error (code 42P01) if the table is missing,
   // and succeeds instantly even on an empty table.

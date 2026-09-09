@@ -21,6 +21,7 @@ export const ownerTestingPublicPaths = new Set([
   "/healthz",
   "/access-mode",
   "/auth/providers",
+  "/auth/session",
   "/auth/login",
   "/auth/logout",
   "/auth/forgot-password",

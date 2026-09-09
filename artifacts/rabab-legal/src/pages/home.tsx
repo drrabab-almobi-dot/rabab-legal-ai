@@ -1,29 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { setPageSEO } from '@/lib/seo';
-import { Link, useLocation } from 'wouter';
-import { Navbar, Footer } from '@/components/layout';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { Scale, CheckCircle2, Star, ChevronDown, ChevronUp, MessageSquare, Shield, Clock, Phone, FileText, FileSignature, Handshake, Building, Gavel, Lightbulb, Briefcase, Landmark, Search, Loader2, Lock, PenLine, FileSearch, Bot, ArrowLeft, BookOpen, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import launchHeroImg from '@/assets/launch-hero.jpg';
-import lawyerHeroImg from '@/assets/lawyer-hero.png';
-import { buildWhatsAppContactLink } from '@/lib/whatsapp-contact';
-import { SERVICE_CATALOG } from '@/lib/service-catalog';
-import { useLang } from '@/hooks/use-language';
-import { translateArabicText } from '@/lib/translations';
+import React, { useState, useEffect } from "react";
+import { setPageSEO } from "@/lib/seo";
+import { Link, useLocation } from "wouter";
+import { Navbar, Footer } from "@/components/layout";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui";
+import {
+  Scale,
+  CheckCircle2,
+  Star,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  Shield,
+  Clock,
+  Phone,
+  FileText,
+  FileSignature,
+  Handshake,
+  Building,
+  Gavel,
+  Lightbulb,
+  Briefcase,
+  Landmark,
+  Search,
+  Loader2,
+  Lock,
+  PenLine,
+  FileSearch,
+  Bot,
+  ArrowLeft,
+  BookOpen,
+  RefreshCw,
+} from "lucide-react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import launchHeroImg from "@/assets/launch-hero.jpg";
+import lawyerHeroImg from "@/assets/lawyer-hero.png";
+import { buildWhatsAppContactLink } from "@/lib/whatsapp-contact";
+import { SERVICE_CATALOG } from "@/lib/service-catalog";
+import { useLang } from "@/hooks/use-language";
+import { translateArabicText } from "@/lib/translations";
+import { useOwnerTestMode } from "@/components/owner-test-gate";
 
-const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const SERVICE_FRAME_STYLES = [
-  { idle: 'border-secondary/70 hover:border-secondary hover:shadow-secondary/15', active: 'border-secondary bg-secondary/10', panel: 'border-secondary/60' },
-  { idle: 'border-accent/70 hover:border-accent hover:shadow-accent/15', active: 'border-accent bg-accent/10', panel: 'border-accent/60' },
-  { idle: 'border-blue-400/70 hover:border-blue-400 hover:shadow-blue-400/15', active: 'border-blue-400 bg-blue-400/10', panel: 'border-blue-400/60' },
-  { idle: 'border-emerald-400/70 hover:border-emerald-400 hover:shadow-emerald-400/15', active: 'border-emerald-400 bg-emerald-400/10', panel: 'border-emerald-400/60' },
+  {
+    idle: "border-secondary/70 hover:border-secondary hover:shadow-secondary/15",
+    active: "border-secondary bg-secondary/10",
+    panel: "border-secondary/60",
+  },
+  {
+    idle: "border-accent/70 hover:border-accent hover:shadow-accent/15",
+    active: "border-accent bg-accent/10",
+    panel: "border-accent/60",
+  },
+  {
+    idle: "border-blue-400/70 hover:border-blue-400 hover:shadow-blue-400/15",
+    active: "border-blue-400 bg-blue-400/10",
+    panel: "border-blue-400/60",
+  },
+  {
+    idle: "border-emerald-400/70 hover:border-emerald-400 hover:shadow-emerald-400/15",
+    active: "border-emerald-400 bg-emerald-400/10",
+    panel: "border-emerald-400/60",
+  },
 ];
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
 };
 
 const staggerContainer = {
@@ -31,12 +81,15 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
-interface PreviewResult { excerpt: string; similarity: number; }
+interface PreviewResult {
+  excerpt: string;
+  similarity: number;
+}
 
 interface DigitalToolLink {
   label: string;
@@ -56,93 +109,264 @@ interface DigitalToolCategory {
 
 const REMAINING_DIGITAL_TOOL_CATEGORIES: DigitalToolCategory[] = [
   {
-    id: 'intellectual-property',
-    title: 'خدمات الملكية الفكرية',
-    subtitle: 'تسجيل العلامات وحماية حقوق المؤلف',
+    id: "intellectual-property",
+    title: "خدمات الملكية الفكرية",
+    subtitle: "تسجيل العلامات وحماية حقوق المؤلف",
     icon: Lightbulb,
     items: [
-      { label: 'تسجيل وتجديد العلامات التجارية', detail: 'تسجيل العلامة وتجديدها وحمايتها', href: '/consultation?type=legal_opinion&ipType=trademark', icon: Lightbulb },
-      { label: 'حقوق المؤلف والمصنفات', detail: 'حماية المصنفات والمحتوى', href: '/consultation?type=legal_opinion&ipType=copyright', icon: FileText },
-      { label: 'براءات الاختراع', detail: 'تقييم الحماية وإجراءات التسجيل', href: '/consultation?type=legal_opinion&ipType=patent', icon: Gavel },
-      { label: 'الرسوم والنماذج الصناعية', detail: 'حماية التصميم والشكل الصناعي', href: '/consultation?type=legal_opinion&ipType=industrial-design', icon: Briefcase },
-      { label: 'الأسرار التجارية', detail: 'حماية المعلومات والمعرفة السرية', href: '/consultation?type=legal_opinion&ipType=trade-secret', icon: Shield },
-      { label: 'الترخيص ونقل ملكية الحقوق', detail: 'تنظيم التراخيص واتفاقيات نقل الحقوق', href: '/consultation?type=legal_opinion&ipType=licensing-transfer', icon: FileSignature },
-      { label: 'التعدي والمنازعات الفكرية', detail: 'تحليل التعدي وخيارات المعالجة', href: '/consultation?type=legal_opinion&ipType=infringement', icon: Gavel },
-      { label: 'حماية الحقوق دولياً', detail: 'استشارات حماية الحقوق خارج المملكة', href: '/consultation?type=legal_opinion&ipType=international', icon: Landmark },
+      {
+        label: "تسجيل وتجديد العلامات التجارية",
+        detail: "تسجيل العلامة وتجديدها وحمايتها",
+        href: "/consultation?type=legal_opinion&ipType=trademark",
+        icon: Lightbulb,
+      },
+      {
+        label: "حقوق المؤلف والمصنفات",
+        detail: "حماية المصنفات والمحتوى",
+        href: "/consultation?type=legal_opinion&ipType=copyright",
+        icon: FileText,
+      },
+      {
+        label: "براءات الاختراع",
+        detail: "تقييم الحماية وإجراءات التسجيل",
+        href: "/consultation?type=legal_opinion&ipType=patent",
+        icon: Gavel,
+      },
+      {
+        label: "الرسوم والنماذج الصناعية",
+        detail: "حماية التصميم والشكل الصناعي",
+        href: "/consultation?type=legal_opinion&ipType=industrial-design",
+        icon: Briefcase,
+      },
+      {
+        label: "الأسرار التجارية",
+        detail: "حماية المعلومات والمعرفة السرية",
+        href: "/consultation?type=legal_opinion&ipType=trade-secret",
+        icon: Shield,
+      },
+      {
+        label: "الترخيص ونقل ملكية الحقوق",
+        detail: "تنظيم التراخيص واتفاقيات نقل الحقوق",
+        href: "/consultation?type=legal_opinion&ipType=licensing-transfer",
+        icon: FileSignature,
+      },
+      {
+        label: "التعدي والمنازعات الفكرية",
+        detail: "تحليل التعدي وخيارات المعالجة",
+        href: "/consultation?type=legal_opinion&ipType=infringement",
+        icon: Gavel,
+      },
+      {
+        label: "حماية الحقوق دولياً",
+        detail: "استشارات حماية الحقوق خارج المملكة",
+        href: "/consultation?type=legal_opinion&ipType=international",
+        icon: Landmark,
+      },
     ],
   },
   {
-    id: 'corporate-governance-compliance',
-    title: 'حوكمة وامتثال الشركات',
-    subtitle: 'سياسات وضوابط وإدارة المخاطر',
+    id: "corporate-governance-compliance",
+    title: "حوكمة وامتثال الشركات",
+    subtitle: "سياسات وضوابط وإدارة المخاطر",
     icon: Shield,
     items: [
-      { label: 'تأسيس وإطار الحوكمة', detail: 'بناء إطار حوكمة واضح للشركة', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=framework', icon: Shield },
-      { label: 'سياسات ولوائح الشركات', detail: 'إعداد ومراجعة اللوائح والسياسات الداخلية', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=policies', icon: FileText },
-      { label: 'الامتثال النظامي والرقابي', detail: 'تقييم الالتزامات ومتطلبات الجهات الرقابية', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=regulatory-compliance', icon: CheckCircle2 },
-      { label: 'إدارة المخاطر القانونية', detail: 'رصد المخاطر ووضع ضوابط المعالجة', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=legal-risk', icon: Gavel },
-      { label: 'مجلس الإدارة واللجان', detail: 'تنظيم الصلاحيات والاجتماعات والقرارات', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=board-committees', icon: Landmark },
-      { label: 'تضارب المصالح والإفصاح', detail: 'ضوابط الإفصاح وتعارض المصالح', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=conflicts-disclosure', icon: FileSignature },
-      { label: 'هيكل الملكية وحقوق الشركاء', detail: 'تنظيم الملكية وحقوق الشركاء والمساهمين', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=ownership-partners', icon: Landmark },
-      { label: 'الصلاحيات والتفويض', detail: 'تحديد المسؤوليات وحدود التفويض', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=delegation-authority', icon: FileSignature },
-      { label: 'الأطراف ذات العلاقة', detail: 'ضوابط التعاملات مع الأطراف المرتبطة', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=related-parties', icon: Handshake },
-      { label: 'مكافحة الرشوة وغسل الأموال', detail: 'سياسات النزاهة ومكافحة الجرائم المالية', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=anti-bribery-aml', icon: Shield },
-      { label: 'حماية البيانات والخصوصية', detail: 'الامتثال لمتطلبات البيانات والخصوصية', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=data-privacy', icon: Lock },
-      { label: 'الإبلاغ عن المخالفات', detail: 'قنوات البلاغات وحماية المبلّغين', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=whistleblowing', icon: MessageSquare },
-      { label: 'المراجعة الداخلية والتحقيقات', detail: 'فحص المخالفات وإجراءات التحقيق الداخلي', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=internal-investigations', icon: Search },
-      { label: 'تقييم الامتثال وخطط المعالجة', detail: 'قياس مستوى الامتثال وإغلاق الملاحظات', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=compliance-remediation', icon: CheckCircle2 },
+      {
+        label: "تأسيس وإطار الحوكمة",
+        detail: "بناء إطار حوكمة واضح للشركة",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=framework",
+        icon: Shield,
+      },
+      {
+        label: "سياسات ولوائح الشركات",
+        detail: "إعداد ومراجعة اللوائح والسياسات الداخلية",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=policies",
+        icon: FileText,
+      },
+      {
+        label: "الامتثال النظامي والرقابي",
+        detail: "تقييم الالتزامات ومتطلبات الجهات الرقابية",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=regulatory-compliance",
+        icon: CheckCircle2,
+      },
+      {
+        label: "إدارة المخاطر القانونية",
+        detail: "رصد المخاطر ووضع ضوابط المعالجة",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=legal-risk",
+        icon: Gavel,
+      },
+      {
+        label: "مجلس الإدارة واللجان",
+        detail: "تنظيم الصلاحيات والاجتماعات والقرارات",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=board-committees",
+        icon: Landmark,
+      },
+      {
+        label: "تضارب المصالح والإفصاح",
+        detail: "ضوابط الإفصاح وتعارض المصالح",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=conflicts-disclosure",
+        icon: FileSignature,
+      },
+      {
+        label: "هيكل الملكية وحقوق الشركاء",
+        detail: "تنظيم الملكية وحقوق الشركاء والمساهمين",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=ownership-partners",
+        icon: Landmark,
+      },
+      {
+        label: "الصلاحيات والتفويض",
+        detail: "تحديد المسؤوليات وحدود التفويض",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=delegation-authority",
+        icon: FileSignature,
+      },
+      {
+        label: "الأطراف ذات العلاقة",
+        detail: "ضوابط التعاملات مع الأطراف المرتبطة",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=related-parties",
+        icon: Handshake,
+      },
+      {
+        label: "مكافحة الرشوة وغسل الأموال",
+        detail: "سياسات النزاهة ومكافحة الجرائم المالية",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=anti-bribery-aml",
+        icon: Shield,
+      },
+      {
+        label: "حماية البيانات والخصوصية",
+        detail: "الامتثال لمتطلبات البيانات والخصوصية",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=data-privacy",
+        icon: Lock,
+      },
+      {
+        label: "الإبلاغ عن المخالفات",
+        detail: "قنوات البلاغات وحماية المبلّغين",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=whistleblowing",
+        icon: MessageSquare,
+      },
+      {
+        label: "المراجعة الداخلية والتحقيقات",
+        detail: "فحص المخالفات وإجراءات التحقيق الداخلي",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=internal-investigations",
+        icon: Search,
+      },
+      {
+        label: "تقييم الامتثال وخطط المعالجة",
+        detail: "قياس مستوى الامتثال وإغلاق الملاحظات",
+        href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=compliance-remediation",
+        icon: CheckCircle2,
+      },
     ],
   },
   {
-    id: 'research',
-    title: 'الباحثة الذكية',
-    subtitle: 'بحث في المصادر والوثائق القانونية',
+    id: "research",
+    title: "الباحثة الذكية",
+    subtitle: "بحث في المصادر والوثائق القانونية",
     icon: Search,
     items: [
-      { label: 'السوابق القضائية', detail: 'بحث في الأحكام والمبادئ القضائية', href: '/legal-search?filter=judicial', icon: Gavel },
-      { label: 'المدونات القانونية', detail: 'بحث في المدونات والأنظمة ذات الصلة', href: '/legal-search?filter=codex', icon: BookOpen },
-      { label: 'التعاميم والقرارات', detail: 'الوصول إلى التعاميم والقرارات', href: '/legal-search?filter=circulars', icon: Search },
-      { label: 'بحث في الكل', detail: 'بحث شامل في جميع المصادر', href: '/legal-search', icon: Search },
+      {
+        label: "السوابق القضائية",
+        detail: "بحث في الأحكام والمبادئ القضائية",
+        href: "/legal-search?filter=judicial",
+        icon: Gavel,
+      },
+      {
+        label: "المدونات القانونية",
+        detail: "بحث في المدونات والأنظمة ذات الصلة",
+        href: "/legal-search?filter=codex",
+        icon: BookOpen,
+      },
+      {
+        label: "التعاميم والقرارات",
+        detail: "الوصول إلى التعاميم والقرارات",
+        href: "/legal-search?filter=circulars",
+        icon: Search,
+      },
+      {
+        label: "بحث في الكل",
+        detail: "بحث شامل في جميع المصادر",
+        href: "/legal-search",
+        icon: Search,
+      },
     ],
   },
   {
-    id: 'pleadings',
-    title: 'تحرير المذكرات والصحائف',
-    subtitle: 'صياغة قانونية وفق النوع والمسار القضائي',
+    id: "pleadings",
+    title: "تحرير المذكرات والصحائف",
+    subtitle: "صياغة قانونية وفق النوع والمسار القضائي",
     icon: PenLine,
     items: [
-      { label: 'لائحة الدعوى', detail: 'صياغة صحيفة دعوى متكاملة', href: '/legal-assistant?service=pleadings&memoType=lawsuit', icon: PenLine },
-      { label: 'مذكرة جوابية', detail: 'رد قانوني منظم على الدعوى', href: '/legal-assistant?service=pleadings&memoType=response', icon: FileText },
-      { label: 'الاعتراض بالاستئناف', detail: 'صياغة أسباب الاستئناف', href: '/legal-assistant?service=pleadings&memoType=appeal', icon: Gavel },
-      { label: 'النقض أمام العليا', detail: 'تحرير مذكرة نقض قانونية', href: '/legal-assistant?service=pleadings&memoType=cassation', icon: Landmark },
+      {
+        label: "لائحة الدعوى",
+        detail: "صياغة صحيفة دعوى متكاملة",
+        href: "/legal-assistant?service=pleadings&memoType=lawsuit",
+        icon: PenLine,
+      },
+      {
+        label: "مذكرة جوابية",
+        detail: "رد قانوني منظم على الدعوى",
+        href: "/legal-assistant?service=pleadings&memoType=response",
+        icon: FileText,
+      },
+      {
+        label: "الاعتراض بالاستئناف",
+        detail: "صياغة أسباب الاستئناف",
+        href: "/legal-assistant?service=pleadings&memoType=appeal",
+        icon: Gavel,
+      },
+      {
+        label: "النقض أمام العليا",
+        detail: "تحرير مذكرة نقض قانونية",
+        href: "/legal-assistant?service=pleadings&memoType=cassation",
+        icon: Landmark,
+      },
     ],
   },
   {
-    id: 'contracts',
-    title: 'صياغة ومراجعة العقود',
-    subtitle: 'إعداد العقود وتحليلها وكشف المخاطر',
+    id: "contracts",
+    title: "صياغة ومراجعة العقود",
+    subtitle: "إعداد العقود وتحليلها وكشف المخاطر",
     icon: FileText,
     items: [
-      { label: 'صياغة عقد جديد', detail: 'مسودة قانونية تلائم احتياجك', href: '/contracts?tab=draft', icon: FileText },
-      { label: 'مراجعة عقد', detail: 'فحص البنود وتقديم النصح', href: '/contracts?tab=review', icon: FileSignature },
-      { label: 'تحليل المخاطر', detail: 'كشف البنود والمخاطر المحتملة', href: '/contracts?tab=analyze', icon: FileSearch },
-      { label: 'استخراج البيانات', detail: 'تلخيص البيانات الجوهرية للعقد', href: '/contracts?tab=extract', icon: Search },
+      {
+        label: "صياغة عقد جديد",
+        detail: "مسودة قانونية تلائم احتياجك",
+        href: "/contracts?tab=draft",
+        icon: FileText,
+      },
+      {
+        label: "مراجعة عقد",
+        detail: "فحص البنود وتقديم النصح",
+        href: "/contracts?tab=review",
+        icon: FileSignature,
+      },
+      {
+        label: "تحليل المخاطر",
+        detail: "كشف البنود والمخاطر المحتملة",
+        href: "/contracts?tab=analyze",
+        icon: FileSearch,
+      },
+      {
+        label: "استخراج البيانات",
+        detail: "تلخيص البيانات الجوهرية للعقد",
+        href: "/contracts?tab=extract",
+        icon: Search,
+      },
     ],
   },
 ];
 
 const REMAINING_DIGITAL_TOOL_CATEGORY_ORDER = [
-  'pleadings',
-  'contracts',
-  'intellectual-property',
-  'corporate-governance-compliance',
-  'research',
+  "pleadings",
+  "contracts",
+  "intellectual-property",
+  "corporate-governance-compliance",
+  "research",
 ];
 
 export default function Home() {
   const { lang, t } = useLang();
+  const { isPublicRelease } = useOwnerTestMode();
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  const [previewQuery, setPreviewQuery] = useState('');
+  const [previewQuery, setPreviewQuery] = useState("");
   const [previewResults, setPreviewResults] = useState<PreviewResult[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewSearched, setPreviewSearched] = useState(false);
@@ -151,21 +375,26 @@ export default function Home() {
 
   useEffect(() => {
     setPageSEO({
-      title: t('استشارة قانونية بالذكاء الاصطناعي', 'AI-powered legal consultation'),
-      description: t(
-        'RABAB LEGAL AI — استشارة قانونية سعودية فورية ودقيقة مدعومة بالذكاء الاصطناعي. اطرح سؤالك في الأنظمة السعودية واحصل على إجابة موثّقة.',
-        'RABAB LEGAL AI — instant, accurate Saudi legal guidance powered by AI. Ask about Saudi laws and receive a source-based answer.',
+      title: t(
+        "استشارة قانونية بالذكاء الاصطناعي",
+        "AI-powered legal consultation",
       ),
-      canonical: 'https://rabablegal.com/',
+      description: t(
+        "RABAB LEGAL AI — استشارة قانونية سعودية فورية ودقيقة مدعومة بالذكاء الاصطناعي. اطرح سؤالك في الأنظمة السعودية واحصل على إجابة موثّقة.",
+        "RABAB LEGAL AI — instant, accurate Saudi legal guidance powered by AI. Ask about Saudi laws and receive a source-based answer.",
+      ),
+      canonical: "https://rabablegal.com/",
     });
   }, [lang]);
 
   useEffect(() => {
-    const desktopGrid = window.matchMedia('(min-width: 1536px)');
-    const syncServiceGridColumns = () => setServiceGridColumns(desktopGrid.matches ? 4 : 3);
+    const desktopGrid = window.matchMedia("(min-width: 1536px)");
+    const syncServiceGridColumns = () =>
+      setServiceGridColumns(desktopGrid.matches ? 4 : 3);
     syncServiceGridColumns();
-    desktopGrid.addEventListener('change', syncServiceGridColumns);
-    return () => desktopGrid.removeEventListener('change', syncServiceGridColumns);
+    desktopGrid.addEventListener("change", syncServiceGridColumns);
+    return () =>
+      desktopGrid.removeEventListener("change", syncServiceGridColumns);
   }, []);
 
   const handlePreviewSearch = async (e: React.FormEvent) => {
@@ -175,13 +404,19 @@ export default function Home() {
     setPreviewSearched(false);
     setPreviewResults([]);
     try {
-      const res = await fetch(`${API_BASE}/api/knowledge/preview-search?q=${encodeURIComponent(previewQuery)}`);
+      const res = await fetch(
+        `${API_BASE}/api/knowledge/preview-search?q=${encodeURIComponent(previewQuery)}`,
+      );
       if (res.ok) {
         const data = await res.json();
         setPreviewResults(data.results ?? []);
       }
-    } catch { /* silent */ }
-    finally { setPreviewLoading(false); setPreviewSearched(true); }
+    } catch {
+      /* silent */
+    } finally {
+      setPreviewLoading(false);
+      setPreviewSearched(true);
+    }
   };
 
   const services = [
@@ -189,10 +424,16 @@ export default function Home() {
     { title: "الأحوال الشخصية والتركات", icon: <Scale className="w-8 h-8" /> },
     { title: "العقود التجارية", icon: <FileText className="w-8 h-8" /> },
     { title: "النزاعات المدنية", icon: <MessageSquare className="w-8 h-8" /> },
-    { title: "التأسيس التجاري والتراخيص", icon: <Building className="w-8 h-8" /> },
+    {
+      title: "التأسيس التجاري والتراخيص",
+      icon: <Building className="w-8 h-8" />,
+    },
     { title: "القضايا الجزائية", icon: <Gavel className="w-8 h-8" /> },
     { title: "الملكية الفكرية", icon: <Lightbulb className="w-8 h-8" /> },
-    { title: "خدمات الشركات والاستثمار", icon: <Briefcase className="w-8 h-8" /> },
+    {
+      title: "خدمات الشركات والاستثمار",
+      icon: <Briefcase className="w-8 h-8" />,
+    },
     { title: "المصرفية والتمويلية", icon: <Landmark className="w-8 h-8" /> },
   ];
 
@@ -243,56 +484,131 @@ export default function Home() {
   ];
 
   const faqs = [
-    { q: "كيف أبدأ استشارتي القانونية؟", a: "ببساطة سجل حساباً جديداً، اختر باقة تناسب احتياجك، واطرح سؤالك مباشرة عبر المنصة ليتم الرد عليه بشكل فوري." },
-    { q: "هل الاستشارات سرية؟", a: "نعم، نحن نطبق أعلى معايير التشفير والسرية. لا يتم مشاركة بياناتك أو استشاراتك مع أي طرف ثالث تحت أي ظرف." },
-    { q: "ما مدى دقة الإجابات المقدمة؟", a: "تُقدَّم الإجابات عبر منصة ذكاء اصطناعي متخصصة في المنظومة القانونية السعودية وتُعدّ توجيهاً أولياً لا رأياً قانونياً نهائياً. للقضايا التي تستوجب تعمقاً أكثر، تتيح المنصة إمكانية الرجوع مباشراً إلى المحامية د. رباب لاستكمال الاستشارة والحصول على الرأي القانوني المتخصص." },
-    { q: "هل يمكنني استخدام رباب لصياغة العقود؟", a: "نعم، تتيح رباب خدمة متخصصة لصياغة العقود وفق الأنظمة السعودية ودول مجلس التعاون، مع إمكانية رفع ملف عقد موجود لمراجعته وتحسينه." },
-    { q: "ما الفرق بين الاستشارة القانونية والاستشارة القضائية؟", a: "الاستشارة القانونية تجيب عن أسئلة قانونية عامة كالحقوق والالتزامات والعقود، أما الاستشارة القضائية فتُعنى بالقضايا المرفوعة أمام المحاكم وتحليل الأحكام والمرافعات وفق الأنظمة." },
-    { q: "هل يمكنني رفع وثيقة أو عقد وتحليلها؟", a: "نعم، يمكنك رفع ملفات PDF أو Word أو صور مستندات وتحليلها مباشراً داخل المحادثة، وستستخرج رباب النص وتجيب عن أسئلتك استناداً إلى محتوى الوثيقة." },
-    { q: "هل رباب متاحة على مدار الساعة؟", a: "نعم، الخدمة متاحة 24/7 طوال أيام السنة. يمكنك طرح استشارتك في أي وقت والحصول على رد فوري دون الحاجة لحجز موعد أو انتظار." },
-    { q: "ما الأنظمة التي تستند إليها رباب؟", a: "تستند رباب إلى منظومة الأنظمة واللوائح السعودية ودول مجلس التعاون، مع تحديث دوري لمواكبة المستجدات التشريعية." },
-    { q: "كيف تختلف رباب عن البحث في الإنترنت؟", a: "رباب لا تعرض نتائج بحث عامة، بل تحلل سؤالك وتجيب عليه مباشراً مستندةً إلى نصوص قانونية موثّقة، مع ذكر المصادر والمواد النظامية ذات الصلة." },
-    { q: "هل يمكن الاستفادة من رباب للقضايا التجارية والشركات؟", a: "نعم، تغطي رباب الاستفسارات المتعلقة بتأسيس الشركات والعقود التجارية والنزاعات بين الشركاء وأحكام نظام الشركات ونظام الاستثمار، وتُعدّ أداةً فعّالة للمحامين ورجال الأعمال على حدٍّ سواء." },
+    {
+      q: "كيف أبدأ استشارتي القانونية؟",
+      a: "ببساطة سجل حساباً جديداً، اختر باقة تناسب احتياجك، واطرح سؤالك مباشرة عبر المنصة ليتم الرد عليه بشكل فوري.",
+    },
+    {
+      q: "هل الاستشارات سرية؟",
+      a: "نعم، نحن نطبق أعلى معايير التشفير والسرية. لا يتم مشاركة بياناتك أو استشاراتك مع أي طرف ثالث تحت أي ظرف.",
+    },
+    {
+      q: "ما مدى دقة الإجابات المقدمة؟",
+      a: "تُقدَّم الإجابات عبر منصة ذكاء اصطناعي متخصصة في المنظومة القانونية السعودية وتُعدّ توجيهاً أولياً لا رأياً قانونياً نهائياً. للقضايا التي تستوجب تعمقاً أكثر، تتيح المنصة إمكانية الرجوع مباشراً إلى المحامية د. رباب لاستكمال الاستشارة والحصول على الرأي القانوني المتخصص.",
+    },
+    {
+      q: "هل يمكنني استخدام رباب لصياغة العقود؟",
+      a: "نعم، تتيح رباب خدمة متخصصة لصياغة العقود وفق الأنظمة السعودية ودول مجلس التعاون، مع إمكانية رفع ملف عقد موجود لمراجعته وتحسينه.",
+    },
+    {
+      q: "ما الفرق بين الاستشارة القانونية والاستشارة القضائية؟",
+      a: "الاستشارة القانونية تجيب عن أسئلة قانونية عامة كالحقوق والالتزامات والعقود، أما الاستشارة القضائية فتُعنى بالقضايا المرفوعة أمام المحاكم وتحليل الأحكام والمرافعات وفق الأنظمة.",
+    },
+    {
+      q: "هل يمكنني رفع وثيقة أو عقد وتحليلها؟",
+      a: "نعم، يمكنك رفع ملفات PDF أو Word أو صور مستندات وتحليلها مباشراً داخل المحادثة، وستستخرج رباب النص وتجيب عن أسئلتك استناداً إلى محتوى الوثيقة.",
+    },
+    {
+      q: "هل رباب متاحة على مدار الساعة؟",
+      a: "نعم، الخدمة متاحة 24/7 طوال أيام السنة. يمكنك طرح استشارتك في أي وقت والحصول على رد فوري دون الحاجة لحجز موعد أو انتظار.",
+    },
+    {
+      q: "ما الأنظمة التي تستند إليها رباب؟",
+      a: "تستند رباب إلى منظومة الأنظمة واللوائح السعودية ودول مجلس التعاون، مع تحديث دوري لمواكبة المستجدات التشريعية.",
+    },
+    {
+      q: "كيف تختلف رباب عن البحث في الإنترنت؟",
+      a: "رباب لا تعرض نتائج بحث عامة، بل تحلل سؤالك وتجيب عليه مباشراً مستندةً إلى نصوص قانونية موثّقة، مع ذكر المصادر والمواد النظامية ذات الصلة.",
+    },
+    {
+      q: "هل يمكن الاستفادة من رباب للقضايا التجارية والشركات؟",
+      a: "نعم، تغطي رباب الاستفسارات المتعلقة بتأسيس الشركات والعقود التجارية والنزاعات بين الشركاء وأحكام نظام الشركات ونظام الاستثمار، وتُعدّ أداةً فعّالة للمحامين ورجال الأعمال على حدٍّ سواء.",
+    },
   ];
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden font-sans">
       <Navbar />
-      
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-primary pt-16 pb-0">
+      <section
+        data-main-content
+        className="relative overflow-hidden bg-primary pt-16 pb-0"
+      >
         <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-primary/80 to-primary"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-12">
-            <motion.div 
+            <motion.div
               className="flex-1 hidden lg:block"
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
             >
               <div className="relative w-full max-w-md mx-auto rounded-2xl overflow-hidden border-4 border-secondary/30 shadow-2xl shadow-secondary/10">
-                <img src={launchHeroImg} alt={t('RABAB LEGAL AI — الإطلاق التجريبي', 'RABAB LEGAL AI — Launch Preview')} className="object-cover w-full h-auto block" />
+                <img
+                  src={launchHeroImg}
+                  alt={t(
+                    "RABAB LEGAL AI — الإطلاق التجريبي",
+                    "RABAB LEGAL AI — Launch Preview",
+                  )}
+                  className="object-cover w-full h-auto block"
+                />
               </div>
             </motion.div>
-            <motion.div 
+            <motion.div
               className="flex-1 text-center lg:text-right"
-              initial="hidden" animate="visible" variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
             >
-              <motion.span variants={fadeInUp} className="inline-block py-1 px-3 rounded-full mb-6 text-xs sm:text-sm font-semibold" style={{color:'hsl(47 100% 48%)', background:'hsl(191 100% 50% / 0.1)', border:'2px solid hsl(191 100% 50% / 0.7)'}}>
-                {t('رباب محاميتك الرقمية — RABAB LEGAL AI', 'Rabab, your digital lawyer — RABAB LEGAL AI')}
+              <motion.span
+                variants={fadeInUp}
+                className="inline-block py-1 px-3 rounded-full mb-6 text-xs sm:text-sm font-semibold"
+                style={{
+                  color: "hsl(47 100% 48%)",
+                  background: "hsl(191 100% 50% / 0.1)",
+                  border: "2px solid hsl(191 100% 50% / 0.7)",
+                }}
+              >
+                {t(
+                  "رباب محاميتك الرقمية — RABAB LEGAL AI",
+                  "Rabab, your digital lawyer — RABAB LEGAL AI",
+                )}
               </motion.span>
-              <motion.h1 variants={fadeInUp} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6 leading-snug">
-                {t('رباب مستشارتك القانونية طوال 24 ساعة', 'Rabab, your legal consultant around the clock')}
+              <motion.h1
+                variants={fadeInUp}
+                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6 leading-snug"
+              >
+                {t(
+                  "رباب مستشارتك القانونية طوال 24 ساعة",
+                  "Rabab, your legal consultant around the clock",
+                )}
               </motion.h1>
-              <motion.p variants={fadeInUp} className="text-sm md:text-base text-white mb-4 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                {t('استشارات قانونية دقيقة وفق الأنظمة السعودية ودول مجلس التعاون، باستخدام أحدث تقنيات الذكاء الاصطناعي، مع إمكانية طلب تأكيد الاستشارة من المحامية د. رباب المعبي.', 'Accurate legal guidance under Saudi and GCC laws, powered by advanced AI, with the option to request confirmation from Lawyer Dr. Rabab Almoaibi.')}
+              <motion.p
+                variants={fadeInUp}
+                className="text-sm md:text-base text-white mb-4 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+              >
+                {t(
+                  "استشارات قانونية دقيقة وفق الأنظمة السعودية ودول مجلس التعاون، باستخدام أحدث تقنيات الذكاء الاصطناعي، مع إمكانية طلب تأكيد الاستشارة من المحامية د. رباب المعبي.",
+                  "Accurate legal guidance under Saudi and GCC laws, powered by advanced AI, with the option to request confirmation from Lawyer Dr. Rabab Almoaibi.",
+                )}
               </motion.p>
-              <motion.div variants={fadeInUp} className="flex justify-center lg:justify-end mb-8">
+              <motion.div
+                variants={fadeInUp}
+                className="flex justify-center lg:justify-end mb-8"
+              >
                 <a
                   href="#why-rabab"
-                  onClick={e => { e.preventDefault(); document.getElementById('why-rabab')?.scrollIntoView({ behavior: 'smooth' }); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("why-rabab")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
                   className="flex items-center gap-1.5 text-secondary/80 hover:text-secondary text-sm font-medium transition-colors"
                 >
-                  {t('لماذا تختار رباب الرقمية؟', 'Why choose Rabab Digital?')}
+                  {t("لماذا تختار رباب الرقمية؟", "Why choose Rabab Digital?")}
                   <ChevronDown className="w-4 h-4 animate-bounce" />
                 </a>
               </motion.div>
@@ -302,50 +618,105 @@ export default function Home() {
       </section>
 
       {/* Benefits */}
-      <section id="why-rabab" className="pt-6 pb-6 bg-primary text-primary-foreground">
+      <section
+        id="why-rabab"
+        className="pt-6 pb-6 bg-primary text-primary-foreground"
+      >
         <div className="container mx-auto px-4">
           <h2 className="mb-10 text-center text-4xl sm:text-5xl md:text-6xl leading-tight font-bold lg:whitespace-nowrap">
-            {t('لماذا تختار رباب الرقمية؟', 'Why choose Rabab Digital?')}
+            {t("لماذا تختار رباب الرقمية؟", "Why choose Rabab Digital?")}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <p className="text-lg text-white mb-8 leading-relaxed">
-                {t('نجمع بين خبرة المحاماة العريقة والتكنولوجيا الحديثة لتقديم تجربة استشارية استثنائية.', 'We combine established legal expertise with modern technology to provide an exceptional consultation experience.')}
+                {t(
+                  "نجمع بين خبرة المحاماة العريقة والتكنولوجيا الحديثة لتقديم تجربة استشارية استثنائية.",
+                  "We combine established legal expertise with modern technology to provide an exceptional consultation experience.",
+                )}
               </p>
               <div className="space-y-6">
                 {[
-                  { title: "استجابة فورية", titleEn: "Instant Response", desc: "لا داعي للانتظار لحجز موعد، استشارتك جاهزة على مدار الساعة.", descEn: "No need to wait for an appointment; your consultation is ready around the clock." },
-                  { title: "دقة وموثوقية", titleEn: "Accuracy & Reliability", desc: "مبنية على أحدث الأنظمة والقوانين المعمول بها في المملكة ودول مجلس التعاون.", descEn: "Built on the latest applicable laws and regulations in Saudi Arabia and the GCC." },
-                  { title: "خصوصية تامة", titleEn: "Complete Privacy", desc: "تشفير كامل لبياناتك ومحادثاتك لضمان السرية المطلقة.", descEn: "Full encryption for your data and conversations to ensure absolute confidentiality." },
+                  {
+                    title: "استجابة فورية",
+                    titleEn: "Instant Response",
+                    desc: "لا داعي للانتظار لحجز موعد، استشارتك جاهزة على مدار الساعة.",
+                    descEn:
+                      "No need to wait for an appointment; your consultation is ready around the clock.",
+                  },
+                  {
+                    title: "دقة وموثوقية",
+                    titleEn: "Accuracy & Reliability",
+                    desc: "مبنية على أحدث الأنظمة والقوانين المعمول بها في المملكة ودول مجلس التعاون.",
+                    descEn:
+                      "Built on the latest applicable laws and regulations in Saudi Arabia and the GCC.",
+                  },
+                  {
+                    title: "خصوصية تامة",
+                    titleEn: "Complete Privacy",
+                    desc: "تشفير كامل لبياناتك ومحادثاتك لضمان السرية المطلقة.",
+                    descEn:
+                      "Full encryption for your data and conversations to ensure absolute confidentiality.",
+                  },
                 ].map((benefit, i) => (
                   <div key={i} className="flex gap-4">
-                    <div className="mt-1"><CheckCircle2 className="w-6 h-6 text-secondary" /></div>
+                    <div className="mt-1">
+                      <CheckCircle2 className="w-6 h-6 text-secondary" />
+                    </div>
                     <div>
-                        <h4 className="font-bold text-lg mb-1 text-secondary whitespace-nowrap">{t(benefit.title, benefit.titleEn)}</h4>
-                        <p className="text-white text-lg leading-relaxed">
-                          {i === 0 ? (
-                            <>
-                              {t('لا داعي للانتظار لحجز موعد، استشارتك جاهزة ', 'No need to wait for an appointment; your consultation is ready ')}
-                              <span dir={lang === 'ar' ? 'rtl' : 'ltr'} className="inline-block whitespace-nowrap">{t('على مدار الساعة.', 'around the clock.')}</span>
-                            </>
-                          ) : t(benefit.desc, benefit.descEn)}
-                        </p>
+                      <h4 className="font-bold text-lg mb-1 text-secondary whitespace-nowrap">
+                        {t(benefit.title, benefit.titleEn)}
+                      </h4>
+                      <p className="text-white text-lg leading-relaxed">
+                        {i === 0 ? (
+                          <>
+                            {t(
+                              "لا داعي للانتظار لحجز موعد، استشارتك جاهزة ",
+                              "No need to wait for an appointment; your consultation is ready ",
+                            )}
+                            <span
+                              dir={lang === "ar" ? "rtl" : "ltr"}
+                              className="inline-block whitespace-nowrap"
+                            >
+                              {t("على مدار الساعة.", "around the clock.")}
+                            </span>
+                          </>
+                        ) : (
+                          t(benefit.desc, benefit.descEn)
+                        )}
+                      </p>
                     </div>
                   </div>
                 ))}
                 {/* ── ميزة حصرية: خبرة بشرية عند الحاجة ── */}
                 <div className="flex gap-4 rounded-xl border border-blue-400/60 bg-blue-600/20 px-4 py-4">
                   <div className="mt-1 shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-6 h-6 text-secondary"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
                     </svg>
                   </div>
                   <div>
                     <h4 className="font-bold text-lg mb-1 text-secondary">
-                      {t('خبرة بشرية عند الحاجة', 'Human Expertise When You Need It')}
+                      {t(
+                        "خبرة بشرية عند الحاجة",
+                        "Human Expertise When You Need It",
+                      )}
                     </h4>
                     <p className="text-white text-lg leading-relaxed">
-                      {t('إمكانية الرجوع المباشر والتواصل مع المحامية د. رباب أحمد المعبي عند الحاجة والحصول على الرأي القانوني.', 'Contact Lawyer Dr. Rabab Ahmed Almoaibi directly when needed and receive a legal opinion.')}
+                      {t(
+                        "إمكانية الرجوع المباشر والتواصل مع المحامية د. رباب أحمد المعبي عند الحاجة والحصول على الرأي القانوني.",
+                        "Contact Lawyer Dr. Rabab Ahmed Almoaibi directly when needed and receive a legal opinion.",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -353,7 +724,11 @@ export default function Home() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-secondary blur-3xl opacity-20 rounded-full"></div>
-              <img src={lawyerHeroImg} alt={t('محامية رباب', 'Lawyer Rabab')} className="rounded-2xl relative z-10 border border-white/10" />
+              <img
+                src={lawyerHeroImg}
+                alt={t("محامية رباب", "Lawyer Rabab")}
+                className="rounded-2xl relative z-10 border border-white/10"
+              />
             </div>
           </div>
         </div>
@@ -364,18 +739,25 @@ export default function Home() {
         <div className="container mx-auto px-4 text-center">
           <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">
-               {t('ابدأ استشارتك القانونية الأولى مجاناً', 'Start your first legal consultation for free')}
+              {t(
+                "ابدأ استشارتك القانونية الأولى مجاناً",
+                "Start your first legal consultation for free",
+              )}
             </h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
-                <Button size="lg" className="bg-secondary text-primary font-bold hover:bg-secondary/90 text-lg px-10 h-14 shadow-xl shadow-secondary/30 w-full sm:w-auto">
-                   {t('ابدأ الاستشارة', 'Start Consultation')}
-                </Button>
+              <Link
+                href={isPublicRelease ? "/register" : "/contact"}
+                className="inline-flex h-14 w-full items-center justify-center rounded-md bg-secondary px-10 text-lg font-bold text-secondary-foreground shadow-xl shadow-secondary/30 transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
+              >
+                {isPublicRelease
+                  ? t("ابدأ الاستشارة", "Start Consultation")
+                  : t("تواصل لمعرفة موعد الإطلاق", "Contact us about launch")}
               </Link>
-              <Link href="/pricing">
-                <Button size="lg" variant="outline" className="border-secondary/50 text-secondary font-bold hover:bg-secondary/10 text-lg px-10 h-14 w-full sm:w-auto">
-                   {t('عرض الباقات', 'View Plans')}
-                </Button>
+              <Link
+                href="/pricing"
+                className="inline-flex h-14 w-full items-center justify-center rounded-md border-2 border-secondary/70 bg-transparent px-10 text-lg font-bold text-secondary transition-colors hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
+              >
+                {t("عرض الباقات", "View Plans")}
               </Link>
             </div>
           </motion.div>
@@ -383,12 +765,34 @@ export default function Home() {
       </section>
 
       {/* ── كتالوج الخدمات الرئيسية ── */}
-       <section id="services" className="bg-gradient-to-b from-primary to-sidebar py-12 md:py-16" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <section
+        id="services"
+        className="bg-gradient-to-b from-primary to-sidebar py-12 md:py-16"
+        dir={lang === "ar" ? "rtl" : "ltr"}
+      >
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="mx-auto mb-10 max-w-2xl text-center">
-             <p className="mb-3 text-3xl font-black leading-tight text-secondary md:text-4xl">{t('خدماتنا القانونية', 'Our Legal Services')}</p>
-             <h2 className="text-3xl font-black text-white md:text-4xl">{t('اختر الخدمة المناسبة لاحتياجك', 'Choose the service that fits your needs')}</h2>
-             <p className="mt-3 text-white">{t('اضغط على الخدمة لعرض شرحها وفروعها واختيار المسار المناسب.', 'Select a service to view its description, branches, and the best path for you.')}</p>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="mx-auto mb-10 max-w-2xl text-center"
+          >
+            <p className="mb-3 text-3xl font-black leading-tight text-secondary md:text-4xl">
+              {t("خدماتنا القانونية", "Our Legal Services")}
+            </p>
+            <h2 className="text-3xl font-black text-white md:text-4xl">
+              {t(
+                "اختر الخدمة المناسبة لاحتياجك",
+                "Choose the service that fits your needs",
+              )}
+            </h2>
+            <p className="mt-3 text-white">
+              {t(
+                "اضغط على الخدمة لعرض شرحها وفروعها واختيار المسار المناسب.",
+                "Select a service to view its description, branches, and the best path for you.",
+              )}
+            </p>
           </motion.div>
 
           <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
@@ -397,7 +801,8 @@ export default function Home() {
               // تدوير لوحة الألوان بين الصفوف يمنع تكرار اللون نفسه عمودياً.
               const row = Math.floor(index / serviceGridColumns);
               const column = index % serviceGridColumns;
-              const frameStyle = serviceFrameStyles[(column + row) % serviceFrameStyles.length];
+              const frameStyle =
+                serviceFrameStyles[(column + row) % serviceFrameStyles.length];
               return (
                 <motion.div
                   key={service.id}
@@ -406,19 +811,36 @@ export default function Home() {
                   viewport={{ once: true }}
                   transition={{ delay: Math.min(index * 0.06, 0.35) }}
                 >
-                  <Link href={`/services/${service.id}`} className="group block h-full">
-                    <div className={`flex h-full min-h-60 flex-col rounded-2xl border-2 bg-white/5 p-7 ${lang === 'ar' ? 'text-right' : 'text-left'} transition-all hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl ${frameStyle.card}`}>
+                  <Link
+                    href={`/services/${service.id}`}
+                    className="group block h-full"
+                  >
+                    <div
+                      className={`flex h-full min-h-60 flex-col rounded-2xl border-2 bg-white/5 p-7 ${lang === "ar" ? "text-right" : "text-left"} transition-all hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl ${frameStyle.card}`}
+                    >
                       <div className="flex items-start gap-4">
-                        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border transition-colors ${frameStyle.icon}`}>
+                        <div
+                          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border transition-colors ${frameStyle.icon}`}
+                        >
                           <ServiceIcon className="h-7 w-7" />
                         </div>
                         <div className="min-w-0">
-                            <h3 className="min-w-0 break-words text-xl font-black leading-snug text-secondary">{lang === 'ar' ? service.title : translateArabicText(service.title)}</h3>
-                          <p className="mt-2 text-base leading-relaxed text-white/90">{lang === 'ar' ? service.summary : translateArabicText(service.summary)}</p>
+                          <h3 className="min-w-0 break-words text-xl font-black leading-snug text-secondary">
+                            {lang === "ar"
+                              ? service.title
+                              : translateArabicText(service.title)}
+                          </h3>
+                          <p className="mt-2 text-base leading-relaxed text-white/90">
+                            {lang === "ar"
+                              ? service.summary
+                              : translateArabicText(service.summary)}
+                          </p>
                         </div>
                       </div>
                       <div className="mt-auto flex items-center justify-between border-t border-white/15 pt-5 text-base font-bold text-white">
-                         <span>{t('عرض الخدمة والفروع', 'View Service & Branches')}</span>
+                        <span>
+                          {t("عرض الخدمة والفروع", "View Service & Branches")}
+                        </span>
                         <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
                       </div>
                     </div>
@@ -433,15 +855,23 @@ export default function Home() {
       {/* العرض السابق للفروع داخل الصفحة — أُلغي لصالح صفحات الخدمات المستقلة */}
       <section className="hidden" aria-hidden="true">
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
-
           {/* Header */}
-          <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">أدوات المحامية الرقمية</h2>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            className="text-center mb-10"
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              أدوات المحامية الرقمية
+            </h2>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             <motion.section
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
               style={{ order: 1 }}
               className="bg-white/5 border-4 border-secondary/60 rounded-2xl p-6 lg:p-7"
               aria-labelledby="legal-consultations-heading"
@@ -451,23 +881,39 @@ export default function Home() {
                   <MessageSquare className="w-6 h-6 text-secondary" />
                 </div>
                 <div>
-                  <h3 id="legal-consultations-heading" className="text-white font-bold text-lg leading-tight">الاستشارات القانونية</h3>
-                  <p className="text-white/60 text-xs mt-0.5">رأي قانوني مستند إلى الأنظمة</p>
+                  <h3
+                    id="legal-consultations-heading"
+                    className="text-white font-bold text-lg leading-tight"
+                  >
+                    الاستشارات القانونية
+                  </h3>
+                  <p className="text-white/60 text-xs mt-0.5">
+                    رأي قانوني مستند إلى الأنظمة
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-6">
                 {[
-                  { label: 'استشارة قانونية', detail: 'رأي قانوني موثّق', href: '/consultation', icon: MessageSquare },
-                ].map(service => {
+                  {
+                    label: "استشارة قانونية",
+                    detail: "رأي قانوني موثّق",
+                    href: "/consultation",
+                    icon: MessageSquare,
+                  },
+                ].map((service) => {
                   const Icon = service.icon;
                   return (
                     <Link key={service.label} href={service.href}>
                       <div className="h-full min-h-20 rounded-xl border border-white/15 bg-white/5 p-3 text-right transition-all hover:bg-white/10 hover:border-secondary/70">
                         <div className="flex items-center gap-2">
                           <Icon className="w-4 h-4 text-secondary shrink-0" />
-                          <span className="text-sm font-bold text-white">{service.label}</span>
+                          <span className="text-sm font-bold text-white">
+                            {service.label}
+                          </span>
                         </div>
-                        <p className="text-xs text-white/55 mt-1 pr-6">{service.detail}</p>
+                        <p className="text-xs text-white/55 mt-1 pr-6">
+                          {service.detail}
+                        </p>
                       </div>
                     </Link>
                   );
@@ -476,7 +922,9 @@ export default function Home() {
             </motion.section>
 
             <motion.section
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
               style={{ order: 2 }}
               className="bg-white/5 border-4 border-secondary/60 rounded-2xl p-6 lg:p-7"
               aria-labelledby="judicial-consultations-heading"
@@ -486,26 +934,57 @@ export default function Home() {
                   <Gavel className="w-6 h-6 text-secondary" />
                 </div>
                 <div>
-                  <h3 id="judicial-consultations-heading" className="text-white font-bold text-lg leading-tight">الاستشارات القضائية</h3>
-                  <p className="text-white/60 text-xs mt-0.5">خدمات القضايا والأحكام والمذكرات</p>
+                  <h3
+                    id="judicial-consultations-heading"
+                    className="text-white font-bold text-lg leading-tight"
+                  >
+                    الاستشارات القضائية
+                  </h3>
+                  <p className="text-white/60 text-xs mt-0.5">
+                    خدمات القضايا والأحكام والمذكرات
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-6">
                 {[
-                  { label: 'إدارة القضية', detail: 'تنظيم مراحل ومستندات القضية', href: '/consultation?type=case_management', icon: Briefcase },
-                  { label: 'تحليل الأحكام', detail: 'دراسة الحكم وأسبابه', href: '/consultation?type=judgment_analysis', icon: Gavel },
-                  { label: 'تحرير المذكرات', detail: 'صحائف ولوائح ومذكرات', href: '/legal-assistant?service=pleadings', icon: PenLine },
-                  { label: 'الاعتراضات واللوائح', detail: 'استئناف ونقض والتماس', href: '/consultation?type=pleadings', icon: Landmark },
-                ].map(service => {
+                  {
+                    label: "إدارة القضية",
+                    detail: "تنظيم مراحل ومستندات القضية",
+                    href: "/consultation?type=case_management",
+                    icon: Briefcase,
+                  },
+                  {
+                    label: "تحليل الأحكام",
+                    detail: "دراسة الحكم وأسبابه",
+                    href: "/consultation?type=judgment_analysis",
+                    icon: Gavel,
+                  },
+                  {
+                    label: "تحرير المذكرات",
+                    detail: "صحائف ولوائح ومذكرات",
+                    href: "/legal-assistant?service=pleadings",
+                    icon: PenLine,
+                  },
+                  {
+                    label: "الاعتراضات واللوائح",
+                    detail: "استئناف ونقض والتماس",
+                    href: "/consultation?type=pleadings",
+                    icon: Landmark,
+                  },
+                ].map((service) => {
                   const Icon = service.icon;
                   return (
                     <Link key={service.label} href={service.href}>
                       <div className="h-full min-h-20 rounded-xl border border-white/15 bg-white/5 p-3 text-right transition-all hover:bg-white/10 hover:border-secondary/70">
                         <div className="flex items-center gap-2">
                           <Icon className="w-4 h-4 text-secondary shrink-0" />
-                          <span className="text-sm font-bold text-white">{service.label}</span>
+                          <span className="text-sm font-bold text-white">
+                            {service.label}
+                          </span>
                         </div>
-                        <p className="text-xs text-white/55 mt-1 pr-6">{service.detail}</p>
+                        <p className="text-xs text-white/55 mt-1 pr-6">
+                          {service.detail}
+                        </p>
                       </div>
                     </Link>
                   );
@@ -514,7 +993,9 @@ export default function Home() {
             </motion.section>
 
             <motion.section
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
               style={{ order: 7 }}
               className="bg-white/5 border-4 border-secondary/60 rounded-2xl p-6 lg:p-7"
               aria-labelledby="commercial-arbitration-heading"
@@ -524,30 +1005,79 @@ export default function Home() {
                   <Landmark className="w-6 h-6 text-secondary" />
                 </div>
                 <div>
-                  <h3 id="commercial-arbitration-heading" className="text-white font-bold text-lg leading-tight">التحكيم التجاري والوساطة</h3>
-                  <p className="text-white/60 text-xs mt-0.5">إدارة التحكيم والوساطة والتسوية</p>
+                  <h3
+                    id="commercial-arbitration-heading"
+                    className="text-white font-bold text-lg leading-tight"
+                  >
+                    التحكيم التجاري والوساطة
+                  </h3>
+                  <p className="text-white/60 text-xs mt-0.5">
+                    إدارة التحكيم والوساطة والتسوية
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 pt-6">
                 {[
-                  { label: 'إدارة جلسات التحكيم', detail: 'جدول الجلسة والإجراءات والمتابعة', href: '/consultation?type=arbitration_session_management', icon: Clock },
-                  { label: 'تحرير محاضر التحكيم', detail: 'مسودة محضر دقيقة للمراجعة والاعتماد', href: '/consultation?type=arbitration_minutes', icon: FileText },
-                  { label: 'تحليل أحكام التحكيم', detail: 'الأسباب والمنطوق ومسارات التنفيذ', href: '/consultation?type=arbitration_award_analysis', icon: Gavel },
-                  { label: 'طلب الصلح', detail: 'حل ودي للنزاع بموافقة الأطراف', href: buildWhatsAppContactLink('السلام عليكم، أرغب في طلب خدمة الصلح ضمن التحكيم التجاري والوساطة.'), icon: Handshake, external: true },
-                  { label: 'طلب الوساطة', detail: 'وساطة قانونية للوصول إلى تسوية', href: buildWhatsAppContactLink('السلام عليكم، أرغب في طلب خدمة الوساطة ضمن التحكيم التجاري والوساطة.'), icon: Handshake, external: true },
-                ].map(service => {
+                  {
+                    label: "إدارة جلسات التحكيم",
+                    detail: "جدول الجلسة والإجراءات والمتابعة",
+                    href: "/consultation?type=arbitration_session_management",
+                    icon: Clock,
+                  },
+                  {
+                    label: "تحرير محاضر التحكيم",
+                    detail: "مسودة محضر دقيقة للمراجعة والاعتماد",
+                    href: "/consultation?type=arbitration_minutes",
+                    icon: FileText,
+                  },
+                  {
+                    label: "تحليل أحكام التحكيم",
+                    detail: "الأسباب والمنطوق ومسارات التنفيذ",
+                    href: "/consultation?type=arbitration_award_analysis",
+                    icon: Gavel,
+                  },
+                  {
+                    label: "طلب الصلح",
+                    detail: "حل ودي للنزاع بموافقة الأطراف",
+                    href: buildWhatsAppContactLink(
+                      "السلام عليكم، أرغب في طلب خدمة الصلح ضمن التحكيم التجاري والوساطة.",
+                    ),
+                    icon: Handshake,
+                    external: true,
+                  },
+                  {
+                    label: "طلب الوساطة",
+                    detail: "وساطة قانونية للوصول إلى تسوية",
+                    href: buildWhatsAppContactLink(
+                      "السلام عليكم، أرغب في طلب خدمة الوساطة ضمن التحكيم التجاري والوساطة.",
+                    ),
+                    icon: Handshake,
+                    external: true,
+                  },
+                ].map((service) => {
                   const Icon = service.icon;
                   const content = (
                     <div className="h-full min-h-20 rounded-xl border border-white/15 bg-white/5 p-3 text-right transition-all hover:bg-white/10 hover:border-secondary/70">
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4 text-secondary shrink-0" />
-                        <span className="text-sm font-bold text-white">{service.label}</span>
+                        <span className="text-sm font-bold text-white">
+                          {service.label}
+                        </span>
                       </div>
-                      <p className="text-xs text-white/55 mt-1 pr-6">{service.detail}</p>
+                      <p className="text-xs text-white/55 mt-1 pr-6">
+                        {service.detail}
+                      </p>
                     </div>
                   );
                   return service.external ? (
-                    <a key={service.label} href={service.href} target="_blank" rel="noopener noreferrer">{content}</a>
+                    <a
+                      key={service.label}
+                      href={service.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {content}
+                    </a>
                   ) : (
                     <Link key={service.label} href={service.href}>
                       {content}
@@ -557,53 +1087,78 @@ export default function Home() {
               </div>
             </motion.section>
 
-            {REMAINING_DIGITAL_TOOL_CATEGORIES
-              .slice()
-              .sort((a, b) => REMAINING_DIGITAL_TOOL_CATEGORY_ORDER.indexOf(a.id) - REMAINING_DIGITAL_TOOL_CATEGORY_ORDER.indexOf(b.id))
+            {REMAINING_DIGITAL_TOOL_CATEGORIES.slice()
+              .sort(
+                (a, b) =>
+                  REMAINING_DIGITAL_TOOL_CATEGORY_ORDER.indexOf(a.id) -
+                  REMAINING_DIGITAL_TOOL_CATEGORY_ORDER.indexOf(b.id),
+              )
               .map((category, index) => {
-              const CategoryIcon = category.icon;
-              return (
-                <motion.section
-                  key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + (index * 0.1) }}
-                  style={{ order: index + 3 + (category.id === 'research' ? 1 : 0) }}
-                  className="bg-white/5 border-4 border-secondary/60 rounded-2xl p-6 lg:p-7"
-                  aria-labelledby={`${category.id}-heading`}
-                >
-                  <div className="flex items-center gap-3 pb-4 border-b border-white/15">
-                    <div className="w-12 h-12 rounded-xl bg-secondary/20 border border-secondary/40 flex items-center justify-center shrink-0">
-                      <CategoryIcon className="w-6 h-6 text-secondary" />
+                const CategoryIcon = category.icon;
+                return (
+                  <motion.section
+                    key={category.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + index * 0.1 }}
+                    style={{
+                      order: index + 3 + (category.id === "research" ? 1 : 0),
+                    }}
+                    className="bg-white/5 border-4 border-secondary/60 rounded-2xl p-6 lg:p-7"
+                    aria-labelledby={`${category.id}-heading`}
+                  >
+                    <div className="flex items-center gap-3 pb-4 border-b border-white/15">
+                      <div className="w-12 h-12 rounded-xl bg-secondary/20 border border-secondary/40 flex items-center justify-center shrink-0">
+                        <CategoryIcon className="w-6 h-6 text-secondary" />
+                      </div>
+                      <div>
+                        <h3
+                          id={`${category.id}-heading`}
+                          className="text-white font-bold text-lg leading-tight"
+                        >
+                          {category.title}
+                        </h3>
+                        <p className="text-white/60 text-xs mt-0.5">
+                          {category.subtitle}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 id={`${category.id}-heading`} className="text-white font-bold text-lg leading-tight">{category.title}</h3>
-                      <p className="text-white/60 text-xs mt-0.5">{category.subtitle}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-6">
-                    {category.items.map(item => {
-                      const ItemIcon = item.icon;
-                      const content = (
-                        <div className="h-full min-h-20 rounded-xl border border-white/15 bg-white/5 p-3 text-right transition-all hover:bg-white/10 hover:border-secondary/70">
-                          <div className="flex items-center gap-2">
-                            <ItemIcon className="w-4 h-4 text-secondary shrink-0" />
-                            <span className="text-sm font-bold text-white">{item.label}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-6">
+                      {category.items.map((item) => {
+                        const ItemIcon = item.icon;
+                        const content = (
+                          <div className="h-full min-h-20 rounded-xl border border-white/15 bg-white/5 p-3 text-right transition-all hover:bg-white/10 hover:border-secondary/70">
+                            <div className="flex items-center gap-2">
+                              <ItemIcon className="w-4 h-4 text-secondary shrink-0" />
+                              <span className="text-sm font-bold text-white">
+                                {item.label}
+                              </span>
+                            </div>
+                            <p className="text-xs text-white/55 mt-1 pr-6">
+                              {item.detail}
+                            </p>
                           </div>
-                          <p className="text-xs text-white/55 mt-1 pr-6">{item.detail}</p>
-                        </div>
-                      );
+                        );
 
-                      return item.external ? (
-                        <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer">{content}</a>
-                      ) : (
-                        <Link key={item.label} href={item.href}>{content}</Link>
-                      );
-                    })}
-                  </div>
-                </motion.section>
-              );
-            })}
+                        return item.external ? (
+                          <a
+                            key={item.label}
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {content}
+                          </a>
+                        ) : (
+                          <Link key={item.label} href={item.href}>
+                            {content}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.section>
+                );
+              })}
           </div>
         </div>
       </section>
@@ -611,11 +1166,19 @@ export default function Home() {
       {/* CTA */}
       <section className="py-12 bg-primary text-center">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">{t('خدمة قانونية فورية — ابدأ الآن', 'Instant Legal Service — Get Started')}</h2>
-          <Link href="/register">
-            <Button size="lg" className="bg-secondary text-primary hover:bg-secondary/90 text-lg px-10 h-14 shadow-xl font-bold">
-              {t('أنشئ حسابك مجاناً', 'Create Your Free Account')}
-            </Button>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6">
+            {t(
+              "خدمة قانونية فورية — ابدأ الآن",
+              "Instant Legal Service — Get Started",
+            )}
+          </h2>
+          <Link
+            href={isPublicRelease ? "/register" : "/contact"}
+            className="inline-flex h-14 items-center justify-center rounded-md bg-secondary px-10 text-lg font-bold text-secondary-foreground shadow-xl transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {isPublicRelease
+              ? t("أنشئ حسابك مجاناً", "Create Your Free Account")
+              : t("اطلب إشعارك عند الإطلاق", "Request a launch notification")}
           </Link>
         </div>
       </section>
@@ -624,27 +1187,64 @@ export default function Home() {
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4">{t('كيف تعمل الخدمة؟', 'How Does the Service Work?')}</h2>
-            <p className="text-white text-lg max-w-2xl mx-auto">{t('خطوات بسيطة للحصول على الرأي القانوني الذي تحتاجه', 'Simple steps to get the legal guidance you need')}</p>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4">
+              {t("كيف تعمل الخدمة؟", "How Does the Service Work?")}
+            </h2>
+            <p className="text-white text-lg max-w-2xl mx-auto">
+              {t(
+                "خطوات بسيطة للحصول على الرأي القانوني الذي تحتاجه",
+                "Simple steps to get the legal guidance you need",
+              )}
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { num: "01", title: "سجل حسابك", titleEn: "Create Your Account", desc: "أنشئ حساباً جديداً في ثوانٍ معدودة وابدأ رحلتك معنا.", descEn: "Create a new account in seconds and begin your journey with us." },
-              { num: "02", title: "اختر باقتك", titleEn: "Choose Your Plan", desc: "حدد الباقة المناسبة لاحتياجاتك القانونية وأكمل الدفع بأمان.", descEn: "Choose the plan that suits your legal needs and complete payment securely." },
-              { num: "03", title: "اطرح سؤالك", titleEn: "Ask Your Question", desc: "احصل على إجابة فورية ودقيقة مبنية على الأنظمة السعودية.", descEn: "Receive an instant, accurate answer based on Saudi laws." }
+              {
+                num: "01",
+                title: "سجل حسابك",
+                titleEn: "Create Your Account",
+                desc: "أنشئ حساباً جديداً في ثوانٍ معدودة وابدأ رحلتك معنا.",
+                descEn:
+                  "Create a new account in seconds and begin your journey with us.",
+              },
+              {
+                num: "02",
+                title: "اختر باقتك",
+                titleEn: "Choose Your Plan",
+                desc: "حدد الباقة المناسبة لاحتياجاتك القانونية وأكمل الدفع بأمان.",
+                descEn:
+                  "Choose the plan that suits your legal needs and complete payment securely.",
+              },
+              {
+                num: "03",
+                title: "اطرح سؤالك",
+                titleEn: "Ask Your Question",
+                desc: "احصل على إجابة فورية ودقيقة مبنية على الأنظمة السعودية.",
+                descEn:
+                  "Receive an instant, accurate answer based on Saudi laws.",
+              },
             ].map((step, i) => {
               const frameStyle = processFrameStyles[i];
               return (
                 <motion.div
                   key={i}
-                  initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={fadeInUp}
                   className={`bg-card p-8 rounded-2xl border-2 text-center transition-colors shadow-sm relative group ${frameStyle.card}`}
                 >
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold transition-colors ${frameStyle.number}`}>
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold transition-colors ${frameStyle.number}`}
+                  >
                     {step.num}
                   </div>
-                  <h3 className="text-xl font-bold mb-3 text-primary-foreground">{t(step.title, step.titleEn)}</h3>
-                  <p className="text-white text-lg leading-relaxed">{t(step.desc, step.descEn)}</p>
+                  <h3 className="text-xl font-bold mb-3 text-primary-foreground">
+                    {t(step.title, step.titleEn)}
+                  </h3>
+                  <p className="text-white text-lg leading-relaxed">
+                    {t(step.desc, step.descEn)}
+                  </p>
                 </motion.div>
               );
             })}
@@ -656,14 +1256,23 @@ export default function Home() {
       <section className="py-14 bg-primary border-t border-white/10">
         <div className="container mx-auto px-4">
           <motion.div
-            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
             className="text-center"
           >
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-white mb-3 tracking-tight">
-               {t('قاعدة معرفة قانونية متكاملة', 'A Complete Legal Knowledge Base')}
+              {t(
+                "قاعدة معرفة قانونية متكاملة",
+                "A Complete Legal Knowledge Base",
+              )}
             </h2>
             <p className="text-white text-base md:text-lg font-medium">
-               {t('محتوى قانوني موثّق يُغذّي كل استشارة', 'Documented legal content that supports every consultation')}
+              {t(
+                "محتوى قانوني موثّق يُغذّي كل استشارة",
+                "Documented legal content that supports every consultation",
+              )}
             </p>
           </motion.div>
         </div>
@@ -673,149 +1282,328 @@ export default function Home() {
       <section className="hidden" aria-hidden="true">
         <div className="container mx-auto px-4">
           <div className="mb-10">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-2">خدماتنا</h2>
-            <p className="text-muted-foreground text-base max-w-xl">اختر الخدمة المناسبة لاحتياجك القانوني</p>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-2">
+              خدماتنا
+            </h2>
+            <p className="text-muted-foreground text-base max-w-xl">
+              اختر الخدمة المناسبة لاحتياجك القانوني
+            </p>
           </div>
 
           {/* الخدمات السبع المعتمدة */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             {[
               {
-                id: 'legal_consultation', icon: <MessageSquare className="w-6 h-6" />,
-                title: 'الاستشارات القانونية', sub: 'رأي قانوني مستند إلى الأنظمة',
-                href: '/consultation', branches: null,
+                id: "legal_consultation",
+                icon: <MessageSquare className="w-6 h-6" />,
+                title: "الاستشارات القانونية",
+                sub: "رأي قانوني مستند إلى الأنظمة",
+                href: "/consultation",
+                branches: null,
               },
               {
-                id: 'judicial', icon: <Gavel className="w-6 h-6" />,
-                title: 'الاستشارات القضائية', sub: 'إدارة القضايا وتحليل الأحكام',
-                href: '/legal-assistant?service=judicial',
+                id: "judicial",
+                icon: <Gavel className="w-6 h-6" />,
+                title: "الاستشارات القضائية",
+                sub: "إدارة القضايا وتحليل الأحكام",
+                href: "/legal-assistant?service=judicial",
                 branches: [
-                  { label: 'إدارة القضية', href: '/consultation?type=case_management' },
-                  { label: 'تحليل الأحكام القضائية', href: '/consultation?type=judgment_analysis' },
+                  {
+                    label: "إدارة القضية",
+                    href: "/consultation?type=case_management",
+                  },
+                  {
+                    label: "تحليل الأحكام القضائية",
+                    href: "/consultation?type=judgment_analysis",
+                  },
                 ],
               },
               {
-                id: 'pleadings', icon: <PenLine className="w-6 h-6" />,
-                title: 'تحرير المذكرات والصحائف', sub: 'صياغة وفق النوع والمسار القضائي',
-                href: '/legal-assistant?service=pleadings',
+                id: "pleadings",
+                icon: <PenLine className="w-6 h-6" />,
+                title: "تحرير المذكرات والصحائف",
+                sub: "صياغة وفق النوع والمسار القضائي",
+                href: "/legal-assistant?service=pleadings",
                 branches: [
-                  { label: 'لائحة الدعوى', href: '/legal-assistant?service=pleadings&memoType=lawsuit' },
-                  { label: 'المذكرة الجوابية أو مذكرة الرد', href: '/legal-assistant?service=pleadings&memoType=response' },
-                  { label: 'الاعتراض بالاستئناف', href: '/legal-assistant?service=pleadings&memoType=appeal' },
-                  { label: 'الاعتراض بالتماس إعادة النظر', href: '/legal-assistant?service=pleadings&memoType=review_petition' },
-                  { label: 'النقض أمام المحكمة العليا', href: '/legal-assistant?service=pleadings&memoType=cassation' },
+                  {
+                    label: "لائحة الدعوى",
+                    href: "/legal-assistant?service=pleadings&memoType=lawsuit",
+                  },
+                  {
+                    label: "المذكرة الجوابية أو مذكرة الرد",
+                    href: "/legal-assistant?service=pleadings&memoType=response",
+                  },
+                  {
+                    label: "الاعتراض بالاستئناف",
+                    href: "/legal-assistant?service=pleadings&memoType=appeal",
+                  },
+                  {
+                    label: "الاعتراض بالتماس إعادة النظر",
+                    href: "/legal-assistant?service=pleadings&memoType=review_petition",
+                  },
+                  {
+                    label: "النقض أمام المحكمة العليا",
+                    href: "/legal-assistant?service=pleadings&memoType=cassation",
+                  },
                 ],
               },
               {
-                id: 'contracts', icon: <FileText className="w-6 h-6" />,
-                title: 'صياغة ومراجعة العقود', sub: 'عقود نظامية لدول مجلس التعاون',
-                href: '/contracts',
+                id: "contracts",
+                icon: <FileText className="w-6 h-6" />,
+                title: "صياغة ومراجعة العقود",
+                sub: "عقود نظامية لدول مجلس التعاون",
+                href: "/contracts",
                 branches: [
-                  { label: 'صياغة عقد جديد', href: '/contracts?tab=draft' },
-                  { label: 'تحليل عقد ودراسة المخاطر', href: '/contracts?tab=analyze' },
-                  { label: 'مراجعة عقد وتقديم النصح', href: '/contracts?tab=review' },
-                  { label: 'استخراج البيانات والتلخيص', href: '/contracts?tab=extract' },
+                  { label: "صياغة عقد جديد", href: "/contracts?tab=draft" },
+                  {
+                    label: "تحليل عقد ودراسة المخاطر",
+                    href: "/contracts?tab=analyze",
+                  },
+                  {
+                    label: "مراجعة عقد وتقديم النصح",
+                    href: "/contracts?tab=review",
+                  },
+                  {
+                    label: "استخراج البيانات والتلخيص",
+                    href: "/contracts?tab=extract",
+                  },
                 ],
               },
               {
-                id: 'intellectual_property', icon: <Lightbulb className="w-6 h-6" />,
-                title: 'خدمات الملكية الفكرية', sub: 'حماية الحقوق والابتكارات',
-                href: '/legal-assistant?service=intellectual_property',
+                id: "intellectual_property",
+                icon: <Lightbulb className="w-6 h-6" />,
+                title: "خدمات الملكية الفكرية",
+                sub: "حماية الحقوق والابتكارات",
+                href: "/legal-assistant?service=intellectual_property",
                 branches: [
-                  { label: 'تسجيل وتجديد العلامات التجارية', href: '/consultation?type=legal_opinion&ipType=trademark' },
-                  { label: 'حقوق المؤلف والمصنفات', href: '/consultation?type=legal_opinion&ipType=copyright' },
-                  { label: 'براءات الاختراع', href: '/consultation?type=legal_opinion&ipType=patent' },
-                  { label: 'الرسوم والنماذج الصناعية', href: '/consultation?type=legal_opinion&ipType=industrial-design' },
-                  { label: 'الأسرار التجارية', href: '/consultation?type=legal_opinion&ipType=trade-secret' },
-                  { label: 'الترخيص ونقل ملكية الحقوق', href: '/consultation?type=legal_opinion&ipType=licensing-transfer' },
-                  { label: 'التعدي والمنازعات الفكرية', href: '/consultation?type=legal_opinion&ipType=infringement' },
-                  { label: 'حماية الحقوق دولياً', href: '/consultation?type=legal_opinion&ipType=international' },
+                  {
+                    label: "تسجيل وتجديد العلامات التجارية",
+                    href: "/consultation?type=legal_opinion&ipType=trademark",
+                  },
+                  {
+                    label: "حقوق المؤلف والمصنفات",
+                    href: "/consultation?type=legal_opinion&ipType=copyright",
+                  },
+                  {
+                    label: "براءات الاختراع",
+                    href: "/consultation?type=legal_opinion&ipType=patent",
+                  },
+                  {
+                    label: "الرسوم والنماذج الصناعية",
+                    href: "/consultation?type=legal_opinion&ipType=industrial-design",
+                  },
+                  {
+                    label: "الأسرار التجارية",
+                    href: "/consultation?type=legal_opinion&ipType=trade-secret",
+                  },
+                  {
+                    label: "الترخيص ونقل ملكية الحقوق",
+                    href: "/consultation?type=legal_opinion&ipType=licensing-transfer",
+                  },
+                  {
+                    label: "التعدي والمنازعات الفكرية",
+                    href: "/consultation?type=legal_opinion&ipType=infringement",
+                  },
+                  {
+                    label: "حماية الحقوق دولياً",
+                    href: "/consultation?type=legal_opinion&ipType=international",
+                  },
                 ],
               },
               {
-                id: 'corporate_governance_compliance', icon: <Shield className="w-6 h-6" />,
-                title: 'حوكمة وامتثال الشركات', sub: 'سياسات وضوابط وإدارة المخاطر',
-                href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=framework',
+                id: "corporate_governance_compliance",
+                icon: <Shield className="w-6 h-6" />,
+                title: "حوكمة وامتثال الشركات",
+                sub: "سياسات وضوابط وإدارة المخاطر",
+                href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=framework",
                 branches: [
-                  { label: 'تأسيس وإطار الحوكمة', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=framework' },
-                  { label: 'سياسات ولوائح الشركات', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=policies' },
-                  { label: 'الامتثال النظامي والرقابي', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=regulatory-compliance' },
-                  { label: 'إدارة المخاطر القانونية', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=legal-risk' },
-                  { label: 'مجلس الإدارة واللجان', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=board-committees' },
-                  { label: 'تضارب المصالح والإفصاح', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=conflicts-disclosure' },
-                  { label: 'هيكل الملكية وحقوق الشركاء', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=ownership-partners' },
-                  { label: 'الصلاحيات والتفويض', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=delegation-authority' },
-                  { label: 'الأطراف ذات العلاقة', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=related-parties' },
-                  { label: 'مكافحة الرشوة وغسل الأموال', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=anti-bribery-aml' },
-                  { label: 'حماية البيانات والخصوصية', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=data-privacy' },
-                  { label: 'الإبلاغ عن المخالفات', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=whistleblowing' },
-                  { label: 'المراجعة الداخلية والتحقيقات', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=internal-investigations' },
-                  { label: 'تقييم الامتثال وخطط المعالجة', href: '/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=compliance-remediation' },
+                  {
+                    label: "تأسيس وإطار الحوكمة",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=framework",
+                  },
+                  {
+                    label: "سياسات ولوائح الشركات",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=policies",
+                  },
+                  {
+                    label: "الامتثال النظامي والرقابي",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=regulatory-compliance",
+                  },
+                  {
+                    label: "إدارة المخاطر القانونية",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=legal-risk",
+                  },
+                  {
+                    label: "مجلس الإدارة واللجان",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=board-committees",
+                  },
+                  {
+                    label: "تضارب المصالح والإفصاح",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=conflicts-disclosure",
+                  },
+                  {
+                    label: "هيكل الملكية وحقوق الشركاء",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=ownership-partners",
+                  },
+                  {
+                    label: "الصلاحيات والتفويض",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=delegation-authority",
+                  },
+                  {
+                    label: "الأطراف ذات العلاقة",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=related-parties",
+                  },
+                  {
+                    label: "مكافحة الرشوة وغسل الأموال",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=anti-bribery-aml",
+                  },
+                  {
+                    label: "حماية البيانات والخصوصية",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=data-privacy",
+                  },
+                  {
+                    label: "الإبلاغ عن المخالفات",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=whistleblowing",
+                  },
+                  {
+                    label: "المراجعة الداخلية والتحقيقات",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=internal-investigations",
+                  },
+                  {
+                    label: "تقييم الامتثال وخطط المعالجة",
+                    href: "/consultation?type=legal_opinion&service=corporate-governance-compliance&governanceType=compliance-remediation",
+                  },
                 ],
               },
               {
-                id: 'commercial_arbitration', icon: <Landmark className="w-6 h-6" />,
-                title: 'التحكيم التجاري والوساطة', sub: 'إدارة التحكيم والوساطة والتسوية',
-                href: '/legal-assistant?service=commercial_arbitration',
+                id: "commercial_arbitration",
+                icon: <Landmark className="w-6 h-6" />,
+                title: "التحكيم التجاري والوساطة",
+                sub: "إدارة التحكيم والوساطة والتسوية",
+                href: "/legal-assistant?service=commercial_arbitration",
                 branches: [
-                  { label: 'إدارة جلسات التحكيم', href: '/consultation?type=arbitration_session_management' },
-                  { label: 'تحرير محاضر التحكيم', href: '/consultation?type=arbitration_minutes' },
-                  { label: 'تحليل أحكام التحكيم', href: '/consultation?type=arbitration_award_analysis' },
-                  { label: 'الصلح', href: buildWhatsAppContactLink('السلام عليكم، أرغب في طلب خدمة الصلح ضمن التحكيم التجاري والوساطة.'), external: true },
-                  { label: 'الوساطة', href: buildWhatsAppContactLink('السلام عليكم، أرغب في طلب خدمة الوساطة ضمن التحكيم التجاري والوساطة.'), external: true },
+                  {
+                    label: "إدارة جلسات التحكيم",
+                    href: "/consultation?type=arbitration_session_management",
+                  },
+                  {
+                    label: "تحرير محاضر التحكيم",
+                    href: "/consultation?type=arbitration_minutes",
+                  },
+                  {
+                    label: "تحليل أحكام التحكيم",
+                    href: "/consultation?type=arbitration_award_analysis",
+                  },
+                  {
+                    label: "الصلح",
+                    href: buildWhatsAppContactLink(
+                      "السلام عليكم، أرغب في طلب خدمة الصلح ضمن التحكيم التجاري والوساطة.",
+                    ),
+                    external: true,
+                  },
+                  {
+                    label: "الوساطة",
+                    href: buildWhatsAppContactLink(
+                      "السلام عليكم، أرغب في طلب خدمة الوساطة ضمن التحكيم التجاري والوساطة.",
+                    ),
+                    external: true,
+                  },
                 ],
               },
               {
-                id: 'research', icon: <Search className="w-6 h-6" />,
-                title: 'الباحثة الذكية', sub: 'بحث في المصادر والوثائق القانونية',
-                href: '/legal-search',
+                id: "research",
+                icon: <Search className="w-6 h-6" />,
+                title: "الباحثة الذكية",
+                sub: "بحث في المصادر والوثائق القانونية",
+                href: "/legal-search",
                 branches: [
-                  { label: 'السوابق القضائية', href: '/legal-search?filter=judicial' },
-                  { label: 'المدونات القانونية', href: '/legal-search?filter=codex' },
-                  { label: 'التعاميم', href: '/legal-search?filter=circulars' },
-                  { label: 'القرارات', href: '/legal-search?filter=decisions' },
-                  { label: 'بحث في الكل', href: '/legal-search' },
+                  {
+                    label: "السوابق القضائية",
+                    href: "/legal-search?filter=judicial",
+                  },
+                  {
+                    label: "المدونات القانونية",
+                    href: "/legal-search?filter=codex",
+                  },
+                  { label: "التعاميم", href: "/legal-search?filter=circulars" },
+                  { label: "القرارات", href: "/legal-search?filter=decisions" },
+                  { label: "بحث في الكل", href: "/legal-search" },
                 ],
               },
             ].map((svc, index) => (
-              <motion.div key={svc.id} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="flex flex-col">
+              <motion.div
+                key={svc.id}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeInUp}
+                className="flex flex-col"
+              >
                 <div
                   onClick={() => {
                     if (!svc.branches) {
                       window.location.href = svc.href;
                       return;
                     }
-                    setHomeExpandedId(prev => prev === svc.id ? null : svc.id);
+                    setHomeExpandedId((prev) =>
+                      prev === svc.id ? null : svc.id,
+                    );
                   }}
                   className={`group border-2 rounded-2xl p-5 cursor-pointer transition-all select-none ${homeExpandedId === svc.id ? `${SERVICE_FRAME_STYLES[index % SERVICE_FRAME_STYLES.length].active} rounded-b-none border-b-0` : `${SERVICE_FRAME_STYLES[index % SERVICE_FRAME_STYLES.length].idle} bg-card hover:shadow-md`}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">{svc.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-foreground text-sm">{svc.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{svc.sub}</p>
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      {svc.icon}
                     </div>
-                    {svc.branches
-                      ? <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${homeExpandedId === svc.id ? 'rotate-180' : ''}`} />
-                      : <ArrowLeft className="w-4 h-4 text-muted-foreground shrink-0 rotate-180" />
-                    }
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-foreground text-sm">
+                        {svc.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {svc.sub}
+                      </p>
+                    </div>
+                    {svc.branches ? (
+                      <ChevronDown
+                        className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${homeExpandedId === svc.id ? "rotate-180" : ""}`}
+                      />
+                    ) : (
+                      <ArrowLeft className="w-4 h-4 text-muted-foreground shrink-0 rotate-180" />
+                    )}
                   </div>
                 </div>
                 <AnimatePresence>
                   {homeExpandedId === svc.id && svc.branches && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className={`overflow-hidden border-2 border-t-0 rounded-b-2xl bg-card ${SERVICE_FRAME_STYLES[index % SERVICE_FRAME_STYLES.length].panel}`}>
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className={`overflow-hidden border-2 border-t-0 rounded-b-2xl bg-card ${SERVICE_FRAME_STYLES[index % SERVICE_FRAME_STYLES.length].panel}`}
+                    >
                       <div className="p-3 flex flex-col gap-1">
-                        {svc.branches.map(b => {
+                        {svc.branches.map((b) => {
                           const content = (
                             <div className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
-                              <span className="text-xs font-medium text-foreground">{b.label}</span>
+                              <span className="text-xs font-medium text-foreground">
+                                {b.label}
+                              </span>
                               <ArrowLeft className="w-3 h-3 text-muted-foreground rotate-180" />
                             </div>
                           );
                           return b.external ? (
-                            <a key={b.href} href={b.href} target="_blank" rel="noopener noreferrer">{content}</a>
+                            <a
+                              key={b.href}
+                              href={b.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {content}
+                            </a>
                           ) : (
-                            <Link key={b.href} href={b.href}>{content}</Link>
+                            <Link key={b.href} href={b.href}>
+                              {content}
+                            </Link>
                           );
                         })}
                       </div>
@@ -825,36 +1613,71 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
-
         </div>
       </section>
-
 
       {/* Testimonials */}
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4">{t('ماذا يقول عملاؤنا؟', 'What Our Clients Say')}</h2>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-4">
+              {t("ماذا يقول عملاؤنا؟", "What Our Clients Say")}
+            </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { name: "أحمد س.", nameEn: "Ahmed S.", role: "رائد أعمال", roleEn: "Entrepreneur", text: "وفرت علي المنصة الكثير من الوقت والجهد في فهم عقود التأسيس قبل التوقيع عليها. خدمة ممتازة.", textEn: "The platform saved me significant time and effort understanding incorporation contracts before signing. Excellent service." },
-              { name: "سارة م.", nameEn: "Sarah M.", role: "موظفة", roleEn: "Employee", text: "استشارة دقيقة وواضحة جداً في قضية عمالية، ساعدتني في معرفة حقوقي كاملة.", textEn: "Clear and precise guidance on an employment matter that helped me understand my rights fully." },
-              { name: "عبدالله ع.", nameEn: "Abdullah A.", role: "مستثمر", roleEn: "Investor", text: "تجربة احترافية، الإجابات سريعة وتغطي الجوانب القانونية بشكل شامل وموثوق.", textEn: "A professional experience: fast answers that cover the legal issues comprehensively and reliably." }
+              {
+                name: "أحمد س.",
+                nameEn: "Ahmed S.",
+                role: "رائد أعمال",
+                roleEn: "Entrepreneur",
+                text: "وفرت علي المنصة الكثير من الوقت والجهد في فهم عقود التأسيس قبل التوقيع عليها. خدمة ممتازة.",
+                textEn:
+                  "The platform saved me significant time and effort understanding incorporation contracts before signing. Excellent service.",
+              },
+              {
+                name: "سارة م.",
+                nameEn: "Sarah M.",
+                role: "موظفة",
+                roleEn: "Employee",
+                text: "استشارة دقيقة وواضحة جداً في قضية عمالية، ساعدتني في معرفة حقوقي كاملة.",
+                textEn:
+                  "Clear and precise guidance on an employment matter that helped me understand my rights fully.",
+              },
+              {
+                name: "عبدالله ع.",
+                nameEn: "Abdullah A.",
+                role: "مستثمر",
+                roleEn: "Investor",
+                text: "تجربة احترافية، الإجابات سريعة وتغطي الجوانب القانونية بشكل شامل وموثوق.",
+                textEn:
+                  "A professional experience: fast answers that cover the legal issues comprehensively and reliably.",
+              },
             ].map((testimonial, i) => (
-              <Card key={i} className={`bg-card/80 border-2 shadow-sm ${testimonialFrameStyles[i % testimonialFrameStyles.length]}`}>
+              <Card
+                key={i}
+                className={`bg-card/80 border-2 shadow-sm ${testimonialFrameStyles[i % testimonialFrameStyles.length]}`}
+              >
                 <CardContent className="p-8">
                   <div className="flex gap-1 mb-4 text-secondary">
-                    {[...Array(5)].map((_, j) => <Star key={j} className="w-4 h-4 fill-current" />)}
+                    {[...Array(5)].map((_, j) => (
+                      <Star key={j} className="w-4 h-4 fill-current" />
+                    ))}
                   </div>
-                  <p className="text-white mb-6 leading-relaxed italic">"{t(testimonial.text, testimonial.textEn)}"</p>
+                  <p className="text-white mb-6 leading-relaxed italic">
+                    "{t(testimonial.text, testimonial.textEn)}"
+                  </p>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                       {t(testimonial.name, testimonial.nameEn).charAt(0)}
+                      {t(testimonial.name, testimonial.nameEn).charAt(0)}
                     </div>
                     <div>
-                       <p className="font-bold text-sm text-primary">{t(testimonial.name, testimonial.nameEn)}</p>
-                       <p className="text-xs text-white">{t(testimonial.role, testimonial.roleEn)}</p>
+                      <p className="font-bold text-sm text-primary">
+                        {t(testimonial.name, testimonial.nameEn)}
+                      </p>
+                      <p className="text-xs text-white">
+                        {t(testimonial.role, testimonial.roleEn)}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -868,24 +1691,39 @@ export default function Home() {
       <section className="py-14 bg-primary">
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-secondary mb-4">{t('الأسئلة الشائعة', 'Frequently Asked Questions')}</h2>
-            <p className="!text-white text-base">{t('إجابات على الأسئلة الأكثر شيوعاً', 'Answers to the most common questions')}</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-secondary mb-4">
+              {t("الأسئلة الشائعة", "Frequently Asked Questions")}
+            </h2>
+            <p className="!text-white text-base">
+              {t(
+                "إجابات على الأسئلة الأكثر شيوعاً",
+                "Answers to the most common questions",
+              )}
+            </p>
           </div>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
-              <div key={i} className={`border-2 rounded-xl overflow-hidden bg-primary/95 ${faqFrameStyles[i % faqFrameStyles.length]}`} style={{backdropFilter:'blur(4px)'}}>
-                <button 
+              <div
+                key={i}
+                className={`border-2 rounded-xl overflow-hidden bg-primary/95 ${faqFrameStyles[i % faqFrameStyles.length]}`}
+                style={{ backdropFilter: "blur(4px)" }}
+              >
+                <button
                   className="w-full px-6 py-4 flex justify-between items-center text-right font-bold text-white hover:bg-white/5 transition-colors"
                   onClick={() => setActiveFaq(activeFaq === i ? null : i)}
                 >
                   {faq.q}
-                  {activeFaq === i ? <ChevronUp className="w-5 h-5 text-secondary" /> : <ChevronDown className="w-5 h-5 text-secondary" />}
+                  {activeFaq === i ? (
+                    <ChevronUp className="w-5 h-5 text-secondary" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-secondary" />
+                  )}
                 </button>
                 <AnimatePresence>
                   {activeFaq === i && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }} 
-                      animate={{ height: "auto", opacity: 1 }} 
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
@@ -902,7 +1740,6 @@ export default function Home() {
       </section>
 
       <Footer />
-      
     </div>
   );
 }

@@ -1,85 +1,99 @@
-import { Route, Switch, Router as WouterRouter, useLocation, Redirect } from 'wouter';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ArrowRight } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef } from 'react';
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { AuthProvider } from '@/hooks/use-auth';
-import { LangProvider, useLang } from '@/hooks/use-language';
-import { ThemeProvider } from '@/hooks/use-theme';
-import { ProtectedRoute, GuestOnlyRoute } from '@/components/protected-route';
-import { QuotaConfirmProvider } from '@/components/QuotaConfirmModal';
-import { OwnerTestGate } from '@/components/owner-test-gate';
+import {
+  Route,
+  Switch,
+  Router as WouterRouter,
+  useLocation,
+  Redirect,
+} from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
+import { lazy, Suspense, useEffect, useRef } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/use-auth";
+import { LangProvider, useLang } from "@/hooks/use-language";
+import { ThemeProvider } from "@/hooks/use-theme";
+import { ProtectedRoute, GuestOnlyRoute } from "@/components/protected-route";
+import { QuotaConfirmProvider } from "@/components/QuotaConfirmModal";
+import { OwnerTestGate } from "@/components/owner-test-gate";
 
 // Route-level loading keeps administration, document tools, and PDF libraries out
 // of the critical homepage bundle. Each route remains functionally identical.
-const Home = lazy(() => import('@/pages/home'));
-const Pricing = lazy(() => import('@/pages/pricing'));
-const Login = lazy(() => import('@/pages/login'));
-const Register = lazy(() => import('@/pages/register'));
-const Dashboard = lazy(() => import('@/pages/dashboard'));
-const Consultation = lazy(() => import('@/pages/consultation'));
-const PaymentFlow = lazy(() => import('@/pages/payment'));
-const PaymentCallback = lazy(() => import('@/pages/payment-callback'));
+const Home = lazy(() => import("@/pages/home"));
+const Pricing = lazy(() => import("@/pages/pricing"));
+const Login = lazy(() => import("@/pages/login"));
+const Register = lazy(() => import("@/pages/register"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Consultation = lazy(() => import("@/pages/consultation"));
+const PaymentFlow = lazy(() => import("@/pages/payment"));
+const PaymentCallback = lazy(() => import("@/pages/payment-callback"));
 const PaymentSuccess = lazy(async () => ({
-  default: (await import('@/pages/payment-status')).PaymentSuccess,
+  default: (await import("@/pages/payment-status")).PaymentSuccess,
 }));
 const PaymentFailed = lazy(async () => ({
-  default: (await import('@/pages/payment-status')).PaymentFailed,
+  default: (await import("@/pages/payment-status")).PaymentFailed,
 }));
-const InvoiceDetail = lazy(() => import('@/pages/invoice'));
-const Contact = lazy(() => import('@/pages/contact'));
-const About = lazy(() => import('@/pages/about'));
-const FAQ = lazy(() => import('@/pages/faq'));
-const Appointment = lazy(() => import('@/pages/appointment'));
-const Privacy = lazy(() => import('@/pages/privacy'));
-const Terms = lazy(() => import('@/pages/terms'));
-const ForgotPassword = lazy(() => import('@/pages/forgot-password'));
-const ResetPassword = lazy(() => import('@/pages/reset-password'));
-const KnowledgeSearch = lazy(() => import('@/pages/knowledge-search'));
-const LegalSearchPage = lazy(() => import('@/pages/legal-search'));
-const ContractsPage = lazy(() => import('@/pages/contracts'));
-const LegalAssistant = lazy(() => import('@/pages/legal-assistant'));
-const ServiceDetails = lazy(() => import('@/pages/service-details'));
-const UsageLogPage = lazy(() => import('@/pages/usage-log'));
-const OrganizationPage = lazy(() => import('@/pages/organization'));
+const InvoiceDetail = lazy(() => import("@/pages/invoice"));
+const Contact = lazy(() => import("@/pages/contact"));
+const About = lazy(() => import("@/pages/about"));
+const FAQ = lazy(() => import("@/pages/faq"));
+const Appointment = lazy(() => import("@/pages/appointment"));
+const Privacy = lazy(() => import("@/pages/privacy"));
+const Terms = lazy(() => import("@/pages/terms"));
+const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
+const ResetPassword = lazy(() => import("@/pages/reset-password"));
+const KnowledgeSearch = lazy(() => import("@/pages/knowledge-search"));
+const LegalSearchPage = lazy(() => import("@/pages/legal-search"));
+const ContractsPage = lazy(() => import("@/pages/contracts"));
+const LegalAssistant = lazy(() => import("@/pages/legal-assistant"));
+const ServiceDetails = lazy(() => import("@/pages/service-details"));
+const UsageLogPage = lazy(() => import("@/pages/usage-log"));
+const OrganizationPage = lazy(() => import("@/pages/organization"));
 const DevPanel = lazy(async () => ({
-  default: (await import('@/components/dev-panel')).DevPanel,
+  default: (await import("@/components/dev-panel")).DevPanel,
 }));
 const UsageCounter = lazy(async () => ({
-  default: (await import('@/components/UsageCounter')).UsageCounter,
+  default: (await import("@/components/UsageCounter")).UsageCounter,
 }));
 
-const AdminDashboard = lazy(() => import('@/pages/admin/dashboard'));
-const AdminUsers = lazy(() => import('@/pages/admin/users'));
-const AdminKnowledgeBase = lazy(() => import('@/pages/admin/knowledge-base'));
-const AdminPackages = lazy(() => import('@/pages/admin/packages'));
-const AdminCoupons = lazy(() => import('@/pages/admin/coupons'));
-const AdminPayments = lazy(() => import('@/pages/admin/payments'));
-const AdminConsultations = lazy(() => import('@/pages/admin/consultations'));
-const AdminAuditLog = lazy(() => import('@/pages/admin/audit-log'));
-const AdminNotifications = lazy(() => import('@/pages/admin/notifications'));
-const AdminMojContent = lazy(() => import('@/pages/admin/moj-content'));
-const AdminKnowledgeQuality = lazy(() => import('@/pages/admin/knowledge-quality'));
-const AdminSectionControl = lazy(() => import('@/pages/admin/section-control'));
-const AdminConversionReport = lazy(() => import('@/pages/admin/conversion-report'));
-const AdminSourceStatus = lazy(() => import('@/pages/admin/source-status'));
-const AdminEmailSettings = lazy(() => import('@/pages/admin/email-settings'));
-const AdminContactMessages = lazy(() => import('@/pages/admin/contact-messages'));
-const AdminLegalCodex = lazy(() => import('@/pages/admin/legal-codex'));
-const AdminWhatsAppSettings = lazy(() => import('@/pages/admin/whatsapp-settings'));
-const AdminInitiatives = lazy(() => import('@/pages/admin/initiatives'));
+const AdminDashboard = lazy(() => import("@/pages/admin/dashboard"));
+const AdminUsers = lazy(() => import("@/pages/admin/users"));
+const AdminKnowledgeBase = lazy(() => import("@/pages/admin/knowledge-base"));
+const AdminPackages = lazy(() => import("@/pages/admin/packages"));
+const AdminCoupons = lazy(() => import("@/pages/admin/coupons"));
+const AdminPayments = lazy(() => import("@/pages/admin/payments"));
+const AdminConsultations = lazy(() => import("@/pages/admin/consultations"));
+const AdminAuditLog = lazy(() => import("@/pages/admin/audit-log"));
+const AdminNotifications = lazy(() => import("@/pages/admin/notifications"));
+const AdminMojContent = lazy(() => import("@/pages/admin/moj-content"));
+const AdminKnowledgeQuality = lazy(
+  () => import("@/pages/admin/knowledge-quality"),
+);
+const AdminSectionControl = lazy(() => import("@/pages/admin/section-control"));
+const AdminConversionReport = lazy(
+  () => import("@/pages/admin/conversion-report"),
+);
+const AdminSourceStatus = lazy(() => import("@/pages/admin/source-status"));
+const AdminEmailSettings = lazy(() => import("@/pages/admin/email-settings"));
+const AdminContactMessages = lazy(
+  () => import("@/pages/admin/contact-messages"),
+);
+const AdminLegalCodex = lazy(() => import("@/pages/admin/legal-codex"));
+const AdminWhatsAppSettings = lazy(
+  () => import("@/pages/admin/whatsapp-settings"),
+);
+const AdminInitiatives = lazy(() => import("@/pages/admin/initiatives"));
 
 const queryClient = new QueryClient();
 
 // Placeholder components for static pages
 const SimplePage = () => {
   const { lang, t } = useLang();
-  const title = t('إخلاء المسؤولية القانوني', 'Legal Disclaimer');
+  const title = t("إخلاء المسؤولية القانوني", "Legal Disclaimer");
 
   return (
     <div
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir={lang === "ar" ? "rtl" : "ltr"}
       className="min-h-screen flex flex-col bg-muted/20"
     >
       <div className="p-4 bg-primary text-white">
@@ -89,8 +103,8 @@ const SimplePage = () => {
       <div className="container mx-auto p-12 max-w-3xl prose prose-slate rtl:prose-invert">
         <p>
           {t(
-            'محتوى صفحة إخلاء المسؤولية القانوني باللغة العربية...',
-            'The Legal Disclaimer page content is available in Arabic...'
+            "محتوى صفحة إخلاء المسؤولية القانوني باللغة العربية...",
+            "The Legal Disclaimer page content is available in Arabic...",
           )}
         </p>
       </div>
@@ -103,7 +117,7 @@ function NotFound() {
 
   return (
     <div
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir={lang === "ar" ? "rtl" : "ltr"}
       className="min-h-screen flex items-center justify-center bg-muted/20 text-center px-4"
     >
       <div>
@@ -111,16 +125,16 @@ function NotFound() {
 
         <p className="text-xl text-muted-foreground mb-8">
           {t(
-            'عذراً، الصفحة التي تبحث عنها غير موجودة.',
-            'Sorry, the page you are looking for does not exist.'
+            "عذراً، الصفحة التي تبحث عنها غير موجودة.",
+            "Sorry, the page you are looking for does not exist.",
           )}
         </p>
 
         <button
-          onClick={() => (window.location.href = '/')}
+          onClick={() => (window.location.href = "/")}
           className="bg-primary text-white px-6 py-3 rounded-md font-bold"
         >
-          {t('العودة للرئيسية', 'Back to home')}
+          {t("العودة للرئيسية", "Back to home")}
         </button>
       </div>
     </div>
@@ -147,7 +161,7 @@ function BackButton() {
     currentLocation.current = location;
   }, [location]);
 
-  if (location === '/') return null;
+  if (location === "/") return null;
 
   const handleBack = () => {
     const previousLocation = navigationStack.current.at(-2);
@@ -156,7 +170,7 @@ function BackButton() {
       isReturning.current = true;
       navigate(previousLocation);
     } else {
-      navigate('/');
+      navigate("/");
     }
   };
 
@@ -164,14 +178,14 @@ function BackButton() {
     <button
       type="button"
       onClick={handleBack}
-      aria-label={t('العودة للصفحة السابقة', 'Go back')}
-      title={t('العودة للصفحة السابقة', 'Go back')}
+      aria-label={t("العودة للصفحة السابقة", "Go back")}
+      title={t("العودة للصفحة السابقة", "Go back")}
       className={`fixed top-[4.5rem] ${
-        lang === 'ar' ? 'right-4 md:right-6' : 'left-4 md:left-6'
+        lang === "ar" ? "right-4 md:right-6" : "left-4 md:left-6"
       } z-40 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-3 py-2 text-sm font-bold text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
     >
       <ArrowRight className="h-4 w-4" aria-hidden="true" />
-      <span>{t('رجوع', 'Back')}</span>
+      <span>{t("رجوع", "Back")}</span>
     </button>
   );
 }
@@ -444,7 +458,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <LangProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <AuthProvider>
               <QuotaConfirmProvider>
                 <AppContent />
@@ -460,35 +474,55 @@ function App() {
 function AppContent() {
   const { lang } = useLang();
 
+  const skipToMainContent = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const target = document.querySelector<HTMLElement>(
+      "main, [data-main-content]",
+    );
+    if (!target) return;
+    event.preventDefault();
+    target.id = "main-content";
+    target.tabIndex = -1;
+    target.focus();
+  };
+
   return (
-    <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div dir={lang === "ar" ? "rtl" : "ltr"}>
       <TooltipProvider>
-        <OwnerTestGate>
-          <Suspense
-            fallback={
-              <main
-                className="flex min-h-screen items-center justify-center bg-background px-4"
-                role="status"
-                aria-live="polite"
-              >
-                <p className="text-sm text-muted-foreground">
-                  جارٍ تحميل الصفحة…
-                </p>
-              </main>
-            }
-          >
-            <Router />
-          </Suspense>
+        <a
+          href="#main-content"
+          onClick={skipToMainContent}
+          className="fixed start-4 top-3 z-[300] -translate-y-24 rounded-md bg-primary px-4 py-2 font-bold text-primary-foreground shadow-lg transition-transform focus:translate-y-0"
+        >
+          {lang === "ar" ? "تخطي إلى المحتوى" : "Skip to content"}
+        </a>
+        <div>
+          <OwnerTestGate>
+            <Suspense
+              fallback={
+                <main
+                  className="flex min-h-screen items-center justify-center bg-background px-4"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <p className="text-sm text-muted-foreground">
+                    جارٍ تحميل الصفحة…
+                  </p>
+                </main>
+              }
+            >
+              <Router />
+            </Suspense>
 
-          <BackButton />
+            <BackButton />
 
-          <Toaster />
+            <Toaster />
 
-          <Suspense fallback={null}>
-            <DevPanel />
-            <UsageCounter />
-          </Suspense>
-        </OwnerTestGate>
+            <Suspense fallback={null}>
+              <DevPanel />
+              <UsageCounter />
+            </Suspense>
+          </OwnerTestGate>
+        </div>
       </TooltipProvider>
     </div>
   );
