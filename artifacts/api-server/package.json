@@ -18,6 +18,7 @@
     "test:origin-policy": "node ./test-build.mjs src/lib/origin-policy.test.ts",
     "test:owner-access": "node ./test-build.mjs src/lib/owner-test-access.test.ts",
     "test:owner-access-integration": "node ./test-build.mjs src/lib/owner-test-access.integration.test.ts",
+    "test:safe-zip": "node ./test-build.mjs src/lib/safe-zip.test.ts",
     "test:citation-cleanup": "node ./test-build.mjs src/lib/citation-cleanup.test.ts",
     "test:chat": "node ./test-build.mjs src/routes/chat.test.ts"
   },
@@ -28,7 +29,6 @@
     "@types/uuid": "^11.0.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
-    "adm-zip": "^0.6.0",
     "bufferutil": "^4.1.0",
     "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",
@@ -36,6 +36,7 @@
     "drizzle-orm": "catalog:",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "fflate": "^0.8.3",
     "google-auth-library": "^10.9.1",
     "input": "^1.0.1",
     "jsonwebtoken": "^9.0.3",
@@ -54,7 +55,6 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.8",
     "@types/bcryptjs": "^3.0.0",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cookie-parser": "^1.4.10",

@@ -2,7 +2,7 @@
  * Admin: Legal Codex Management
  * Upload codex PDFs, trigger case extraction, monitor progress, and check text quality.
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Upload, BookOpen, Loader2, CheckCircle, AlertTriangle, Trash2,
   Play, RefreshCw, ChevronDown, ChevronUp, FileText, ShieldCheck, RotateCcw, Search,
@@ -119,7 +119,7 @@ export default function AdminLegalCodexPage() {
   const [knowledgeScan, setKnowledgeScan] = useState<{ total: number; issuesFound: number; results: KnowledgeQualityRow[] } | null>(null);
   const [showKnowledgeScan, setShowKnowledgeScan] = useState(false);
 
-  const fetchList = async () => {
+  const fetchList = useCallback(async () => {
     try {
       const r = await fetch(`${API_BASE}/api/admin/codex/list`, { credentials: "include" });
       if (!r.ok) throw new Error(t("فشل التحميل", "Failed to load"));
@@ -130,9 +130,9 @@ export default function AdminLegalCodexPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  useEffect(() => { fetchList(); }, []);
+  useEffect(() => { fetchList(); }, [fetchList]);
 
   // Poll extraction status for running jobs
   useEffect(() => {
@@ -152,7 +152,7 @@ export default function AdminLegalCodexPage() {
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [codices]);
+  }, [codices, fetchList]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();

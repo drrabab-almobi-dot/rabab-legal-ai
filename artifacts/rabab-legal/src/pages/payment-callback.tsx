@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Loader2, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,13 +17,7 @@ export default function PaymentCallback() {
   const [phase, setPhase] = useState<Phase>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
-    verify();
-  }, []);
-
-  async function verify() {
+  const verify = useCallback(async () => {
     try {
       const params = new URLSearchParams(window.location.search);
       const moyasarId = params.get('id');
@@ -93,7 +87,12 @@ export default function PaymentCallback() {
       setPhase('failed');
       setErrorMsg(err.message || t('حدث خطأ غير متوقع', 'An unexpected error occurred'));
     }
-  }
+  }, [queryClient, setLocation, t]);
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+    verify();
+  }, [verify]);
 
   if (phase === 'verifying') {
     return (

@@ -57,7 +57,7 @@ export default function AdminAuditLog() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const fetchLogs = async (p = page, s = search) => {
+  const fetchLogs = React.useCallback(async (p: number, s: string) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(p), search: s });
@@ -68,9 +68,9 @@ export default function AdminAuditLog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  React.useEffect(() => { fetchLogs(1, ''); }, []);
+  React.useEffect(() => { fetchLogs(1, ''); }, [fetchLogs]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

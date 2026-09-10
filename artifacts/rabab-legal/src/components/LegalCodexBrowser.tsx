@@ -359,7 +359,7 @@ export function LegalCodexBrowser() {
     } finally {
       setLoading(false);
     }
-  }, [query, codexFilter, courtFilter, stageFilter, stageFilter, yearFilter]);
+  }, [query, codexFilter, courtFilter, stageFilter, yearFilter]);
 
   const fetchCodeces = async () => {
     try {
@@ -377,7 +377,7 @@ export function LegalCodexBrowser() {
     fetchedRef.current = true;
     fetchList(1);
     fetchCodeces();
-  }, []);
+  }, [fetchList]);
 
   const openDetail = async (c: CaseSummary) => {
     setSelectedCase(null);

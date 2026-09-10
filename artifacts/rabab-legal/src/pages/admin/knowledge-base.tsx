@@ -211,8 +211,7 @@ export default function KnowledgeBase() {
         if (d.job?.running) { setMojCrawling(true); mojPollRef.current = setInterval(pollMojStatus, 2500); }
       }).catch(() => {});
     return () => stopMojPoll();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pollMojStatus, stopMojPoll]);
 
   React.useEffect(() => {
     setLoading(true);
@@ -332,7 +331,7 @@ export default function KnowledgeBase() {
       setUploading(false);
       setTimeout(() => setProgress(null), 5000);
     }
-  }, [fetchDocs, startPolling, t]);
+  }, [categoryInput, fetchDocs, startPolling, t]);
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;

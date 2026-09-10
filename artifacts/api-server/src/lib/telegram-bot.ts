@@ -22,6 +22,7 @@ import { eq, isNull, isNotNull } from "drizzle-orm";
 import { createAndIndexDocument } from "./document-indexer";
 import { retrieveRelevantChunks } from "./rag";
 import { logger } from "./logger";
+import { readSafeZipEntries } from "./safe-zip";
 
 // ── Singletons ───────────────────────────────────────────────────────────────
 let bot: TelegramBot | null = null;
@@ -336,13 +337,14 @@ async function handleDocumentUpload(msg: Message, silentMode = false): Promise<v
 
     // ── ملف ZIP: فهرسة كل ملف بداخله ──────────────────────────────────────
     if (isZip) {
-      const AdmZip = (await import("adm-zip" as any)).default;
-      const zip = new AdmZip(buffer);
-      const entries = zip.getEntries() as any[];
-
-      const supported = entries.filter((e: any) => {
-        if (e.isDirectory) return false;
-        return ALLOWED_EXTENSIONS.test(e.entryName) && !e.entryName.toLowerCase().endsWith(".zip");
+      const supported = readSafeZipEntries(buffer, {
+        include: entryName =>
+          ALLOWED_EXTENSIONS.test(entryName) &&
+          !entryName.toLowerCase().endsWith(".zip") &&
+          !entryName.startsWith("__MACOSX/"),
+        maxEntries: 1_000,
+        maxEntryBytes: MAX_FILE_BYTES,
+        maxTotalBytes: 250 * 1024 * 1024,
       });
 
       if (supported.length === 0) {
@@ -362,7 +364,7 @@ async function handleDocumentUpload(msg: Message, silentMode = false): Promise<v
         const entryMime = detectMime(entryName, "application/octet-stream");
 
         try {
-          const entryBuffer = Buffer.from(entry.getData());
+          const entryBuffer = entry.data;
           await createAndIndexDocument(entryBuffer, entryMime, entryName, { sourceType: "telegram" });
           success++;
           logger.info({ filename: entryName }, "telegram: ملف من ZIP أُفهرس");

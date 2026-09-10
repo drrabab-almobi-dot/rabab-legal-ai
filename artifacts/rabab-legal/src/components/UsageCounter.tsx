@@ -3,7 +3,7 @@
  * يظهر للمستخدمين المسجّلين فقط (ليس للزوار، ليس في الشريط العلوي).
  * قابل للطيّ إلى أيقونة صغيرة.
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronUp, ChevronDown, X, BarChart2, TrendingUp, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -56,7 +56,7 @@ export function UsageCounter() {
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const fetchQuota = async () => {
+  const fetchQuota = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
@@ -65,7 +65,7 @@ export function UsageCounter() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -74,7 +74,7 @@ export function UsageCounter() {
       return () => clearInterval(interval);
     }
     return undefined;
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchQuota]);
 
   // إغلاق اللوحة عند النقر خارجها
   useEffect(() => {

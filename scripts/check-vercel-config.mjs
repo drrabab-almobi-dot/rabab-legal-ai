@@ -58,6 +58,11 @@ assert(
   ),
   "unknown frontend routes must not be rewritten to index.html; Vercel should return a real 404",
 );
+assert.equal(
+  rootConfig.routes,
+  undefined,
+  "root Vercel config must rely on standard static 404.html handling; check-seo-output verifies the generated page",
+);
 assert(
   rootConfig.headers?.some(
     (header) =>
@@ -96,10 +101,14 @@ for (const [key, value] of [
   );
 }
 assert(
-  securityHeaders.some(
+  securityHeaders.some((entry) => entry.key === "Content-Security-Policy"),
+  "root frontend config must enforce its validated CSP baseline",
+);
+assert(
+  !securityHeaders.some(
     (entry) => entry.key === "Content-Security-Policy-Report-Only",
   ),
-  "root frontend config must ship a CSP report-only baseline before enforcing CSP",
+  "root frontend config must not leave CSP in report-only mode",
 );
 assert.equal(
   rootConfig.functions,

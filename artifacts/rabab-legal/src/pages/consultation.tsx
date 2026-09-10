@@ -1787,6 +1787,7 @@ function ChatScreen({
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [customLanguage, setCustomLanguage] = useState('');
   const autoStartInitialMessageRef = useRef(false);
+  const sendRef = useRef<() => Promise<void>>(async () => {});
   const selectedResponseLanguage = responseLanguageLabel(localTaskParams.responseLanguage);
 
   const setResponseLanguage = async (languageCode: string) => {
@@ -1859,20 +1860,20 @@ function ChatScreen({
     };
     const t = setTimeout(poll, 600); // first check after 0.6 s
     return () => { cancelled = true; clearTimeout(t); };
-  }, [consultationId]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [consultationId, preparingSources]);
 
   // Also clear immediately when first AI reply arrives (belt-and-suspenders)
   useEffect(() => {
     if (preparingSources && messages.some(m => m.role === 'assistant')) {
       setPreparingSources(false);
     }
-  }, [messages]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [messages, preparingSources]);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => { scrollToBottom(); }, [messages, sending]);
+  useEffect(() => { scrollToBottom(); }, [messages, sending, scrollToBottom]);
 
   const send = async () => {
     const text = input.trim();
@@ -1982,6 +1983,7 @@ function ChatScreen({
       textareaRef.current?.focus();
     }
   };
+  sendRef.current = send;
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -2000,9 +2002,7 @@ function ChatScreen({
       autoStartInitialMessageRef.current
     ) return;
     autoStartInitialMessageRef.current = true;
-    void send();
-  // send deliberately stays out of dependencies to run this one-time transfer only.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    void sendRef.current();
   }, [initialMessage, messages.length, sending]);
 
   // ── رفع الملفات لجميع أنواع الاستشارات ──
@@ -2459,7 +2459,7 @@ export default function Consultation() {
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const { lang } = useLang();
-  const t = (ar: string, en: string) => localized(lang, ar, en);
+  const t = useCallback((ar: string, en: string) => localized(lang, ar, en), [lang]);
 
   const [phase, setPhase] = useState<'setup' | 'chat'>('setup');
   const [consultationId, setConsultationId] = useState<number | null>(null);
@@ -2614,7 +2614,7 @@ export default function Consultation() {
         toast({ variant: 'destructive', title: t('خطأ', 'Error'), description: t('تعذّر تحميل الاستشارة', 'Unable to load the consultation') });
       }
     })();
-  }, [urlConsultationId]);
+  }, [urlConsultationId, consultationId, phase, t, toast]);
 
   if (subLoading) {
     return (

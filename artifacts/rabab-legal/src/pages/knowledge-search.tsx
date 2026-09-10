@@ -359,7 +359,7 @@ function MojCircularBrowser() {
   const [copied, setCopied] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const fetchList = async (pg = 1, q = query, year = yearFilter, status = statusFilter) => {
+  const fetchList = useCallback(async (pg = 1, q = query, year = yearFilter, status = statusFilter) => {
     setLoading(true);
     setError('');
     try {
@@ -376,14 +376,14 @@ function MojCircularBrowser() {
       setPages(data.pages ?? 1);
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
-  };
+  }, [query, yearFilter, statusFilter]);
 
-  const fetchYears = async () => {
+  const fetchYears = useCallback(async () => {
     try {
       const r = await fetch(`${API_BASE}/api/knowledge/moj-circulars-years`, { credentials: 'include' });
       if (r.ok) { const d = await r.json(); setYears(d.years ?? []); }
     } catch { /* silent */ }
-  };
+  }, []);
 
   const fetchedRef = useRef(false);
   useEffect(() => {
@@ -391,7 +391,7 @@ function MojCircularBrowser() {
     fetchedRef.current = true;
     fetchList(1);
     fetchYears();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchList, fetchYears]);
 
   const openDetail = async (c: MojCircular) => {
     setDetail(null);
@@ -2005,7 +2005,7 @@ function ContractDrafter() {
     try { localStorage.setItem(CONTRACT_DRAFT_KEY, JSON.stringify(payload)); } catch { /* quota */ }
     // Sync to DB for logged-in users
     syncToDb({ description, draft, editedDraft });
-  }, [draft, editedDraft, description]);
+  }, [draft, editedDraft, description, syncToDb]);
 
   const resumeSavedDraft = () => {
     if (!savedDraft) return;
@@ -2127,10 +2127,29 @@ function ContractDrafter() {
   </header>
   <pre>${escaped}</pre>
   <footer>هذه المسودة لأغراض المراجعة فقط — يُنصح بمراجعة محامٍ مرخّص قبل الاستخدام الرسمي.</footer>
-  <script>window.onload = function(){ window.print(); };<\/script>
 </body>
 </html>`);
       win.document.close();
+      let printed = false;
+      let fallbackTimer: number | undefined;
+      const print = () => {
+        if (printed || win.closed) return;
+        printed = true;
+        if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
+        win.focus();
+        win.print();
+      };
+      const printAfterFonts = () => {
+        const fontsReady = win.document.fonts?.ready;
+        if (fontsReady) {
+          void fontsReady.then(print, print);
+        } else {
+          print();
+        }
+      };
+      win.addEventListener('load', printAfterFonts, { once: true });
+      fallbackTimer = window.setTimeout(print, 5000);
+      if (win.document.readyState === 'complete') printAfterFonts();
     } finally {
       setExportingPdf(false);
     }

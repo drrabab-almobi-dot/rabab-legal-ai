@@ -53,7 +53,7 @@ export default function Appointment() {
       ),
       canonical: 'https://rabablegal.com/appointment',
     });
-  }, [lang]);
+  }, [lang, t]);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     appointmentType: '',

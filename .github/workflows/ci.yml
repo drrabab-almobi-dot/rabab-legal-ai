@@ -77,6 +77,9 @@ jobs:
       - name: Test owner-only access gate
         run: pnpm --filter @workspace/api-server run test:owner-access-integration
 
+      - name: Test safe ZIP extraction limits
+        run: pnpm --filter @workspace/api-server run test:safe-zip
+
       - name: Provision isolated authentication test database
         run: pnpm --filter @workspace/db run push-force
 
