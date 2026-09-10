@@ -31,16 +31,10 @@ async function extractText(buffer: Buffer, mimetype: string, filename: string): 
     return { text: buffer.toString("utf-8") };
   }
   if (mimetype === "application/pdf" || filename.toLowerCase().endsWith(".pdf")) {
-    try {
-      const { default: pdfParse } = await import("pdf-parse/lib/pdf-parse.js" as any);
-      const data = await pdfParse(buffer);
-      return { text: data.text ?? "", pageCount: data.numpages ?? undefined };
-    } catch {
-      const pdfMod = await import("pdf-parse" as any);
-      const fn = pdfMod.default ?? pdfMod;
-      const data = await fn(buffer);
-      return { text: data.text ?? "", pageCount: data.numpages ?? undefined };
-    }
+    const pdfMod = await import("pdf-parse/lib/pdf-parse.js" as any);
+    const pdfParse = pdfMod.default ?? pdfMod;
+    const data = await pdfParse(buffer);
+    return { text: data.text ?? "", pageCount: data.numpages ?? undefined };
   }
   if (mimetype.includes("wordprocessingml") || filename.toLowerCase().endsWith(".docx")) {
     const mammoth = await import("mammoth");

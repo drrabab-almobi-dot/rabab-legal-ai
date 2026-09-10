@@ -48,6 +48,7 @@ await esbuild({
     "ref-napi", "rocksdb", "sass-embedded", "sequelize", "serialport", "snappy",
     "tinypool", "usb", "workerd", "wrangler", "zeromq", "zeromq-prebuilt",
     "playwright", "puppeteer", "puppeteer-core", "electron",
+    "pdf-parse", "pdf-parse/*",
     // pdfkit → fontkit → brotli → @swc/helpers CJS shim; keep all three external
     // so they resolve from node_modules at runtime instead of being inlined.
     "pdfkit", "fontkit", "@swc/helpers",
