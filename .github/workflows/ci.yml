@@ -80,6 +80,9 @@ jobs:
       - name: Test safe ZIP extraction limits
         run: pnpm --filter @workspace/api-server run test:safe-zip
 
+      - name: Test critical production schema readiness
+        run: pnpm --filter @workspace/api-server run test:critical-schema
+
       - name: Provision isolated authentication test database
         run: pnpm --filter @workspace/db run push-force
 

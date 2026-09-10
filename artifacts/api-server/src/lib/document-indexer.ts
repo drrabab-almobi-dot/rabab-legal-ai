@@ -157,12 +157,7 @@ export function buildMetadataSample(text: string): string {
   const mid    = t.slice(Math.max(0, midPos), midPos + 1000);
   const tail   = t.slice(Math.max(0, t.length - 1500));
 
-  const parts: string[] = [head];
-  if (!head.includes(mid.slice(0, 40))) parts.push(`[...]\n${mid}`);
-  if (!head.includes(tail.slice(0, 40)) && !mid.includes(tail.slice(0, 40))) {
-    parts.push(`[...]\n${tail}`);
-  }
-  return parts.join("\n");
+  return [head, mid, tail].join("\n[...]\n");
 }
 
 // ── Regex patterns for common Saudi legal number formats ──────────────────────
