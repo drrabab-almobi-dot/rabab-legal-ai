@@ -4,6 +4,7 @@ import { charterSystemMsg } from "../lib/legal-charter.js";
 import multer from "multer";
 import { requireAuth } from "../middlewares/auth";
 import { checkAndReserveService, commitService, releaseService } from "../lib/quota";
+import { getContractPdfTrialLimitError } from "../lib/contract-page-limit";
 import { db, contractDraftsTable, serviceSessionsTable } from "@workspace/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
@@ -65,7 +66,6 @@ async function extractText(buffer: Buffer, mimetype: string, filename: string): 
 
 const EXTRACT_CHAR_LIMIT = 40_000;
 const SCANNED_THRESHOLD = 80; // أقل من هذا → على الأرجح ملف مصوّر
-const TRIAL_PAGE_LIMIT   = 10;
 
 // POST /api/contract/extract — returns extracted text, max 40000 chars
 router.post("/contract/extract", requireAuth, upload.single("file"), async (req, res): Promise<void> => {
@@ -87,17 +87,15 @@ router.post("/contract/extract", requireAuth, upload.single("file"), async (req,
     }
 
     // فحص حد الصفحات لمستخدمي التجربة المجانية
-    if (pageCount && pageCount > TRIAL_PAGE_LIMIT) {
+    if (pageCount) {
       const { getQuotaStatus } = await import("../lib/quota.js");
-      const quotaStatus = await getQuotaStatus(req.userId!);
-      const isTrial = quotaStatus.isTrial;
-      if (isTrial) {
-        res.status(403).json({
-          error: `يمكن للتجربة المجانية تحليل حتى ${TRIAL_PAGE_LIMIT} صفحات (الملف يحتوي على ${pageCount} صفحة). اشترك للوصول الكامل.`,
-          trialLimit: true,
-          pageCount,
-          limit: TRIAL_PAGE_LIMIT,
-        });
+      const trialLimitError = await getContractPdfTrialLimitError(
+        req.userId!,
+        pageCount,
+        getQuotaStatus,
+      );
+      if (trialLimitError) {
+        res.status(403).json(trialLimitError);
         return;
       }
     }
