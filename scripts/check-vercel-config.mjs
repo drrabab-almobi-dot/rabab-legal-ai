@@ -9,6 +9,11 @@ const rootConfig = await readJson("../vercel.json");
 const apiConfig = await readJson("../artifacts/api-server/vercel.json");
 
 assert.equal(
+  rootConfig.framework,
+  null,
+  "root Vercel project must use the Other preset so Vite does not inject a catch-all SPA rewrite",
+);
+assert.equal(
   rootConfig.installCommand,
   "pnpm install --frozen-lockfile --prod=false",
 );
