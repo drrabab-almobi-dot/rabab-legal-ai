@@ -8,13 +8,14 @@ export async function getContractPdfTrialLimitError(
   userId: number,
   pageCount: number,
   getQuotaStatus: (userId: number) => Promise<ContractExtractionQuotaStatus>,
+  isExempt = false,
 ): Promise<{
   error: string;
   trialLimit: true;
   pageCount: number;
   limit: number;
 } | null> {
-  if (pageCount <= TRIAL_PDF_PAGE_LIMIT) return null;
+  if (isExempt || pageCount <= TRIAL_PDF_PAGE_LIMIT) return null;
 
   const quotaStatus = await getQuotaStatus(userId);
   if (!quotaStatus.isTrial) return null;
