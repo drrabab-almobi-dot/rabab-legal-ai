@@ -2049,7 +2049,7 @@ function ChatScreen({
   const showTotal = questionsAllowed !== null && questionsAllowed < 999;
 
   return (
-    <div className="h-[100svh] flex flex-col overflow-x-hidden bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="rabab-service-2026 h-[100svh] flex flex-col overflow-x-hidden bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Quota exhausted full modal */}
       {quotaExhausted && (
         <QuotaExhaustedModal onGoToPricing={() => setLocation('/pricing')} />

@@ -46,7 +46,7 @@
       "handle": "filesystem"
     },
     {
-      "src": "/(?:appointment|packages|disclaimer|login|register|forgot-password|reset-password|consultation(?:/[^/]+)?|contracts|legal-search|legal-assistant|knowledge-search|services/[^/]+|payment(?:/.*)?|invoices/[^/]+|dashboard|account|usage-log|organization|join-org|admin(?:/.*)?)",
+      "src": "/(?:appointment|packages|disclaimer|design-preview|login|register|forgot-password|reset-password|consultation(?:/[^/]+)?|contracts|legal-search|legal-assistant|knowledge-search|services/[^/]+|payment(?:/.*)?|invoices/[^/]+|dashboard|account|usage-log|organization|join-org|admin(?:/.*)?)",
       "dest": "/index.html"
     },
     {

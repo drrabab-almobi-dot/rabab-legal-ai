@@ -107,6 +107,7 @@ for (const pathname of [
   "/appointment",
   "/packages",
   "/disclaimer",
+  "/design-preview",
   "/login",
   "/register",
   "/forgot-password",
