@@ -1,153 +1,58 @@
 {
+  "framework": null,
   "installCommand": "pnpm install --frozen-lockfile --prod=false",
   "buildCommand": "pnpm run build",
   "outputDirectory": "artifacts/rabab-legal/dist/public",
-  "redirects": [
+  "routes": [
     {
-      "source": "/:path*",
+      "src": "/(.*)",
       "has": [
         {
           "type": "host",
           "value": "www.rabablegal.com"
         }
       ],
-      "destination": "https://rabablegal.com/:path*",
-      "permanent": true
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://rabab-legal-ai-api.vercel.app/api/:path*"
+      "status": 308,
+      "headers": {
+        "Location": "https://rabablegal.com/$1"
+      }
     },
     {
-      "source": "/login",
-      "destination": "/index.html"
+      "src": "/assets/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
     },
     {
-      "source": "/register",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-Frame-Options": "DENY",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(self)",
+        "Content-Security-Policy": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://cdn.moyasar.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com; connect-src 'self' https://api.moyasar.com https://cdn.jsdelivr.net; frame-src https://cdn.moyasar.com"
+      },
+      "continue": true
     },
     {
-      "source": "/forgot-password",
-      "destination": "/index.html"
+      "src": "/api/(.*)",
+      "dest": "https://rabab-legal-ai-api.vercel.app/api/$1",
+      "headers": {
+        "x-vercel-enable-rewrite-caching": "0"
+      }
     },
     {
-      "source": "/reset-password",
-      "destination": "/index.html"
+      "handle": "filesystem"
     },
     {
-      "source": "/consultation",
-      "destination": "/index.html"
+      "src": "/(?:appointment|packages|disclaimer|login|register|forgot-password|reset-password|consultation(?:/[^/]+)?|contracts|legal-search|legal-assistant|knowledge-search|services/[^/]+|payment(?:/.*)?|invoices/[^/]+|dashboard|account|usage-log|organization|join-org|admin(?:/.*)?)",
+      "dest": "/index.html"
     },
     {
-      "source": "/consultation/:id",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/contracts",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/legal-search",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/legal-assistant",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/knowledge-search",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/services/:serviceId",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/payment",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/payment/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/invoices/:id",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/account",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/usage-log",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/organization",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/join-org",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin/:path*",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/assets/:path*",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/:path*",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=(), payment=(self)"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://cdn.moyasar.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com; connect-src 'self' https://api.moyasar.com https://cdn.jsdelivr.net; frame-src https://cdn.moyasar.com"
-        }
-      ]
-    },
-    {
-      "source": "/api/:path*",
-      "headers": [
-        {
-          "key": "x-vercel-enable-rewrite-caching",
-          "value": "0"
-        }
-      ]
+      "src": "/(.*)",
+      "status": 404,
+      "dest": "/404.html"
     }
   ]
 }

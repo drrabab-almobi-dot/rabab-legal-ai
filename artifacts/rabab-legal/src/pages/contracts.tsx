@@ -376,6 +376,12 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 401) {
+          toast({ variant: 'destructive', title: t('انتهت جلسة الدخول', 'Your session has expired'), description: t('سجّل الدخول ثم أعد المحاولة.', 'Sign in and try again.') });
+          const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+          setLocation(`/login?returnTo=${returnTo}`);
+          return;
+        }
         const errMsg = data.code === 'TRIAL_EXHAUSTED' || data.code === 'QUOTA_EXHAUSTED'
           ? `🔒 ${t('انتهت خدماتك المجانية — اشترك للمتابعة.', 'Your free services have ended—subscribe to continue.')}`
           : `⚠️ ${data.error ?? t('حدث خطأ، يرجى المحاولة مجدداً', 'Something went wrong. Please try again.')}`;
@@ -392,21 +398,22 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
       setMessages(prev => [...prev, { role: 'rabab', text: reply, isDraft: !!data.isDraft }]);
       setApiHistory(prev => [...prev, { role: 'assistant', content: reply }]);
 
-      // Rotate clientSession after successful contract production
       if (data.isDraft) {
         setDraftLiveSearch(liveSrc);
         // Auto-save to DB so badge survives reload
         const sid = reservedSid.current ?? data.sessionId;
         if (sid) {
-          fetch(`${API_BASE}/api/contract/sessions/${sid}`, {
+          const saveResponse = await fetch(`${API_BASE}/api/contract/sessions/${sid}`, {
             method: 'PATCH',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ draftText: reply, usedLiveSearch: liveSrc }),
-          }).catch(() => {});
+          });
+          if (!saveResponse.ok) {
+            const saveError = await saveResponse.json().catch(() => ({}));
+            toast({ variant: 'destructive', title: t('تمت الصياغة ولم تُحفظ المسودة', 'Draft created but not saved'), description: saveError.error ?? t('انسخ المسودة قبل مغادرة الصفحة.', 'Copy the draft before leaving this page.') });
+          }
         }
-        clientSession.current = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
-        reservedSid.current = undefined;
       }
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'rabab', text: `⚠️ ${err.message}` }]);
@@ -434,6 +441,7 @@ function DraftTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
     setAttachedFile(null);
     setSettingsOpen(true);
     reservedSid.current = undefined;
+    clientSession.current = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
   };
   const [extracting, setExtracting] = useState(false);
   const [fileCharInfo, setFileCharInfo] = useState<{ count: number; truncated: boolean } | null>(null);
@@ -1179,7 +1187,13 @@ function AnalyzeTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.code === 'TRIAL_EXHAUSTED') {
+        if (res.status === 401) {
+          toast({ variant: 'destructive', title: t('انتهت جلسة الدخول', 'Your session has expired'), description: t('سجّل الدخول ثم أعد المحاولة.', 'Sign in and try again.') });
+          const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+          setLocation(`/login?returnTo=${returnTo}`);
+          return;
+        }
+        if (data.code === 'TRIAL_EXHAUSTED' || data.needsUpgrade) {
           toast({ variant: 'destructive', title: t('انتهت خدماتك المجانية', 'Your free services have ended'), description: t('اشترك للمتابعة', 'Subscribe to continue') });
           setLocation('/pricing');
           return;
@@ -1438,6 +1452,7 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
   const [usedLiveSearch, setUsedLiveSearch] = useState(false);
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [, setLocation] = useLocation();
 
   const handleExtract = async () => {
     if (!file) return;
@@ -1456,7 +1471,15 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
       formData.append('file', file);
       const res = await fetch(`${API_BASE}/api/contract/extract-data`, { method: 'POST', credentials: 'include', body: formData });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast({ variant: 'destructive', title: t('انتهت جلسة الدخول', 'Your session has expired'), description: t('سجّل الدخول ثم أعد المحاولة.', 'Sign in and try again.') });
+          const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+          setLocation(`/login?returnTo=${returnTo}`);
+          return;
+        }
+        throw new Error(json.error);
+      }
       setData(json.data);
       setContractText(json.contractText ?? '');
       setFilename(json.filename);
@@ -1594,7 +1617,8 @@ function ExtractTab({ hasAccess, toast }: { hasAccess: boolean; toast: any }) {
                 <DataRow label={t('تاريخ النفاذ', 'Effective date')} value={data.effectiveDate} />
                 <DataRow label={t('تاريخ الانتهاء', 'Expiry date')} value={data.expiryDate} />
                 <DataRow label={t('القيمة الإجمالية', 'Total value')} value={data.totalValue ? `${data.totalValue} ${data.currency ?? ''}` : null} />
-                <DataRow label={t('الالتزامات الرئيسية', 'Key obligations')} value={data.keyObligations} />
+                <DataRow label={t('التزامات الطرف الأول', 'First party obligations')} value={data.keyObligationsPartyA} />
+                <DataRow label={t('التزامات الطرف الثاني', 'Second party obligations')} value={data.keyObligationsPartyB} />
                 <DataRow label={t('بنود الغرامات', 'Penalty clauses')} value={data.penaltyClauses} />
                 <DataRow label={t('شروط التجديد', 'Renewal terms')} value={data.renewalTerms} />
                 <DataRow label={t('القانون الحاكم', 'Governing law')} value={data.governingLaw} />

@@ -20,6 +20,7 @@
     "test:owner-access-integration": "node ./test-build.mjs src/lib/owner-test-access.integration.test.ts",
     "test:safe-zip": "node ./test-build.mjs src/lib/safe-zip.test.ts",
     "test:citation-cleanup": "node ./test-build.mjs src/lib/citation-cleanup.test.ts",
+    "test:contract-extract": "node ./test-build.mjs src/routes/contract-extract.test.ts",
     "test:chat": "node ./test-build.mjs src/routes/chat.test.ts"
   },
   "dependencies": {
