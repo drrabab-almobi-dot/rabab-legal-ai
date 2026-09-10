@@ -17,6 +17,7 @@ import {
   isAdminOnlyTestingEnabled,
   isOwnerTestingPublicPath,
 } from "./lib/owner-test-access";
+import { ensureCriticalSchema } from "./lib/critical-schema";
 
 const PgStore = connectPgSimple(session);
 
@@ -221,6 +222,32 @@ app.use(
       return;
     }
     await requireAdmin(req, res, next);
+  },
+);
+
+// Keep production databases created before the latest consultation fields
+// compatible with the current API. This runs after authentication/test-mode
+// gates so rejected traffic never causes a database migration attempt.
+app.use(
+  "/api",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    if (
+      !req.path.startsWith("/consultations") &&
+      !req.path.startsWith("/contract")
+    ) {
+      next();
+      return;
+    }
+    try {
+      await ensureCriticalSchema();
+      next();
+    } catch (error) {
+      req.log?.error({ err: error }, "Critical database schema is not ready");
+      res.status(503).json({
+        error: "الخدمة قيد التهيئة. يرجى إعادة المحاولة بعد لحظات.",
+        code: "DATABASE_SCHEMA_NOT_READY",
+      });
+    }
   },
 );
 
