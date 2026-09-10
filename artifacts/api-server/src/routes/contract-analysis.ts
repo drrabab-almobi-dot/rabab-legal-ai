@@ -93,6 +93,7 @@ router.post("/contract/extract", requireAuth, upload.single("file"), async (req,
         req.userId!,
         pageCount,
         getQuotaStatus,
+        req.userRole === "admin",
       );
       if (trialLimitError) {
         res.status(403).json(trialLimitError);

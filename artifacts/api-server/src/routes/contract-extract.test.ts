@@ -54,4 +54,25 @@ assert.equal(
 );
 assert.equal(shortPdfError, null);
 
+let adminLookupCalled = false;
+const adminError = await getContractPdfTrialLimitError(
+  99,
+  TRIAL_PDF_PAGE_LIMIT + 50,
+  async () => {
+    adminLookupCalled = true;
+    return { isTrial: true };
+  },
+  true,
+);
+assert.equal(
+  adminLookupCalled,
+  false,
+  "unlimited administrators bypass trial quota lookup",
+);
+assert.equal(
+  adminError,
+  null,
+  "unlimited administrators may extract longer PDFs",
+);
+
 console.log("✓ contract PDF trial page-limit identity checks passed");
