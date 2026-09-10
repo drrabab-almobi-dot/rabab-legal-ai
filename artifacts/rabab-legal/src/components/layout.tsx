@@ -235,20 +235,36 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { name: t("الرئيسية", "Home"), path: "/" },
-    { name: t("استشارة قانونية", "Legal Consult"), path: "/consultation" },
-    { name: t("استشارة قضائية", "Judicial"), path: "/services/judicial" },
-    { name: t("العقود", "Contracts"), path: "/contracts" },
-    { name: t("الباحثة الذكية", "Research"), path: "/legal-search" },
-    { name: t("الباقات", "Pricing"), path: "/pricing" },
-    { name: t("حجز موعد", "Appointment"), path: "/appointment" },
-    { name: t("تواصل", "Contact"), path: "/contact" },
+    { name: t("الرئيسية", "Home"), path: "/", icon: Home },
+    {
+      name: t("استشارة قانونية", "Legal Consult"),
+      path: "/consultation",
+      icon: MessageSquare,
+    },
+    {
+      name: t("استشارة قضائية", "Judicial"),
+      path: "/services/judicial",
+      icon: Scale,
+    },
+    { name: t("العقود", "Contracts"), path: "/contracts", icon: FileText },
+    {
+      name: t("الباحثة الذكية", "Research"),
+      path: "/legal-search",
+      icon: BookOpen,
+    },
+    { name: t("الباقات", "Pricing"), path: "/pricing", icon: CreditCard },
+    {
+      name: t("حجز موعد", "Appointment"),
+      path: "/appointment",
+      icon: ClipboardList,
+    },
+    { name: t("تواصل", "Contact"), path: "/contact", icon: Mail },
   ];
 
   return (
     <nav
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="sticky top-0 z-50 w-full border-b border-secondary/30"
+      className="rabab-2026-nav sticky top-0 z-50 w-full border-b border-secondary/30"
       style={{ background: "var(--navbar-bg, black)" }}
     >
       {/* RTL: col1=يمين | col2=وسط | col3=يسار */}
@@ -288,15 +304,24 @@ export function Navbar() {
         {/* Col 2 → وسط: روابط الناف موزّعة بالتساوي */}
         <div className="min-w-0 overflow-x-auto">
           <div className="flex min-w-max items-center justify-evenly gap-4 px-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                href={link.path}
-                className="text-xs font-medium transition-colors whitespace-nowrap text-white hover:text-white/80 relative flex items-center gap-1"
-              >
-                {link.name}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const LinkIcon = link.icon;
+              const isActive =
+                link.path === "/"
+                  ? location === "/"
+                  : location.startsWith(link.path);
+              return (
+                <Link
+                  key={link.path}
+                  href={link.path}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`rabab-2026-nav-link text-xs font-medium transition-colors whitespace-nowrap text-white hover:text-white/80 relative flex items-center gap-2 ${isActive ? "is-active" : ""}`}
+                >
+                  <LinkIcon className="h-4 w-4" aria-hidden="true" />
+                  {link.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -376,15 +401,19 @@ export function Navbar() {
           style={{ scrollbarWidth: "none" }}
         >
           <div className="flex min-w-max items-center justify-center gap-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                href={link.path}
-                className="whitespace-nowrap text-[12px] font-medium text-white transition-colors hover:text-secondary"
-              >
-                {link.name}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const LinkIcon = link.icon;
+              return (
+                <Link
+                  key={link.path}
+                  href={link.path}
+                  className="whitespace-nowrap text-[12px] font-medium text-white transition-colors hover:text-secondary flex items-center gap-1.5"
+                >
+                  <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  {link.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -473,16 +502,20 @@ export function Navbar() {
           id="mobile-navigation"
           className="md:hidden border-b border-border bg-background p-4 flex flex-col gap-4 animate-in slide-in-from-top-2"
         >
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              href={link.path}
-              className="mobile-nav-link text-base font-medium py-2 border-b border-border/50 transition-colors flex items-center gap-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const LinkIcon = link.icon;
+            return (
+              <Link
+                key={link.path}
+                href={link.path}
+                className="mobile-nav-link text-base font-medium py-2 border-b border-border/50 transition-colors flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <LinkIcon className="h-4 w-4" aria-hidden="true" />
+                {link.name}
+              </Link>
+            );
+          })}
           <div className="mt-2 border-t border-border/50 pt-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground">
               <Globe className="w-4 h-4 text-primary" />

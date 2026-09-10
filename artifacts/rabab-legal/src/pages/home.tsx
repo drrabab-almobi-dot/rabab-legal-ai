@@ -527,7 +527,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden font-sans">
+    <div className="rabab-home-2026 min-h-screen flex flex-col overflow-x-hidden font-sans">
       <Navbar />
 
       {/* Hero Section */}

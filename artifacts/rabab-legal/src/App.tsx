@@ -49,6 +49,7 @@ const LegalAssistant = lazy(() => import("@/pages/legal-assistant"));
 const ServiceDetails = lazy(() => import("@/pages/service-details"));
 const UsageLogPage = lazy(() => import("@/pages/usage-log"));
 const OrganizationPage = lazy(() => import("@/pages/organization"));
+const DesignPreview2026 = lazy(() => import("@/pages/design-preview-2026"));
 const DevPanel = lazy(async () => ({
   default: (await import("@/components/dev-panel")).DevPanel,
 }));
@@ -161,7 +162,12 @@ function BackButton() {
     currentLocation.current = location;
   }, [location]);
 
-  if (location === "/") return null;
+  if (
+    location === "/" ||
+    location === "/dashboard" ||
+    location === "/design-preview"
+  )
+    return null;
 
   const handleBack = () => {
     const previousLocation = navigationStack.current.at(-2);
@@ -212,6 +218,8 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
 
       <Route path="/terms" component={Terms} />
+
+      <Route path="/design-preview" component={DesignPreview2026} />
 
       <Route path="/disclaimer">
         <SimplePage />

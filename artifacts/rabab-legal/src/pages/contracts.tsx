@@ -91,7 +91,7 @@ export default function ContractsPage() {
   const hasAccess = isAuthenticated && !shouldShowPaywall;
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden font-sans bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="rabab-service-2026 min-h-screen flex flex-col overflow-x-hidden font-sans bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar />
 
       {/* ── Header ── */}
