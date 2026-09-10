@@ -86,6 +86,9 @@ jobs:
       - name: Test authentication flow against isolated PostgreSQL
         run: pnpm --filter @workspace/api-server run test:auth
 
+      - name: Test authenticated multi-page attachment extraction
+        run: pnpm --filter @workspace/api-server run test:contract-extract
+
       - name: Test consultation quota safety against isolated PostgreSQL
         run: pnpm --filter @workspace/api-server run test:chat
 

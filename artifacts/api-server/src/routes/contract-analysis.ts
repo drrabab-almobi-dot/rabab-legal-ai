@@ -95,7 +95,7 @@ router.post("/contract/extract", requireAuth, upload.single("file"), async (req,
     // فحص حد الصفحات لمستخدمي التجربة المجانية
     if (pageCount && pageCount > TRIAL_PAGE_LIMIT) {
       const { getQuotaStatus } = await import("../lib/quota.js");
-      const quotaStatus = await getQuotaStatus((req as any).user.userId);
+      const quotaStatus = await getQuotaStatus(req.userId!);
       const isTrial = quotaStatus.isTrial;
       if (isTrial) {
         res.status(403).json({
@@ -424,6 +424,10 @@ router.post("/contract/draft", requireAuth, async (req, res): Promise<void> => {
   const { contractType, fields, clientSession } = req.body as { contractType: string; fields: Record<string, string>; clientSession?: string };
   const template = CONTRACT_TEMPLATES[contractType];
   if (!template) { res.status(400).json({ error: "نوع العقد غير مدعوم" }); return; }
+  if (!fields || typeof fields !== "object" || Array.isArray(fields)) {
+    res.status(400).json({ error: "بيانات العقد غير صالحة" });
+    return;
+  }
 
   // ── Quota check ────────────────────────────────────────────────────────────
   let sessionId: number | undefined;
@@ -480,7 +484,7 @@ ${fieldLines}
     const contractText = sanitizeOutput(completion.choices[0]?.message?.content ?? "");
     // Commit quota after successful generation
     if (sessionId) await commitService(sessionId);
-    res.json({ contractText, wordCount: contractText.split(/\s+/).length });
+    res.json({ contractText, wordCount: contractText.split(/\s+/).length, sessionId });
   } catch (err: any) {
     if (sessionId) await releaseService(sessionId).catch(() => {});
     res.status(500).json({ error: err?.message ?? "فشل توليد العقد" });
@@ -497,12 +501,25 @@ router.post("/contract/chat", requireAuth, async (req, res): Promise<void> => {
     draftConfig?: DraftConfig;
   };
 
-  if (!messages?.length) { res.status(400).json({ error: "لا توجد رسائل" }); return; }
+  if (
+    !Array.isArray(messages) ||
+    messages.length === 0 ||
+    messages.length > 60 ||
+    messages.some(message =>
+      !message ||
+      (message.role !== "user" && message.role !== "assistant") ||
+      typeof message.content !== "string" ||
+      !message.content.trim() ||
+      message.content.length > 50_000
+    )
+  ) {
+    res.status(400).json({ error: "سجل رسائل العقد غير صالح" });
+    return;
+  }
 
-  const userCount = messages.filter(m => m.role === "user").length;
-
-  // Reserve quota only on the FIRST user message
-  let sessionId: number | undefined = reservedSessionId;
+  // Keep every turn tied to an owned reservation. A counted reservation may be
+  // reused during its grace window for follow-up edits to the same draft.
+  let sessionId: number | undefined = req.userRole === "admin" ? undefined : reservedSessionId;
   if (reservedSessionId && req.userRole !== "admin") {
     const [ownedReservation] = await db.select({ id: serviceSessionsTable.id })
       .from(serviceSessionsTable)
@@ -510,7 +527,7 @@ router.post("/contract/chat", requireAuth, async (req, res): Promise<void> => {
         eq(serviceSessionsTable.id, reservedSessionId),
         eq(serviceSessionsTable.userId, req.userId!),
         eq(serviceSessionsTable.serviceType, "contract_draft"),
-        eq(serviceSessionsTable.counted, false),
+        clientSession ? eq(serviceSessionsTable.clientSession, clientSession) : sql`TRUE`,
         sql`${serviceSessionsTable.graceEnd} > NOW()`,
       ))
       .limit(1);
@@ -519,7 +536,7 @@ router.post("/contract/chat", requireAuth, async (req, res): Promise<void> => {
       return;
     }
   }
-  if (userCount === 1 && !reservedSessionId && req.userRole !== "admin") {
+  if (!reservedSessionId && req.userRole !== "admin") {
     const result = await checkAndReserveService(req.userId!, "contract_draft", clientSession);
     if (!result.ok) {
       res.status(403).json({
