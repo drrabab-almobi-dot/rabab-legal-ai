@@ -77,6 +77,9 @@ jobs:
       - name: Test owner-only access gate
         run: pnpm --filter @workspace/api-server run test:owner-access-integration
 
+      - name: Test judicial consultation prompt policy
+        run: pnpm --filter @workspace/api-server run test:judicial-prompts
+
       - name: Test safe ZIP extraction limits
         run: pnpm --filter @workspace/api-server run test:safe-zip
 
