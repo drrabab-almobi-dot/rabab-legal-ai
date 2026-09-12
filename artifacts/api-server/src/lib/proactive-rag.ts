@@ -118,6 +118,24 @@ export function buildProactiveQuery(
     keys.map(k => (taskParams[k] ?? "").trim()).find(Boolean) ?? "";
 
   switch (taskType) {
+    case "judicial":
+      return [
+        "النظام القضائي السعودي الاختصاص القضائي إجراءات الدعوى الاعتراض",
+        pick("initial_info", "facts", "documents"),
+      ].filter(Boolean).join(" — ").slice(0, 300);
+
+    case "case_management":
+      return [
+        "إدارة القضية القضائية السعودية الجلسات المذكرات الإجراءات والمواعيد",
+        pick("subject", "facts", "documents"),
+      ].filter(Boolean).join(" — ").slice(0, 300);
+
+    case "judgment_analysis":
+      return [
+        "تحليل الأحكام السعودية أسباب الحكم الاعتراض الاستئناف النقض",
+        pick("facts", "documents"),
+      ].filter(Boolean).join(" — ").slice(0, 300);
+
     case "labor_dispute":
       return [
         "نظام العمل السعودي مكافأة نهاية الخدمة فسخ عقد العمل",
